@@ -1,4 +1,4 @@
-// --- ORCHESTRATEUR PRINCIPAL METAMORPHOSÉ v2.0 (MODULE CORRIGÉ) ---
+// --- ORCHESTRATEUR PRINCIPAL METAMORPHOSÉ v2.0 ---
 import { 
     updateNiveauAdaptatif, 
     selectionnerQuestionsAdaptatives, 
@@ -31,14 +31,13 @@ async function loadPedagogicalData() {
         if (!response.ok) throw new Error("Fichier introuvable");
         AppState.data = await response.json();
         
-        // Initialiser le suivi de progression si vide
         AppState.data.matieres.forEach(mat => {
             mat.chapitres.forEach(chap => {
                 if (!AppState.progress[chap.id]) AppState.progress[chap.id] = "a_reviser";
             });
         });
     } catch (error) {
-        console.error("Erreur de chargement des données réelles. Mode secours activé.", error);
+        console.error("Erreur. Configuration de secours activée.", error);
         AppState.data = { matieres: [] };
     }
     
@@ -80,7 +79,7 @@ function renderDashboardHome() {
     container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2>Mes Matières</h2>
-            <button id="main-infini-btn" class="btn" style="background: linear-gradient(135deg, #2ec4b6, #3d5a99); color: white; font-weight: bold; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">🚀 Mode Adaptatif Global</button>
+            <button id="main-infini-btn" class="btn-primary">🚀 Mode Adaptatif Global</button>
         </div>
         
         ${AppState.data.pieges_classiques ? `
@@ -120,7 +119,7 @@ function renderMatiereView(matId) {
     const container = document.getElementById("app-view-container");
     container.innerHTML = `
         <div style="margin-bottom:24px;">
-            <button id="back-btn" class="btn" style="padding:6px 12px; background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; color:var(--text-primary);">← Retour</button>
+            <button id="back-btn" class="btn-primary" style="padding:6px 12px;">← Retour</button>
             <h2 style="margin-top:16px;">${mat.emoji || "📚"} ${mat.label}</h2>
         </div>
         <div class="chapitres-list" style="display:grid; gap:16px;"></div>
@@ -141,15 +140,12 @@ function renderMatiereView(matId) {
                 <span style="font-size:0.8rem; padding:2px 8px; background:#e0f2fe; color:#0369a1; border-radius:12px; font-weight:bold;">📊 Rang Évolutif : Niv. ${currentNiveau}</span>
             </div>
             <h4>${chapitre.titre}</h4>
-            
             <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px; line-height:1.4;">${chapitre.fiche}</p>
-            ${chapitre.conseil_strategique ? `<p style="font-size:0.8rem; color:#047857; background:#ecfdf5; padding:8px; border-radius:6px; margin-top:10px;">💡 <strong>Conseil examen :</strong> ${chapitre.conseil_strategique}</p>` : ''}
-            
-            <div style="margin-top:16px; display:flex; gap:8px;">
-                <button class="btn-quiz" style="padding:8px 16px; font-size:0.85rem; cursor:pointer; background:#3D5A99; color:white; border:none; border-radius:4px; font-weight:600;">🎯 Démarrer le Quiz Adaptatif</button>
+            ${chapitre.conseil_strategique ? `<p style="font-size:0.8rem; color:#047857; background:#ecfdf5; padding:8px; border-radius:6px; margin-top:10px;">💡 <strong>Conseil :</strong> ${chapitre.conseil_strategique}</p>` : ''}
+            <div style="margin-top:16px;">
+                <button class="btn-quiz btn-primary" style="font-size:0.85rem;">🎯 Démarrer le Quiz Adaptatif</button>
             </div>
         `;
-        // CORRECTION DE LA VARIABLE ICI : passage de "chapitre" au lieu de "chap"
         card.querySelector(".btn-quiz").addEventListener("click", () => startQuizAdaptatif(chapitre));
         list.appendChild(card);
     });
@@ -157,39 +153,19 @@ function renderMatiereView(matId) {
 
 function startQuizAdaptatif(chapitre) {
     if (!chapitre.quiz || chapitre.quiz.length === 0) return alert("Pas de questions disponibles.");
-    
     const questionsFiltrees = selectionnerQuestionsAdaptatives(chapitre.quiz, chapitre.id, 5);
     
-    AppState.currentQuiz = { 
-        chapitreId: chapitre.id, 
-        questions: questionsFiltrees, 
-        currentIndex: 0, 
-        score: 0, 
-        modeInfini: false 
-    };
-    
+    AppState.currentQuiz = { chapitreId: chapitre.id, questions: questionsFiltrees, currentIndex: 0, score: 0, modeInfini: false };
     showQuestion();
     document.getElementById("quiz-modal").classList.add("active");
 }
 
 function startQuizInfini() {
     let toutesLesQuestions = [];
-    AppState.data.matieres.forEach(m => {
-        m.chapitres.forEach(c => {
-            if (c.quiz) toutesLesQuestions = toutesLesQuestions.concat(c.quiz);
-        });
-    });
+    AppState.data.matieres.forEach(m => { m.chapitres.forEach(c => { if (c.quiz) toutesLesQuestions = toutesLesQuestions.concat(c.quiz); }); });
+    if(toutesLesQuestions.length === 0) return alert("Aucune question trouvée.");
     
-    if(toutesLesQuestions.length === 0) return alert("Aucun stock de questions trouvé.");
-    
-    AppState.currentQuiz = { 
-        chapitreId: "global_infini", 
-        questions: toutesLesQuestions.sort(() => Math.random() - 0.5), 
-        currentIndex: 0, 
-        score: 0, 
-        modeInfini: true 
-    };
-    
+    AppState.currentQuiz = { chapitreId: "global_infini", questions: toutesLesQuestions.sort(() => Math.random() - 0.5), currentIndex: 0, score: 0, modeInfini: true };
     showQuestion();
     document.getElementById("quiz-modal").classList.add("active");
 }
@@ -203,10 +179,7 @@ function showQuestion() {
         : `Niveau ${q.difficulte || infoNiveau}/3 — Q. ${AppState.currentQuiz.currentIndex + 1}/${AppState.currentQuiz.questions.length}<br><small style="color:#6b7280; font-weight:normal;">${getMessageMotivation(q.difficulte || infoNiveau)}</small>`;
         
     document.getElementById("quiz-question-text").innerHTML = q.enonce;
-    
-    if(q.annale) {
-        document.getElementById("quiz-question-text").innerHTML += `<br><span style="display:inline-block; margin-top:8px; font-size:0.75rem; background:#f3f4f6; padding:2px 6px; border-radius:4px; color:#4b5563;">📜 Extrait de l'épreuve officielle : ${q.annale}</span>`;
-    }
+    if(q.annale) document.getElementById("quiz-question-text").innerHTML += `<br><span style="display:inline-block; margin-top:8px; font-size:0.75rem; background:#f3f4f6; padding:2px 6px; border-radius:4px; color:#4b5563;">📜 Annale : ${q.annale}</span>`;
 
     document.getElementById("quiz-explanation").classList.add("hidden");
     document.getElementById("quiz-next-btn").classList.add("hidden");
@@ -217,8 +190,6 @@ function showQuestion() {
     q.options.forEach((opt, idx) => {
         const btn = document.createElement("button");
         btn.className = "btn-option";
-        btn.style.width = "100%"; btn.style.padding = "12px"; btn.style.textAlign = "left"; btn.style.cursor = "pointer";
-        btn.style.margin = "6px 0"; btn.style.borderRadius = "6px";
         btn.innerText = opt;
         
         btn.addEventListener("click", () => {
@@ -236,8 +207,8 @@ function showQuestion() {
             
             if(!AppState.currentQuiz.modeInfini) {
                 const action = updateNiveauAdaptatif(AppState.currentQuiz.chapitreId, isCorrect);
-                if(action.montee) showToast("🎉 Niveau supérieur débloqué ! Tu passes au rang suivant !");
-                if(action.descente) showToast("📉 Niveau réajusté pour consolider tes bases.");
+                if(action.montee) showToast("🎉 Niveau supérieur débloqué !");
+                if(action.descente) showToast("📉 Niveau réajusté pour consolider vos bases.");
             }
             
             document.getElementById("explanation-text").innerText = q.explication;
@@ -269,7 +240,7 @@ function showToast(message) {
     toast.style.position = "fixed"; toast.style.bottom = "80px"; toast.style.left = "50%";
     toast.style.transform = "translateX(-50%)"; toast.style.background = "#1e293b";
     toast.style.color = "white"; toast.style.padding = "12px 24px"; toast.style.borderRadius = "30px";
-    toast.style.fontSize = "0.9rem"; toast.style.zIndex = "10000"; toast.style.boxShadow = "0 10px 15px -3px rgba(0,0,0,0.3)";
+    toast.style.fontSize = "0.9rem"; toast.style.zIndex = "10000";
     toast.innerText = message;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3500);
@@ -298,4 +269,12 @@ function setupEventListeners() {
     const toggle = () => document.body.classList.toggle("dark-mode");
     if (document.getElementById("theme-toggle")) document.getElementById("theme-toggle").addEventListener("click", toggle);
     if (document.getElementById("theme-toggle-mobile")) document.getElementById("theme-toggle-mobile").addEventListener("click", toggle);
+    
+    const closeBtn = document.getElementById("quiz-close-btn");
+    if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+            document.getElementById("quiz-modal").classList.remove("active");
+            renderDashboardHome();
+        });
+    }
 }
