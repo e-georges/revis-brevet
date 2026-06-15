@@ -47,6 +47,7 @@ body {
     transition: var(--transition-smooth);
 }
 
+/* SIDEBAR & PROFILE */
 .sidebar {
     width: var(--sidebar-width);
     background-color: var(--bg-sidebar);
@@ -58,7 +59,7 @@ body {
     height: 100vh;
     z-index: 100;
 }
-.sidebar-brand {
+.sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -69,7 +70,7 @@ body {
 }
 .btn-icon { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
 
-.user-profile-widget {
+.profile-widget {
     background: var(--bg-app);
     padding: 16px;
     border-radius: var(--radius-card);
@@ -78,17 +79,12 @@ body {
     align-items: center;
     gap: 12px;
 }
-.profile-avatar-wrapper { position: relative; font-size: 2rem; }
-.btn-edit-inline {
-    position: absolute; bottom: -4px; right: -4px;
-    background: var(--bg-sidebar); border: 1px solid var(--border-color);
-    border-radius: 50%; width: 22px; height: 22px; font-size: 0.7rem; cursor: pointer;
-}
+.avatar-container { font-size: 2rem; }
 .profile-info h3 { font-size: 1rem; font-weight: 600; }
-.profile-meta { font-size: 0.75rem; color: var(--text-secondary); }
-.streak-badge { font-size: 0.8rem; margin-top: 4px; font-weight: 600; }
+.classe-badge { font-size: 0.75rem; color: var(--text-secondary); }
+.streak-counter { font-size: 0.8rem; margin-top: 4px; font-weight: 600; }
 
-.nav-links { list-style: none; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .nav-item {
     display: flex; align-items: center; gap: 12px; padding: 12px;
     border-radius: var(--radius-btn); cursor: pointer; color: var(--text-secondary);
@@ -98,10 +94,11 @@ body {
     background-color: var(--bg-card-hover); color: var(--color-primary);
 }
 
+/* MAIN STRUCTURE */
 .main-content { margin-left: var(--sidebar-width); flex: 1; padding: 40px; max-width: 1200px; }
-.topbar-mobile { display: none; }
+.mobile-header { display: none; }
 
-.dashboard-welcome {
+.welcome-banner {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -111,18 +108,17 @@ body {
     border-radius: var(--radius-card);
     margin-bottom: 32px;
 }
-.countdown-alert {
+.badge-countdown {
     display: inline-block; background: var(--color-danger); color: white;
     padding: 6px 12px; border-radius: 20px; font-weight: 700; margin-top: 12px; font-size: 0.85rem;
 }
 
-.progress-ring-card { display: flex; flex-direction: column; align-items: center; }
-.svg-container { position: relative; width: 120px; height: 120px; }
-.progress-text {
+.banner-progress { display: flex; flex-direction: column; align-items: center; }
+.progress-ring-container { position: relative; width: 120px; height: 120px; }
+.progress-ring-text {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     font-size: 1.4rem; font-weight: 700;
 }
-.progress-ring__circle-bg { stroke: rgba(255,255,255,0.2); }
 .progress-ring__circle {
     transform: rotate(-90deg); transform-origin: 60px 60px;
     transition: stroke-dashoffset 0.35s;
@@ -142,7 +138,6 @@ body {
 
 .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; color: white; }
 .status-a_reviser { background-color: var(--status-todo); }
-.status-en_cours { background-color: var(--status-warning); }
 .status-acquis { background-color: var(--status-done); }
 
 .btn-option {
@@ -154,106 +149,71 @@ body {
 .btn-option:hover:not(:disabled) { background: var(--bg-card-hover); }
 
 /* ==========================================================================
-   FENEÊTRE POPUP QUIZ (MODALE UNIFIÉE ET CORRIGÉE)
+   FENÊTRE POPUP QUIZ ULTRA-ROBUSTE (FORCE LE CENTRAGE SUR SMARTPHONE)
    ========================================================================== */
-
-/* Arrière-plan sombre fixe qui couvre TOUT l'écran du téléphone */
 .modal-overlay {
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background-color: rgba(0, 0, 0, 0.6) !important;
-    backdrop-filter: blur(4px);
-    display: flex !important;
+    top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    width: 100% !important; height: 100% !important;
+    background-color: rgba(0, 0, 0, 0.75) !important;
+    backdrop-filter: blur(5px);
+    display: none !important; /* Géré exclusivement en JS par flex */
     justify-content: center !important;
     align-items: center !important;
-    z-index: 99999 !important; /* Passe au-dessus de tout */
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
+    z-index: 999999 !important;
     padding: 16px;
 }
 
-/* S'active au clic */
 .modal-overlay.active {
-    opacity: 1 !important;
-    pointer-events: auto !important;
+    display: flex !important;
 }
 
-/* La boîte blanche centrale contenant les questions */
 .modal-content {
-    background-color: var(--bg-card) !important;
-    color: var(--text-primary) !important;
+    background-color: var(--bg-card, #ffffff) !important;
+    color: var(--text-primary, #1a1d2e) !important;
     width: 100% !important;
-    max-width: 520px !important;
-    border-radius: var(--radius-card) !important;
+    max-width: 500px !important;
+    border-radius: 16px !important;
     padding: 24px !important;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3) !important;
-    transform: translateY(-20px);
-    transition: transform 0.25s ease;
-}
-
-.modal-overlay.active .modal-content {
-    transform: translateY(0) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+    position: relative !important;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal-header {
-    border-bottom: 1px solid var(--border-color);
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
     padding-bottom: 12px;
-    margin-bottom: 16px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--color-primary);
-}
-
-.question-text {
-    font-size: 1.15rem;
-    font-weight: 700;
     margin-bottom: 20px;
-    line-height: 1.4;
 }
 
-.options-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 16px;
+.close-modal-btn {
+    background: none !important;
+    border: none !important;
+    font-size: 2rem !important;
+    line-height: 1 !important;
+    color: var(--text-secondary, #6B7280) !important;
+    cursor: pointer !important;
+    padding: 0 4px !important;
 }
+.close-modal-btn:hover { color: var(--color-danger, #E84855) !important; }
+
+.question-text { font-size: 1.15rem; font-weight: 700; line-height: 1.4; margin-bottom: 20px; }
+.options-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 
 .explanation-box {
     background-color: rgba(46, 196, 182, 0.1);
-    border-left: 4px solid var(--color-accent);
-    padding: 12px 16px;
-    border-radius: 6px;
-    margin-top: 16px;
-    font-size: 0.9rem;
-    line-height: 1.4;
+    border-left: 4px solid var(--color-accent, #2EC4B6);
+    padding: 14px; border-radius: 8px; margin-top: 16px; font-size: 0.9rem;
 }
+.hidden { display: none !important; }
+.modal-footer { display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 14px; }
+.btn-primary { background-color: var(--color-primary); color: white; border: none; padding: 10px 20px; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer; }
 
-.hidden {
-    display: none !important;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    border-top: 1px solid var(--border-color);
-    padding-top: 12px;
-}
-
-.btn-primary {
-    background-color: var(--color-primary);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: var(--radius-btn);
-    font-weight: 600;
-    cursor: pointer;
-}
-
-/* RESPONSIVE IPAD & SMARTPHONE */
+/* RECONVERSION SMARTPHONE ET TABLETTE */
 @media (max-width: 768px) {
     body { flex-direction: column; }
     .sidebar {
@@ -261,10 +221,10 @@ body {
         flex-direction: row; padding: 0; border-right: none; border-top: 1px solid var(--border-color);
         box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
     }
-    .sidebar-brand, .user-profile-widget { display: none; }
-    .nav-links { flex-direction: row; width: 100%; height: 100%; justify-content: space-around; gap: 0; overflow-y: hidden; }
+    .sidebar-header, .profile-widget { display: none; }
+    .sidebar-menu { flex-direction: row; width: 100%; height: 100%; justify-content: space-around; gap: 0; }
     .nav-item { flex-direction: column; justify-content: center; gap: 4px; font-size: 0.65rem; padding: 4px; width: 100%; text-align: center; }
     .main-content { margin-left: 0; padding: 16px; padding-bottom: 80px; }
-    .topbar-mobile { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; margin-bottom: 20px; }
-    .dashboard-welcome { flex-direction: column; gap: 20px; text-align: center; padding: 20px; }
+    .mobile-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; margin-bottom: 20px; }
+    .welcome-banner { flex-direction: column; gap: 20px; text-align: center; padding: 20px; }
 }
