@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RévisBrevet 2026 - Quiz Infinis</title>
+    <title>RévisBrevet 2026 - Mode Adaptatif</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700&display=swap">
 </head>
 <body>
 
@@ -41,7 +41,7 @@
                 <div class="banner-text">
                     <h2>Bonjour, <span id="welcome-name">Révisé.e</span> ! 👋</h2>
                     <p>Prêt pour tes révisions du Diplôme National du Brevet 2026 ?</p>
-                    <span class="badge-countdown">⏳ Brevet J-11</span>
+                    <span class="badge-countdown">⏳ Épreuves Officielles</span>
                 </div>
                 <div class="banner-progress">
                     <div class="progress-ring-container">
@@ -57,7 +57,7 @@
 
             <section id="app-view-container" class="view-container">
                 <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                    <p>Chargement de l'application en cours...</p>
+                    <p>Initialisation du moteur adaptatif v2.0...</p>
                 </div>
             </section>
         </main>
@@ -66,14 +66,14 @@
     <div id="quiz-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="quiz-progress">Question 1/10</h3>
+                <h3 id="quiz-progress">Question 1/5</h3>
             </div>
             <div class="modal-body">
-                <p id="quiz-question-text" class="question-text">Énoncé de la question...</p>
+                <p id="quiz-question-text" class="question-text">Chargement de la question...</p>
                 <div id="quiz-options-container" class="options-grid">
                     </div>
                 <div id="quiz-explanation" class="explanation-box hidden">
-                    <p><strong>💡 Explication :</strong> <span id="explanation-text">...</span></p>
+                    <p><strong>💡 Correction & Analyse :</strong> <span id="explanation-text">...</span></p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -82,6 +82,6 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=2.0"></script>
+    <script type="module" src="js/app.js?v=2.0"></script>
 </body>
 </html>

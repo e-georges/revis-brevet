@@ -1,18 +1,17 @@
+// --- ORCHESTRATEUR PRINCIPAL METAMORPHOSÉ v2.0 (MODULE) ---
+import { 
+    updateNiveauAdaptatif, 
+    selectionnerQuestionsAdaptatives, 
+    getNiveauActuel, 
+    getMessageMotivation 
+} from './adaptive-engine.js';
+
 const AppState = {
     data: null,
-    profile: { username: "Élève de 3e", avatar: "🦊", streak: 0, lastActivity: null },
+    profile: { username: "Élève de 3e", avatar: "🦊", streak: 0 },
     progress: {},
     currentQuiz: { chapitreId: null, questions: [], currentIndex: 0, score: 0, modeInfini: false }
 };
-
-// Banque de secours pour le mode Quiz Infini (Garantit que ce n'est JAMAIS vide)
-const BanqueSecours = [
-    { enonce: "Calcul mental : Combien vaut 20% de 60 ?", options: ["A) 10", "B) 12", "C) 15", "D) 8"], bonne_reponse: 1, explication: "10% de 60 = 6, donc 20% = 6 × 2 = 12.", math: true },
-    { enonce: "Quelle figure de style est utilisée dans : 'La Terre est bleue comme une orange' ?", options: ["A) Une métaphore", "B) Une personnification", "C) Une comparaison", "D) Une hyperbole"], bonne_reponse: 2, explication: "Il y a l'outil de comparaison 'comme'." },
-    { enonce: "En quelle année l'ONU a-t-elle été fondée ?", options: ["A) 1918", "B) 1939", "C) 1945", "D) 1962"], bonne_reponse: 2, explication: "L'ONU a été créée en 1945 juste après la Seconde Guerre mondiale." },
-    { enonce: "Si f(x) = 3x - 5, quelle est l'image de 4 ?", options: ["A) 7", "B) 12", "C) 2", "D) -1"], bonne_reponse: 0, explication: "f(4) = 3 × 4 - 5 = 12 - 5 = 7.", math: true },
-    { enonce: "Trouve la bonne orthographe : 'Ils ont ___ leurs devoirs.'", options: ["A) fini", "B) finis", "C) finie", "D) finis-t"], bonne_reponse: 0, explication: "Avec l'auxiliaire avoir, le participe passé ne s'accorde pas si le COD est placé après." }
-];
 
 document.addEventListener("DOMContentLoaded", () => {
     initLocalStorage();
@@ -30,30 +29,18 @@ async function loadPedagogicalData() {
     try {
         const response = await fetch('data/troisieme.json');
         if (!response.ok) throw new Error("Fichier introuvable");
-        
         AppState.data = await response.json();
         
-        // Initialise la progression
+        // Initialiser le suivi de progression si vide
         AppState.data.matieres.forEach(mat => {
             mat.chapitres.forEach(chap => {
                 if (!AppState.progress[chap.id]) AppState.progress[chap.id] = "a_reviser";
             });
         });
     } catch (error) {
-        console.error("Bascule sur la banque de secours...", error);
-        // Structure de secours si le réseau ou le JSON a un problème
-        AppState.data = {
-            matieres: [
-                {
-                    id: "maths", label: "Mathématiques", emoji: "📐", couleur: "#3D5A99",
-                    chapitres: [{ id: "maths_01", titre: "Automatismes (Secours)", priorite: "haute", fiche: "Entraîne-toi sur le calcul mental.", quiz: BanqueSecours.filter(q => q.math) }]
-                },
-                {
-                    id: "francais", label: "Français", emoji: "📖", couleur: "#9B5DE5",
-                    chapitres: [{ id: "fr_01", titre: "Langue et Style (Secours)", priorite: "haute", fiche: "Grammaire et figures de style.", quiz: BanqueSecours.filter(q => !q.math) }]
-                }
-            ]
-        };
+        console.error("Erreur de chargement des données réelles. Mode secours activé.", error);
+        // Fallback pour éviter l'écran blanc
+        AppState.data = { matieres: [] };
     }
     
     buildNavigationMenu();
@@ -63,6 +50,7 @@ async function loadPedagogicalData() {
 
 function buildNavigationMenu() {
     const menu = document.getElementById("sidebar-menu");
+    if (!menu) return;
     menu.innerHTML = `
         <li><a class="nav-item active" id="btn-home"><span>🏠</span><span>Accueil</span></a></li>
         <li><a class="nav-item" id="btn-infini" style="background: linear-gradient(135deg, #ff007f, #7928ca); color: white; border-radius: 6px; font-weight: bold; margin-top: 10px;"><span>🔥</span><span>QUIZ INFINI</span></a></li>
@@ -74,9 +62,7 @@ function buildNavigationMenu() {
         renderDashboardHome();
     });
 
-    document.getElementById("btn-infini").addEventListener("click", () => {
-        startQuizInfini();
-    });
+    document.getElementById("btn-infini").addEventListener("click", startQuizInfini);
     
     AppState.data.matieres.forEach(mat => {
         const li = document.createElement("li");
@@ -95,8 +81,15 @@ function renderDashboardHome() {
     container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2>Mes Matières</h2>
-            <button id="main-infini-btn" class="btn" style="background: linear-gradient(135deg, #2ec4b6, #3d5a99); color: white; font-weight: bold; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; shadow: 0 4px 6px rgba(0,0,0,0.1);">🚀 Lancer un Quiz Infini</button>
+            <button id="main-infini-btn" class="btn" style="background: linear-gradient(135deg, #2ec4b6, #3d5a99); color: white; font-weight: bold; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">🚀 Mode Adaptatif Global</button>
         </div>
+        
+        ${AppState.data.pieges_classiques ? `
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 14px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; color: #78350f;">
+                <strong>⚠️ Le Piège Classique du Jour :</strong> ${AppState.data.pieges_classiques[Math.floor(Math.random() * AppState.data.pieges_classiques.length)]}
+            </div>
+        ` : ''}
+
         <div class="matieres-grid" id="matieres-grid"></div>
     `;
     
@@ -104,14 +97,13 @@ function renderDashboardHome() {
     const grid = document.getElementById("matieres-grid");
     
     AppState.data.matieres.forEach(mat => {
-        const total = mat.chapitres ? mat.chapitres.length : 0;
-        const acquis = mat.chapitres ? mat.chapitres.filter(c => AppState.progress[c.id] === "acquis").length : 0;
+        const total = mat.chapitres?.length || 0;
+        const acquis = mat.chapitres?.filter(c => AppState.progress[c.id] === "acquis").length || 0;
         const pct = total > 0 ? Math.round((acquis / total) * 100) : 0;
 
         const card = document.createElement("div");
         card.className = "card";
         card.style.borderLeft = `5px solid ${mat.couleur || '#3d5a99'}`;
-        card.style.cursor = "pointer";
         card.innerHTML = `
             <h3>${mat.emoji || "📚"} ${mat.label}</h3>
             <p style="font-size:0.85rem; color:var(--text-secondary); margin: 8px 0 16px;">${total} chapitres dispos</p>
@@ -127,84 +119,116 @@ function renderMatiereView(matId) {
     if (!mat) return;
     
     const container = document.getElementById("app-view-container");
-    container.innerHTML = `<div style="margin-bottom:24px;"><button id="back-btn" class="btn" style="padding:6px 12px; background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; color:var(--text-primary);">← Retour</button><h2 style="margin-top:16px;">${mat.emoji || "📚"} ${mat.label}</h2></div><div class="chapitres-list" style="display:grid; gap:16px;"></div>`;
+    container.innerHTML = `
+        <div style="margin-bottom:24px;">
+            <button id="back-btn" class="btn" style="padding:6px 12px; background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; color:var(--text-primary);">← Retour</button>
+            <h2 style="margin-top:16px;">${mat.emoji || "📚"} ${mat.label}</h2>
+        </div>
+        <div class="chapitres-list" style="display:grid; gap:16px;"></div>
+    `;
     document.getElementById("back-btn").addEventListener("click", renderDashboardHome);
 
     const list = container.querySelector(".chapitres-list");
-    if(!mat.chapitres) return;
     
     mat.chapitres.forEach(chap => {
         const stat = AppState.progress[chap.id] || "a_reviser";
+        const currentNiveau = getNiveauActuel(chap.id);
+        
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span class="status-badge status-${stat}">${stat === "acquis" ? "🟢 Acquis" : "⚪ À réviser"}</span>
-                <span style="font-size:0.8rem; padding:2px 6px; background:#F3F4F6; border-radius:4px; font-weight:bold; color:#333;">⚠️ Priorité ${chap.priorite || "moyenne"}</span>
+                <span class="status-badge status-${stat}">${stat === "acquis" ? "🟢 Acquis (Niveau 3)" : "⚪ Entraînement"}</span>
+                <span style="font-size:0.8rem; padding:2px 8px; background:#e0f2fe; color:#0369a1; border-radius:12px; font-weight:bold;">📊 Rang Évolutif : Niv. ${currentNiveau}</span>
             </div>
             <h4>${chap.titre}</h4>
+            
             <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px; line-height:1.4;">${chap.fiche}</p>
+            ${chap.conseil_strategique ? `<p style="font-size:0.8rem; color:#047857; background:#ecfdf5; padding:8px; border-radius:6px; margin-top:10px;">💡 <strong>Conseil examen :</strong> ${chap.conseil_strategique}</p>` : ''}
+            
             <div style="margin-top:16px; display:flex; gap:8px;">
-                <button class="btn-quiz" style="padding:8px 16px; font-size:0.85rem; cursor:pointer; background:#3D5A99; color:white; border:none; border-radius:4px; font-weight:600;">🎯 Lancer le Quiz</button>
+                <button class="btn-quiz" style="padding:8px 16px; font-size:0.85rem; cursor:pointer; background:#3D5A99; color:white; border:none; border-radius:4px; font-weight:600;">🎯 Déparer le Quiz Adaptatif</button>
             </div>
         `;
-        card.querySelector(".btn-quiz").addEventListener("click", () => startQuiz(chap));
+        card.querySelector(".btn-quiz").addEventListener("click", () => startQuizAdaptatif(chap));
         list.appendChild(card);
     });
 }
 
-function getAllQuestions() {
-    let list = [...BanqueSecours];
-    if (AppState.data && AppState.data.matieres) {
-        AppState.data.matieres.forEach(m => {
-            if(m.chapitres) {
-                m.chapitres.forEach(c => {
-                    if (c.quiz) list = list.concat(c.quiz);
-                });
-            }
-        });
-    }
-    return list.sort(() => Math.random() - 0.5);
-}
-
-function startQuizInfini() {
-    const qList = getAllQuestions();
-    AppState.currentQuiz = { chapitreId: "infini", questions: qList, currentIndex: 0, score: 0, modeInfini: true };
+function startQuizAdaptatif(chapitre) {
+    if (!chapitre.quiz || chapitre.quiz.length === 0) return alert("Pas de questions disponibles.");
+    
+    // Utilisation complète du moteur adaptatif pour trier et filtrer les questions
+    const questionsFiltrees = selectionnerQuestionsAdaptatives(chapitre.quiz, chapitre.id, 5);
+    
+    AppState.currentQuiz = { 
+        chapitreId: chapitre.id, 
+        questions: questionsFiltrees, 
+        currentIndex: 0, 
+        score: 0, 
+        modeInfini: false 
+    };
+    
     showQuestion();
     document.getElementById("quiz-modal").classList.add("active");
 }
 
-function startQuiz(chapitre) {
-    if (!chapitre.quiz || chapitre.quiz.length === 0) return alert("Pas de questions dispo.");
-    AppState.currentQuiz = { chapitreId: chapitre.id, questions: chapitre.quiz, currentIndex: 0, score: 0, modeInfini: false };
+function startQuizInfini() {
+    let toutesLesQuestions = [];
+    AppState.data.matieres.forEach(m => {
+        m.chapitres.forEach(c => {
+            if (c.quiz) toutesLesQuestions = toutesLesQuestions.concat(c.quiz);
+        });
+    });
+    
+    if(toutesLesQuestions.length === 0) return alert("Aucun stock de questions trouvé.");
+    
+    AppState.currentQuiz = { 
+        chapitreId: "global_infini", 
+        questions: toutesLesQuestions.sort(() => Math.random() - 0.5), 
+        currentIndex: 0, 
+        score: 0, 
+        modeInfini: true 
+    };
+    
     showQuestion();
     document.getElementById("quiz-modal").classList.add("active");
 }
 
 function showQuestion() {
     const q = AppState.currentQuiz.questions[AppState.currentQuiz.currentIndex];
-    const totalQ = AppState.currentQuiz.modeInfini ? "∞" : AppState.currentQuiz.questions.length;
+    const infoNiveau = getNiveauActuel(AppState.currentQuiz.chapitreId);
     
-    document.getElementById("quiz-progress").innerText = AppState.currentQuiz.modeInfini 
-        ? `🔥 Mode Infini — Question ${AppState.currentQuiz.currentIndex + 1} (Score: ${AppState.currentQuiz.score})`
-        : `Question ${AppState.currentQuiz.currentIndex + 1}/${totalQ}`;
+    // Affichage dynamique de la jauge de motivation adaptative (v2)
+    document.getElementById("quiz-progress").innerHTML = AppState.currentQuiz.modeInfini 
+        ? `🔥 Mode Infini Évolutif — Score: ${AppState.currentQuiz.score}`
+        : `Niveau ${q.difficulte || infoNiveau}/3 — Q. ${AppState.currentQuiz.currentIndex + 1}/${AppState.currentQuiz.questions.length}<br><small style="color:#6b7280; font-weight:normal;">${getMessageMotivation(q.difficulte || infoNiveau)}</small>`;
         
-    document.getElementById("quiz-question-text").innerText = q.enonce;
+    document.getElementById("quiz-question-text").innerHTML = q.enonce;
+    
+    // Intégration des métadonnées d'annales si présentes (v2)
+    if(q.annale) {
+        document.getElementById("quiz-question-text").innerHTML += `<br><span style="display:inline-block; margin-top:8px; font-size:0.75rem; background:#f3f4f6; padding:2px 6px; border-radius:4px; color:#4b5563;">📜 Extrait de l'épreuve officielle : ${q.annale}</span>`;
+    }
+
     document.getElementById("quiz-explanation").classList.add("hidden");
     document.getElementById("quiz-next-btn").classList.add("hidden");
 
     const container = document.getElementById("quiz-options-container");
     container.innerHTML = "";
+    
     q.options.forEach((opt, idx) => {
         const btn = document.createElement("button");
+        btn.className = "btn-option";
         btn.style.width = "100%"; btn.style.padding = "12px"; btn.style.textAlign = "left"; btn.style.cursor = "pointer";
-        btn.style.margin = "6px 0"; btn.style.border = "1px solid #E5E7EB"; btn.style.borderRadius = "6px";
-        btn.style.background = "white"; btn.style.color = "#1F2937"; btn.style.fontWeight = "500";
+        btn.style.margin = "6px 0"; btn.style.borderRadius = "6px";
         btn.innerText = opt;
         
         btn.addEventListener("click", () => {
             Array.from(container.children).forEach(b => b.disabled = true);
-            if (idx === q.bonne_reponse) { 
+            const isCorrect = (idx === q.bonne_reponse);
+            
+            if (isCorrect) { 
                 btn.style.background = "#D1FAE5"; btn.style.borderColor = "#10B981"; 
                 AppState.currentQuiz.score++; 
             } else { 
@@ -212,6 +236,14 @@ function showQuestion() {
                 container.children[q.bonne_reponse].style.background = "#D1FAE5";
                 container.children[q.bonne_reponse].style.borderColor = "#10B981";
             }
+            
+            // Calcul et exécution des règles de niveau adaptatif (v2)
+            if(!AppState.currentQuiz.modeInfini) {
+                const action = updateNiveauAdaptatif(AppState.currentQuiz.chapitreId, isCorrect);
+                if(action.montee) showToast("🎉 Niveau supérieur débloqué ! Tu passes au rang suivant !");
+                if(action.descente) showToast("📉 Niveau réajusté pour consolider tes bases.");
+            }
+            
             document.getElementById("explanation-text").innerText = q.explication;
             document.getElementById("quiz-explanation").classList.remove("hidden");
             document.getElementById("quiz-next-btn").classList.remove("hidden");
@@ -222,23 +254,31 @@ function showQuestion() {
 
 document.getElementById("quiz-next-btn").addEventListener("click", () => {
     AppState.currentQuiz.currentIndex++;
-    
-    if (AppState.currentQuiz.modeInfini) {
-        if (AppState.currentQuiz.currentIndex >= AppState.currentQuiz.questions.length) {
-            AppState.currentQuiz.questions = getAllQuestions();
-            AppState.currentQuiz.currentIndex = 0;
-        }
+    if (AppState.currentQuiz.currentIndex < AppState.currentQuiz.questions.length) {
         showQuestion();
     } else {
-        if (AppState.currentQuiz.currentIndex < AppState.currentQuiz.questions.length) {
-            showQuestion();
-        } else {
-            alert(`Quiz terminé ! Score : ${AppState.currentQuiz.score}/${AppState.currentQuiz.questions.length}`);
-            document.getElementById("quiz-modal").classList.remove("active");
-            renderDashboardHome();
+        // Enregistrement de la progression si le score est excellent
+        if(!AppState.currentQuiz.modeInfini && AppState.currentQuiz.score >= 4) {
+            AppState.progress[AppState.currentQuiz.chapitreId] = "acquis";
+            localStorage.setItem("revis_progress", JSON.stringify(AppState.progress));
         }
+        alert(`Session terminée ! Score : ${AppState.currentQuiz.score}/${AppState.currentQuiz.questions.length}`);
+        document.getElementById("quiz-modal").classList.remove("active");
+        renderDashboardHome();
+        updateGlobalProgressRing();
     }
 });
+
+function showToast(message) {
+    const toast = document.createElement("div");
+    toast.style.position = "fixed"; toast.style.bottom = "80px"; toast.style.left = "50%";
+    toast.style.transform = "translateX(-50%)"; toast.style.background = "#1e293b";
+    toast.style.color = "white"; toast.style.padding = "12px 24px"; toast.style.borderRadius = "30px";
+    toast.style.fontSize = "0.9rem"; toast.style.zIndex = "10000"; toast.style.boxShadow = "0 10px 15px -3px rgba(0,0,0,0.3)";
+    toast.innerText = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+}
 
 function updateGlobalProgressRing() {
     const circle = document.getElementById("global-progress-circle");
