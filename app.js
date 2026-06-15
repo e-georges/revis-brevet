@@ -41,9 +41,10 @@ async function loadPedagogicalData() {
         if (!response.ok) throw new Error("Fichier introuvable.");
         AppState.data = await response.json();
         
-        Object.keys(AppState.data.matieres).forEach(matId => {
-            AppState.data.matieres[matId].chapitres.forEach(chap => {
-                if (!AppState.progress[chap.id]) AppState.progress[chap.id] = chap.statut_defaut || "a_reviser";
+        // Initialisation de la progression pour chaque chapitre
+        AppState.data.matieres.forEach(mat => {
+            mat.chapitres.forEach(chap => {
+                if (!AppState.progress[chap.id]) AppState.progress[chap.id] = "a_reviser";
             });
         });
         localStorage.setItem("revis_progress", JSON.stringify(AppState.progress));
@@ -53,7 +54,7 @@ async function loadPedagogicalData() {
         updateGlobalProgressRing();
     } catch (error) {
         console.error(error);
-        document.getElementById("app-view-container").innerHTML = `<div class="card" style="border-left:4px solid var(--color-danger)"><h3>⚠️ Erreur</h3><p>Vérifiez que troisieme.json est placé dans un dossier nommé 'data'.</p></div>`;
+        document.getElementById("app-view-container").innerHTML = `<div class="card" style="border-left:4px solid var(--color-danger)"><h3>⚠️ Erreur</h3><p>Vérifiez que troisieme.json est placé dans un dossier nommé 'data' et qu'il est correct.</p></div>`;
     }
 }
 
@@ -66,14 +67,13 @@ function buildNavigationMenu() {
         renderDashboardHome();
     });
     
-    Object.keys(AppState.data.matieres).forEach(matId => {
-        const mat = AppState.data.matieres[matId];
+    AppState.data.matieres.forEach(mat => {
         const li = document.createElement("li");
-        li.innerHTML = `<a class="nav-item"><span>${mat.icon}</span><span>${mat.nom}</span></a>`;
+        li.innerHTML = `<a class="nav-item"><span>${mat.emoji}</span><span>${mat.label}</span></a>`;
         li.querySelector("a").addEventListener("click", (e) => {
             document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
             e.currentTarget.classList.add("active");
-            renderMatiereView(matId);
+            renderMatiereView(mat.id);
         });
         menu.appendChild(li);
     });
@@ -84,8 +84,7 @@ function renderDashboardHome() {
     container.innerHTML = `<h2 style="margin-bottom:20px;">Mes Matières</h2><div class="matieres-grid" id="matieres-grid"></div>`;
     const grid = document.getElementById("matieres-grid");
     
-    Object.keys(AppState.data.matieres).forEach(matId => {
-        const mat = AppState.data.matieres[matId];
+    AppState.data.matieres.forEach(mat => {
         const total = mat.chapitres.length;
         const acquis = mat.chapitres.filter(c => AppState.progress[c.id] === "acquis").length;
         const pct = total > 0 ? Math.round((acquis / total) * 100) : 0;
@@ -93,33 +92,40 @@ function renderDashboardHome() {
         const card = document.createElement("div");
         card.className = "card";
         card.style.borderLeft = `5px solid ${mat.couleur || 'var(--color-primary)'}`;
+        card.style.cursor = "pointer";
         card.innerHTML = `
-            <h3>${mat.icon} ${mat.nom}</h3>
+            <h3>${mat.emoji} ${mat.label}</h3>
             <p style="font-size:0.85rem; color:var(--text-secondary); margin: 8px 0 16px;">${total} chapitres</p>
             <div style="background:#E5E7EB; height:6px; border-radius:3px; overflow:hidden;"><div style="background:var(--color-primary); width:${pct}%; height:100%;"></div></div>
             <p style="font-size:0.75rem; font-weight:700; text-align:right; margin-top:4px;">${pct}% acquis</p>
         `;
-        card.addEventListener("click", () => renderMatiereView(matId));
+        card.addEventListener("click", () => renderMatiereView(mat.id));
         grid.appendChild(card);
     });
 }
 
 function renderMatiereView(matId) {
-    const mat = AppState.data.matieres[matId];
+    const mat = AppState.data.matieres.find(m => m.id === matId);
+    if (!mat) return;
+    
     const container = document.getElementById("app-view-container");
-    container.innerHTML = `<div style="margin-bottom:24px;"><button id="back-btn" class="btn" style="padding:6px 12px; background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; color:var(--text-primary);">← Retour</button><h2 style="margin-top:16px;">${mat.icon} ${mat.nom}</h2></div><div class="chapitres-list"></div>`;
+    container.innerHTML = `<div style="margin-bottom:24px;"><button id="back-btn" class="btn" style="padding:6px 12px; background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; color:var(--text-primary);">← Retour</button><h2 style="margin-top:16px;">${mat.emoji} ${mat.label}</h2></div><div class="chapitres-list" style="display:grid; gap:16px;"></div>`;
     document.getElementById("back-btn").addEventListener("click", renderDashboardHome);
 
     const list = container.querySelector(".chapitres-list");
     mat.chapitres.forEach(chap => {
-        const stat = AppState.progress[chap.id];
+        const stat = AppState.progress[chap.id] || "a_reviser";
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
-            <div style="display:flex; justify-content:between; align-items:center; margin-bottom:12px;"><span class="status-badge status-${stat}">${formatStatut(stat)}</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span class="status-badge status-${stat}">${formatStatut(stat)}</span>
+                <span style="font-size:0.8rem; padding:2px 6px; background:#F3F4F6; border-radius:4px; font-weight:bold;">⚠️ Priorité ${chap.priorite}</span>
+            </div>
             <h4>${chap.titre}</h4>
+            <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px; line-height:1.4;">${chap.fiche}</p>
             <div style="margin-top:16px; display:flex; gap:8px;">
-                <button class="btn-status" style="padding:6px; font-size:0.8rem; cursor:pointer; border:1px solid var(--border-color); background:none; border-radius:4px; color:var(--text-primary);">🔄 Statut</button>
+                <button class="btn-status" style="padding:6px 12px; font-size:0.8rem; cursor:pointer; border:1px solid var(--border-color); background:none; border-radius:4px; color:var(--text-primary);">🔄 Statut</button>
                 <button class="btn-quiz" style="padding:6px 12px; font-size:0.8rem; cursor:pointer; background:var(--color-primary); color:white; border:none; border-radius:4px; font-weight:600;">🎯 Quiz</button>
             </div>
         `;
@@ -137,7 +143,7 @@ function cycleStatus(chapId) {
 }
 
 function startQuiz(chapitre) {
-    if (!chapitre.quiz || chapitre.quiz.length === 0) return alert("Pas de quiz local pour ce chapitre.");
+    if (!chapitre.quiz || chapitre.quiz.length === 0) return alert("Pas de quiz disponible pour ce chapitre.");
     AppState.currentQuiz = { chapitreId: chapitre.id, questions: chapitre.quiz, currentIndex: 0, score: 0 };
     showQuestion();
     document.getElementById("quiz-modal").classList.add("active");
@@ -155,12 +161,29 @@ function showQuestion() {
     q.options.forEach((opt, idx) => {
         const btn = document.createElement("button");
         btn.className = "btn-option";
-        btn.style.width = "100%; padding:12px; text-align:left; cursor:pointer;";
+        btn.style.width = "100%"; 
+        btn.style.padding = "12px"; 
+        btn.style.textAlign = "left"; 
+        btn.style.cursor = "pointer";
+        btn.style.margin = "4px 0";
+        btn.style.border = "1px solid var(--border-color)";
+        btn.style.borderRadius = "6px";
+        btn.style.background = "var(--bg-card)";
+        btn.style.color = "var(--text-primary)";
         btn.innerText = opt;
+        
         btn.addEventListener("click", () => {
             Array.from(container.children).forEach(b => b.disabled = true);
-            if (idx === q.bonne_reponse) { btn.style.background = "rgba(46,196,182,0.2)"; btn.style.borderColor = "var(--color-accent)"; AppState.currentQuiz.score++; }
-            else { btn.style.background = "rgba(232,72,85,0.2)"; btn.style.borderColor = "var(--color-danger)"; container.children[q.bonne_reponse].style.background = "rgba(46,196,182,0.2)"; }
+            if (idx === q.bonne_reponse) { 
+                btn.style.background = "rgba(46,196,182,0.2)"; 
+                btn.style.borderColor = "#2ec4b6"; 
+                AppState.currentQuiz.score++; 
+            } else { 
+                btn.style.background = "rgba(232,72,85,0.2)"; 
+                btn.style.borderColor = "#e84855"; 
+                container.children[q.bonne_reponse].style.background = "rgba(46,196,182,0.2)"; 
+                container.children[q.bonne_reponse].style.borderColor = "#2ec4b6"; 
+            }
             document.getElementById("explanation-text").innerText = q.explication;
             document.getElementById("quiz-explanation").classList.remove("hidden");
             document.getElementById("quiz-next-btn").classList.remove("hidden");
@@ -177,7 +200,7 @@ document.getElementById("quiz-next-btn").addEventListener("click", () => {
         if (AppState.currentQuiz.score === AppState.currentQuiz.questions.length) AppState.progress[cId] = "acquis";
         localStorage.setItem("revis_progress", JSON.stringify(AppState.progress));
         updateGlobalProgressRing();
-        alert(`Quiz fini ! Score : ${AppState.currentQuiz.score}/${AppState.currentQuiz.questions.length}`);
+        alert(`Quiz terminé ! Ton score : ${AppState.currentQuiz.score}/${AppState.currentQuiz.questions.length}`);
         document.getElementById("quiz-modal").classList.remove("active");
         renderDashboardHome();
     }
@@ -186,7 +209,7 @@ document.getElementById("quiz-next-btn").addEventListener("click", () => {
 function updateGlobalProgressRing() {
     const circle = document.getElementById("global-progress-circle");
     if (!circle) return;
-    const circumference = circle.r.baseVal.value * 2 * Math.PI;
+    const circumference = 52 * 2 * Math.PI; // r=52
     circle.style.strokeDasharray = `${circumference} ${circumference}`;
     const total = Object.keys(AppState.progress).length;
     const acquis = Object.values(AppState.progress).filter(v => v === "acquis").length;
@@ -210,5 +233,12 @@ function setupEventListeners() {
     document.getElementById("theme-toggle-mobile").addEventListener("click", toggle);
     document.getElementById("edit-profile-btn").addEventListener("click", () => { document.getElementById("input-username").value = AppState.profile.username; document.getElementById("profile-modal").classList.add("active"); });
     document.getElementById("close-modal-btn").addEventListener("click", () => document.getElementById("profile-modal").classList.remove("active"));
-    document.getElementById("profile-form").addEventListener("submit", (e) => { e.preventDefault(); AppState.profile.username = document.getElementById("input-username").value; AppState.profile.avatar = document.querySelector('input[name="avatar"]:checked').value; localStorage.setItem("revis_profile", JSON.stringify(AppState.profile)); renderProfileUI(); document.getElementById("profile-modal").classList.remove("active"); });
+    document.getElementById("profile-form").addEventListener("submit", (e) => {
+        e.preventDefault(); 
+        AppState.profile.username = document.getElementById("input-username").value; 
+        AppState.profile.avatar = document.querySelector('input[name="avatar"]:checked').value; 
+        localStorage.setItem("revis_profile", JSON.stringify(AppState.profile)); 
+        renderProfileUI(); 
+        document.getElementById("profile-modal").classList.remove("active"); 
+    });
 }
