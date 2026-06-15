@@ -1,4 +1,4 @@
-// --- ORCHESTRATEUR PRINCIPAL METAMORPHOSÉ v2.0 (MODULE) ---
+// --- ORCHESTRATEUR PRINCIPAL METAMORPHOSÉ v2.0 (MODULE CORRIGÉ) ---
 import { 
     updateNiveauAdaptatif, 
     selectionnerQuestionsAdaptatives, 
@@ -39,7 +39,6 @@ async function loadPedagogicalData() {
         });
     } catch (error) {
         console.error("Erreur de chargement des données réelles. Mode secours activé.", error);
-        // Fallback pour éviter l'écran blanc
         AppState.data = { matieres: [] };
     }
     
@@ -130,9 +129,9 @@ function renderMatiereView(matId) {
 
     const list = container.querySelector(".chapitres-list");
     
-    mat.chapitres.forEach(chap => {
-        const stat = AppState.progress[chap.id] || "a_reviser";
-        const currentNiveau = getNiveauActuel(chap.id);
+    mat.chapitres.forEach(chapitre => {
+        const stat = AppState.progress[chapitre.id] || "a_reviser";
+        const currentNiveau = getNiveauActuel(chapitre.id);
         
         const card = document.createElement("div");
         card.className = "card";
@@ -141,16 +140,17 @@ function renderMatiereView(matId) {
                 <span class="status-badge status-${stat}">${stat === "acquis" ? "🟢 Acquis (Niveau 3)" : "⚪ Entraînement"}</span>
                 <span style="font-size:0.8rem; padding:2px 8px; background:#e0f2fe; color:#0369a1; border-radius:12px; font-weight:bold;">📊 Rang Évolutif : Niv. ${currentNiveau}</span>
             </div>
-            <h4>${chap.titre}</h4>
+            <h4>${chapitre.titre}</h4>
             
-            <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px; line-height:1.4;">${chap.fiche}</p>
-            ${chap.conseil_strategique ? `<p style="font-size:0.8rem; color:#047857; background:#ecfdf5; padding:8px; border-radius:6px; margin-top:10px;">💡 <strong>Conseil examen :</strong> ${chap.conseil_strategique}</p>` : ''}
+            <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px; line-height:1.4;">${chapitre.fiche}</p>
+            ${chapitre.conseil_strategique ? `<p style="font-size:0.8rem; color:#047857; background:#ecfdf5; padding:8px; border-radius:6px; margin-top:10px;">💡 <strong>Conseil examen :</strong> ${chapitre.conseil_strategique}</p>` : ''}
             
             <div style="margin-top:16px; display:flex; gap:8px;">
-                <button class="btn-quiz" style="padding:8px 16px; font-size:0.85rem; cursor:pointer; background:#3D5A99; color:white; border:none; border-radius:4px; font-weight:600;">🎯 Déparer le Quiz Adaptatif</button>
+                <button class="btn-quiz" style="padding:8px 16px; font-size:0.85rem; cursor:pointer; background:#3D5A99; color:white; border:none; border-radius:4px; font-weight:600;">🎯 Démarrer le Quiz Adaptatif</button>
             </div>
         `;
-        card.querySelector(".btn-quiz").addEventListener("click", () => startQuizAdaptatif(chap));
+        // CORRECTION DE LA VARIABLE ICI : passage de "chapitre" au lieu de "chap"
+        card.querySelector(".btn-quiz").addEventListener("click", () => startQuizAdaptatif(chapitre));
         list.appendChild(card);
     });
 }
@@ -158,7 +158,6 @@ function renderMatiereView(matId) {
 function startQuizAdaptatif(chapitre) {
     if (!chapitre.quiz || chapitre.quiz.length === 0) return alert("Pas de questions disponibles.");
     
-    // Utilisation complète du moteur adaptatif pour trier et filtrer les questions
     const questionsFiltrees = selectionnerQuestionsAdaptatives(chapitre.quiz, chapitre.id, 5);
     
     AppState.currentQuiz = { 
@@ -199,14 +198,12 @@ function showQuestion() {
     const q = AppState.currentQuiz.questions[AppState.currentQuiz.currentIndex];
     const infoNiveau = getNiveauActuel(AppState.currentQuiz.chapitreId);
     
-    // Affichage dynamique de la jauge de motivation adaptative (v2)
     document.getElementById("quiz-progress").innerHTML = AppState.currentQuiz.modeInfini 
         ? `🔥 Mode Infini Évolutif — Score: ${AppState.currentQuiz.score}`
         : `Niveau ${q.difficulte || infoNiveau}/3 — Q. ${AppState.currentQuiz.currentIndex + 1}/${AppState.currentQuiz.questions.length}<br><small style="color:#6b7280; font-weight:normal;">${getMessageMotivation(q.difficulte || infoNiveau)}</small>`;
         
     document.getElementById("quiz-question-text").innerHTML = q.enonce;
     
-    // Intégration des métadonnées d'annales si présentes (v2)
     if(q.annale) {
         document.getElementById("quiz-question-text").innerHTML += `<br><span style="display:inline-block; margin-top:8px; font-size:0.75rem; background:#f3f4f6; padding:2px 6px; border-radius:4px; color:#4b5563;">📜 Extrait de l'épreuve officielle : ${q.annale}</span>`;
     }
@@ -237,7 +234,6 @@ function showQuestion() {
                 container.children[q.bonne_reponse].style.borderColor = "#10B981";
             }
             
-            // Calcul et exécution des règles de niveau adaptatif (v2)
             if(!AppState.currentQuiz.modeInfini) {
                 const action = updateNiveauAdaptatif(AppState.currentQuiz.chapitreId, isCorrect);
                 if(action.montee) showToast("🎉 Niveau supérieur débloqué ! Tu passes au rang suivant !");
@@ -257,7 +253,6 @@ document.getElementById("quiz-next-btn").addEventListener("click", () => {
     if (AppState.currentQuiz.currentIndex < AppState.currentQuiz.questions.length) {
         showQuestion();
     } else {
-        // Enregistrement de la progression si le score est excellent
         if(!AppState.currentQuiz.modeInfini && AppState.currentQuiz.score >= 4) {
             AppState.progress[AppState.currentQuiz.chapitreId] = "acquis";
             localStorage.setItem("revis_progress", JSON.stringify(AppState.progress));
@@ -293,14 +288,14 @@ function updateGlobalProgressRing() {
 }
 
 function renderProfileUI() {
-    document.getElementById("display-username").innerText = AppState.profile.username;
-    document.getElementById("welcome-name").innerText = AppState.profile.username;
-    document.getElementById("display-avatar").innerText = AppState.profile.avatar;
-    document.getElementById("display-streak").innerText = AppState.profile.streak;
+    if (document.getElementById("display-username")) document.getElementById("display-username").innerText = AppState.profile.username;
+    if (document.getElementById("welcome-name")) document.getElementById("welcome-name").innerText = AppState.profile.username;
+    if (document.getElementById("display-avatar")) document.getElementById("display-avatar").innerText = AppState.profile.avatar;
+    if (document.getElementById("display-streak")) document.getElementById("display-streak").innerText = AppState.profile.streak;
 }
 
 function setupEventListeners() {
     const toggle = () => document.body.classList.toggle("dark-mode");
-    document.getElementById("theme-toggle").addEventListener("click", toggle);
-    document.getElementById("theme-toggle-mobile").addEventListener("click", toggle);
+    if (document.getElementById("theme-toggle")) document.getElementById("theme-toggle").addEventListener("click", toggle);
+    if (document.getElementById("theme-toggle-mobile")) document.getElementById("theme-toggle-mobile").addEventListener("click", toggle);
 }
