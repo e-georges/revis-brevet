@@ -145,22 +145,119 @@ body {
 .status-en_cours { background-color: var(--status-warning); }
 .status-acquis { background-color: var(--status-done); }
 
-.modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.6); display: flex; justify-content: center;
-    align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
-}
-.modal.active { opacity: 1; pointer-events: auto; }
-.modal-content { background-color: var(--bg-card); padding: 32px; border-radius: var(--radius-card); width: 90%; max-width: 500px; }
-.hidden { display: none !important; }
+/* ==========================================================================
+   DESIGNS ET STYLES CORRIGÉS DE LA MODALE DE QUIZ (S'ALIGNE AVEC INDEX.HTML)
+   ========================================================================== */
 
-.btn-option {
-    border: 1px solid var(--border-color); background: var(--bg-card);
-    color: var(--text-primary); font-family: var(--font-main); font-size: 0.95rem;
-    border-radius: var(--radius-btn); transition: var(--transition-smooth);
+/* Fond flouté et semi-transparent (Lié à id="quiz-modal" dans le html) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
 }
-.btn-option:hover:not(:disabled) { background: var(--bg-card-hover); }
 
+/* S'active quand le JS ajoute .active */
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Boîte de dialogue interne */
+.modal-content {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    width: 92%;
+    max-width: 540px;
+    border-radius: var(--radius-card);
+    padding: 28px;
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-30px);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-overlay.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.question-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+/* Zone d'explication pédagogique */
+.explanation-box {
+    background-color: rgba(46, 196, 182, 0.1);
+    border-left: 4px solid var(--color-accent);
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.dark-mode .explanation-box {
+    background-color: rgba(46, 196, 182, 0.15);
+    color: #e0f2f1;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius-btn);
+    font-weight: 600;
+    font-family: var(--font-main);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.btn-primary:hover {
+    filter: brightness(1.15);
+}
+
+/* Adaptations mobiles */
 @media (max-width: 768px) {
     body { flex-direction: column; }
     .sidebar {
