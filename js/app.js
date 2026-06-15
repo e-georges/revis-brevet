@@ -30,16 +30,8 @@ async function loadPedagogicalData() {
     try {
         const response = await fetch('data/troisieme.json');
         if (!response.ok) throw new Error("Fichier introuvable");
-        const textData = await response.text();
         
-        // Nettoyage au cas où le JSON se termine mal
-        let cleanText = textData.trim();
-        if (!cleanText.endsWith("}")) {
-            console.warn("JSON tronqué détecté, tentative de réparation...");
-            cleanText = cleanText.substring(0, cleanText.lastIndexOf("}")) + "}]}]}"; 
-        }
-        
-        AppState.data = JSON.parse(cleanText);
+        AppState.data = await response.json();
         
         // Initialise la progression
         AppState.data.matieres.forEach(mat => {
@@ -48,8 +40,8 @@ async function loadPedagogicalData() {
             });
         });
     } catch (error) {
-        console.error("Erreur JSON, chargement de la banque de secours...", error);
-        // Création d'une structure par défaut pour que l'écran ne soit pas blanc
+        console.error("Bascule sur la banque de secours...", error);
+        // Structure de secours si le réseau ou le JSON a un problème
         AppState.data = {
             matieres: [
                 {
@@ -161,7 +153,6 @@ function renderMatiereView(matId) {
     });
 }
 
-// --- LOGIQUE MAGIQUE DES QUIZ INFINIS ---
 function getAllQuestions() {
     let list = [...BanqueSecours];
     if (AppState.data && AppState.data.matieres) {
@@ -173,7 +164,6 @@ function getAllQuestions() {
             }
         });
     }
-    // Mélange aléatoire des questions
     return list.sort(() => Math.random() - 0.5);
 }
 
@@ -233,16 +223,13 @@ function showQuestion() {
 document.getElementById("quiz-next-btn").addEventListener("click", () => {
     AppState.currentQuiz.currentIndex++;
     
-    // En mode infini, on enchaîne indéfiniment
     if (AppState.currentQuiz.modeInfini) {
         if (AppState.currentQuiz.currentIndex >= AppState.currentQuiz.questions.length) {
-            // Si on arrive au bout du stock, on re-mélange
             AppState.currentQuiz.questions = getAllQuestions();
             AppState.currentQuiz.currentIndex = 0;
         }
         showQuestion();
     } else {
-        // Mode normal par chapitre
         if (AppState.currentQuiz.currentIndex < AppState.currentQuiz.questions.length) {
             showQuestion();
         } else {
