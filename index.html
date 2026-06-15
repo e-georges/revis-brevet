@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RévisBrevet 2026 - Quiz Infinis</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">🎓 RévisBrevet</h1>
+                <button id="theme-toggle" class="btn-icon">🌙</button>
+            </div>
+            
+            <div class="profile-widget">
+                <div class="avatar-container">
+                    <span id="display-avatar" class="avatar">🦊</span>
+                </div>
+                <div class="profile-info">
+                    <h3 id="display-username">Élève</h3>
+                    <p class="classe-badge">Classe de 3<sup>ème</sup></p>
+                    <p class="streak-counter">🔥 <span id="display-streak">0</span> jours d'affilée</p>
+                </div>
+            </div>
+
+            <ul class="sidebar-menu" id="sidebar-menu">
+                </ul>
+        </aside>
+
+        <main class="main-content">
+            <header class="mobile-header">
+                <h1 class="logo">🎓 RévisBrevet</h1>
+                <button id="theme-toggle-mobile" class="btn-icon">🌙</button>
+            </header>
+
+            <section class="welcome-banner">
+                <div class="banner-text">
+                    <h2>Bonjour, <span id="welcome-name">Révisé.e</span> ! 👋</h2>
+                    <p>Prêt pour tes révisions du Diplôme National du Brevet 2026 ?</p>
+                    <span class="badge-countdown">⏳ Brevet J-11</span>
+                </div>
+                <div class="banner-progress">
+                    <div class="progress-ring-container">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring__background" stroke="#ffffff33" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                            <circle id="global-progress-circle" class="progress-ring__circle" stroke="#ffffff" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                        </svg>
+                        <div class="progress-ring-text"><span id="global-progress-percent">0</span>%</div>
+                    </div>
+                    <p class="progress-label">Progression globale</p>
+                </div>
+            </section>
+
+            <section id="app-view-container" class="view-container">
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    <p>Chargement de l'application en cours...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="quiz-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="quiz-progress">Question 1/10</h3>
+            </div>
+            <div class="modal-body">
+                <p id="quiz-question-text" class="question-text">Énoncé de la question...</p>
+                <div id="quiz-options-container" class="options-grid">
+                    </div>
+                <div id="quiz-explanation" class="explanation-box hidden">
+                    <p><strong>💡 Explication :</strong> <span id="explanation-text">...</span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="quiz-next-btn" class="btn btn-primary hidden">Continuer →</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js?v=2.0"></script>
+</body>
+</html>
