@@ -564,7 +564,7 @@ function renderProfileUI() {
     const elName = document.getElementById("display-username");
     const elWelcome = document.getElementById("welcome-name");
     if (elName) elName.innerText = "Élève de 3e";
-    if (elWelcome) elWelcome.innerText = "Réviseuse du Brevet";
+    if (elWelcome) elWelcome.innerText = "Révision Brevet des Collèges";
 }
 
 // ── EVENTS ───────────────────────────────────────────────────
