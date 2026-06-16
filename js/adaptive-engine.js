@@ -1,23 +1,40 @@
-// --- MOTEUR ADAPTATIF ET DE DIFFICULTÉ PROGRESSIVE (v2.0) ---
+// ============================================================
+// adaptive-engine.js — Moteur adaptatif RévisBrevet v2.1
+// CORRECTIF : filtre sur q.niveau (pas q.difficulte)
+// CORRECTIF : persistance localStorage du niveau par chapitre
+// ============================================================
 
-const AdaptiveState = {
-    chapters: {},
-};
+// ── PERSISTANCE LOCALSTORAGE ──────────────────────────────────
+function loadAdaptiveState() {
+    try {
+        return JSON.parse(localStorage.getItem("rb_adaptive") || "{}");
+    } catch(e) { return {}; }
+}
+
+function saveAdaptiveState(state) {
+    localStorage.setItem("rb_adaptive", JSON.stringify(state));
+}
 
 function getOrCreateChapterState(chapitreId) {
-    if (!AdaptiveState.chapters[chapitreId]) {
-        AdaptiveState.chapters[chapitreId] = {
+    const allState = loadAdaptiveState();
+    if (!allState[chapitreId]) {
+        allState[chapitreId] = {
             niveau: 1,
             historiqueCorrect: [],
             historiqueIds: []
         };
+        saveAdaptiveState(allState);
     }
-    return AdaptiveState.chapters[chapitreId];
+    return { allState, chapterState: allState[chapitreId] };
 }
 
+// ── MISE À JOUR DU NIVEAU APRÈS UNE RÉPONSE ──────────────────
+// Règles :
+//   Montée  : 3 bonnes consécutives → niveau + 1 (max 3)
+//   Descente : 2 mauvaises sur les 3 dernières → niveau - 1 (min 1)
 export function updateNiveauAdaptatif(chapitreId, isCorrect) {
-    const state = getOrCreateChapterState(chapitreId);
-    
+    const { allState, chapterState: state } = getOrCreateChapterState(chapitreId);
+
     state.historiqueCorrect.push(isCorrect);
     if (state.historiqueCorrect.length > 3) {
         state.historiqueCorrect.shift();
@@ -26,7 +43,11 @@ export function updateNiveauAdaptatif(chapitreId, isCorrect) {
     let montee = false;
     let descente = false;
 
-    if (state.historiqueCorrect.length === 3 && state.historiqueCorrect.every(res => res === true)) {
+    // Montée : 3 bonnes d'affilée
+    if (
+        state.historiqueCorrect.length === 3 &&
+        state.historiqueCorrect.every(r => r === true)
+    ) {
         if (state.niveau < 3) {
             state.niveau++;
             state.historiqueCorrect = [];
@@ -34,7 +55,8 @@ export function updateNiveauAdaptatif(chapitreId, isCorrect) {
         }
     }
 
-    const mauvaises = state.historiqueCorrect.filter(res => res === false).length;
+    // Descente : 2 mauvaises sur les 3 dernières
+    const mauvaises = state.historiqueCorrect.filter(r => r === false).length;
     if (mauvaises >= 2) {
         if (state.niveau > 1) {
             state.niveau--;
@@ -43,47 +65,66 @@ export function updateNiveauAdaptatif(chapitreId, isCorrect) {
         }
     }
 
+    allState[chapitreId] = state;
+    saveAdaptiveState(allState);
+
     return { niveauActuel: state.niveau, montee, descente };
 }
 
+// ── SÉLECTION ADAPTATIVE DES QUESTIONS ───────────────────────
+// CORRECTIF : filtre sur q.niveau (et non q.difficulte)
 export function selectionnerQuestionsAdaptatives(toutesLesQuestions, chapitreId, limite = 5) {
-    const state = getOrCreateChapterState(chapitreId);
+    const { allState, chapterState: state } = getOrCreateChapterState(chapitreId);
     const niveauCible = state.niveau;
 
-    let questionsFiltrees = toutesLesQuestions.filter(q => (q.difficulte || 1) === niveauCible);
+    // Filtrer par niveau (champ "niveau" dans le JSON)
+    let questionsFiltrees = toutesLesQuestions.filter(q => (q.niveau || 1) === niveauCible);
 
+    // Fallback : si aucune question à ce niveau exact, prendre toutes les questions
     if (questionsFiltrees.length === 0) {
-        questionsFiltrees = toutesLesQuestions;
+        questionsFiltrees = [...toutesLesQuestions];
     }
 
+    // Anti-répétition : exclure les questions vues récemment
     let questionsDisponibles = questionsFiltrees.filter(q => !state.historiqueIds.includes(q.id));
 
+    // Si toutes déjà vues : reset et recommencer
     if (questionsDisponibles.length === 0) {
         state.historiqueIds = [];
-        questionsDisponibles = questionsFiltrees;
+        questionsDisponibles = [...questionsFiltrees];
     }
 
+    // Mélanger et prendre le nombre demandé
     const selection = questionsDisponibles.sort(() => Math.random() - 0.5).slice(0, limite);
 
+    // Mémoriser les questions vues (max 10 en mémoire)
     selection.forEach(q => {
-        if (q.id) {
+        if (q.id && !state.historiqueIds.includes(q.id)) {
             state.historiqueIds.push(q.id);
-            if (state.historiqueIds.length > 10) state.historiqueIds.shift();
         }
     });
+    if (state.historiqueIds.length > 10) {
+        state.historiqueIds = state.historiqueIds.slice(-10);
+    }
+
+    allState[chapitreId] = state;
+    saveAdaptiveState(allState);
 
     return selection;
 }
 
+// ── LECTURE DU NIVEAU ACTUEL ──────────────────────────────────
 export function getNiveauActuel(chapitreId) {
-    return getOrCreateChapterState(chapitreId).niveau;
+    const { chapterState } = getOrCreateChapterState(chapitreId);
+    return chapterState.niveau;
 }
 
+// ── MESSAGE MOTIVATION PAR NIVEAU ────────────────────────────
 export function getMessageMotivation(niveau) {
     const messages = {
-        1: "Bases & Fondations 🎯 On sécurise les prérequis essentiels !",
-        2: "Application & Maîtrise 🚀 Tu montes en puissance, le niveau s'élève !",
-        3: "Expertise Annales 👑 Mode guerrier activé, tu es sur des questions réelles du Brevet !"
+        1: "🟢 Consolidation — on sécurise les bases !",
+        2: "🟡 Standard — tu montes en puissance !",
+        3: "🔴 Niveau Brevet — questions type examen réel !"
     };
     return messages[niveau] || "";
 }
