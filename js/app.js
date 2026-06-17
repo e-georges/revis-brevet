@@ -48,22 +48,75 @@ function saveProgress() {
 }
 
 async function loadPedagogicalData() {
-    try {
-        const res = await fetch('data/troisieme.json');
-        if (!res.ok) throw new Error("Fichier introuvable");
-        AppState.data = await res.json();
+    // Essayer plusieurs chemins selon la structure GitHub
+    const chemins = [
+        'data/troisieme.json',
+        'troisieme.json',
+        './data/troisieme.json',
+        './troisieme.json'
+    ];
 
-        // Initialiser la progression pour tous les chapitres
-        AppState.data.matieres.forEach(mat => {
-            mat.chapitres.forEach(chap => {
-                if (!AppState.progress[chap.id]) AppState.progress[chap.id] = "a_reviser";
-            });
-        });
-        saveProgress();
-    } catch(e) {
-        console.error("Erreur chargement JSON:", e);
-        AppState.data = { matieres: [], programme_progression: null };
+    let chargé = false;
+    for (const chemin of chemins) {
+        try {
+            const detail = document.getElementById("loading-detail");
+            if (detail) detail.textContent = `Recherche : ${chemin}`;
+
+            const res = await fetch(chemin);
+            if (!res.ok) continue; // Essayer le chemin suivant
+
+            const text = await res.text();
+            AppState.data = JSON.parse(text);
+            chargé = true;
+            console.log(`✅ JSON chargé depuis : ${chemin}`);
+            break;
+        } catch(e) {
+            console.warn(`❌ Chemin échoué : ${chemin}`, e.message);
+        }
     }
+
+    if (!chargé) {
+        // Afficher une erreur claire dans l'UI
+        const container = document.getElementById("app-view-container");
+        if (container) {
+            container.innerHTML = `
+                <div style="text-align:center;padding:40px 20px;max-width:500px;margin:0 auto;">
+                    <div style="font-size:3rem;margin-bottom:16px;">❌</div>
+                    <h2 style="color:var(--text-primary);margin-bottom:12px;">Fichier de données introuvable</h2>
+                    <p style="color:var(--text-secondary);margin-bottom:20px;line-height:1.6;">
+                        Le fichier <code style="background:var(--bg-card-hover);padding:2px 6px;border-radius:4px;">troisieme.json</code> 
+                        est introuvable. Vérifie la structure de ton dépôt GitHub.
+                    </p>
+                    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:16px;text-align:left;font-size:0.85rem;color:var(--text-secondary);line-height:2;">
+                        <strong style="color:var(--text-primary);">Structure attendue :</strong><br>
+                        📁 ton-repo/<br>
+                        &nbsp;&nbsp;📄 index.html<br>
+                        &nbsp;&nbsp;📄 style.css<br>
+                        &nbsp;&nbsp;📁 js/<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;📄 app.js<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;📄 adaptive-engine.js<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;📄 question-engine.js<br>
+                        &nbsp;&nbsp;📁 <strong>data/</strong><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;📄 <strong>troisieme.json</strong> ← ici
+                    </div>
+                    <button onclick="location.reload()" 
+                        style="margin-top:20px;background:#3D5A99;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:600;">
+                        🔄 Réessayer
+                    </button>
+                </div>
+            `;
+        }
+        return;
+    }
+
+    // Initialiser la progression pour tous les chapitres
+    AppState.data.matieres.forEach(mat => {
+        mat.chapitres.forEach(chap => {
+            if (!AppState.progress[chap.id]) AppState.progress[chap.id] = "a_reviser";
+        });
+    });
+    saveProgress();
+
     buildNavigationMenu();
     renderDashboardHome();
     updateGlobalProgressRing();
