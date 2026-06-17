@@ -324,7 +324,7 @@ document.getElementById('quiz-next-btn')?.addEventListener('click', () => {
 
 function terminerSessionQuiz() {
   const quiz = AppState.quiz;
-  fermarModaleQuiz();
+  fermerModaleQuiz(); // <- Correction de la coquille ici
 
   const pct = Math.round((quiz.score / quiz.questions.length) * 100);
   if (pct >= 80 && quiz.chapitreId !== 'examen_blanc' && quiz.chapitreId !== 'carnet_erreurs') {
@@ -354,14 +354,6 @@ function terminerSessionQuiz() {
   updateProgressRing();
 }
 
-function fermerModaleQuiz() {
-  const mq = document.getElementById('quiz-modal');
-  if (mq) { 
-    mq.classList.remove('active'); 
-    mq.classList.add('hidden');
-  }
-}
-
 async function loadData() {
   try {
     const res = await fetch('troisieme.json');
@@ -381,11 +373,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   const mApi = document.getElementById('modal-api'); if (mApi) { mApi.style.display = 'none'; mApi.classList.add('hidden'); }
 
-  // Liaison de l'événement clic de la croix de fermeture du quiz (ligne 89 de l'index)
-  document.getElementById('quiz-close-btn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    fermerModaleQuiz();
-  });
+  // Liaison universelle (Clic & Tactile) pour fermer le quiz
+  const closeBtn = document.getElementById('quiz-close-btn');
+  if (closeBtn) {
+    const execFermeture = (e) => {
+      e.preventDefault();
+      fermerModaleQuiz();
+    };
+    closeBtn.addEventListener('click', execFermeture);
+    closeBtn.addEventListener('touchstart', execFermeture, { passive: false });
+  }
 
   document.getElementById('btn-settings')?.addEventListener('click', () => {
     document.getElementById('modal-api')?.classList.remove('hidden');
