@@ -1,5 +1,5 @@
 // ============================================================
-// RévisBrevet 2026 — app.js (Version 100% Autonome sans API)
+// RévisBrevet 2026 — app.js (Version Autonome & Pop-up Fixé)
 // Génération locale illimitée, Carnet d'Erreurs & Indices
 // ============================================================
 
@@ -12,7 +12,7 @@ const AppState = {
   quiz: { matId: null, chapitreId: null, matLabel: '', questions: [], index: 0, score: 0, infini: false, estRattrapage: false }
 };
 
-// Banque de secours si le JSON principal ne charge pas
+// Banque de secours imbattable en cas de latence de chargement du JSON
 const SECOURS = [
   { enonce: "20% de 60 = ?", options: ["A) 10", "B) 12", "C) 15", "D) 8"], bonne_reponse: 1, explication: "10% de 60 = 6, donc 20% = 12.", niveau: 1 },
   { enonce: "'Ses yeux étaient deux étoiles' — figure de style ?", options: ["A) Comparaison", "B) Métaphore", "C) Hyperbole", "D) Personnification"], bonne_reponse: 1, explication: "Métaphore : comparaison sans outil de comparaison.", niveau: 3, indice: "Regarde s'il y a un mot de liaison comme 'comme' ou 'tel que'." },
@@ -20,70 +20,38 @@ const SECOURS = [
   { enonce: "f(x) = 3x − 5. Image de 4 ?", options: ["A) 7", "B) 12", "C) 2", "D) -1"], bonne_reponse: 0, explication: "f(4) = 3×4 − 5 = 12 − 5 = 7.", niveau: 3, indice: "Remplace la variable x par la valeur 4 dans la fonction." }
 ];
 
-// ── MOTEUR DE MUTATIONS EXTENSIBLE (Génération Infinie complète MEN) ──
+// ── MOTEUR DE MUTATIONS (Génération Infinie locale) ──────────────────
 const Mutations = {
   pourcentage() {
-    const pcts = [10, 20, 25, 50, 75];
-    const p = pcts[Math.floor(Math.random() * pcts.length)];
-    const bases = [40, 60, 80, 120, 160, 200];
-    const b = bases[Math.floor(Math.random() * bases.length)];
+    const pcts = [10, 20, 25, 50, 75], p = pcts[Math.floor(Math.random() * pcts.length)];
+    const bases = [40, 60, 80, 120, 160, 200], b = bases[Math.floor(Math.random() * bases.length)];
     const r = b * p / 100;
-    const opts = [`A) ${r}`, `B) ${r + p}`, `C) ${b - r}`, `D) ${r * 2}`];
-    return { enonce: `Calculer ${p}% de ${b} (sans calculatrice).`, options: opts, bonne_reponse: 0, explication: `${p}% de ${b} = ${b} × (${p}/100) = ${r}.`, niveau: 1, theme_auto: "Maths : Pourcentages" };
+    return { enonce: `Calculer ${p}% de ${b} (sans calculatrice).`, options: [`A) ${r}`, `B) ${r + p}`, `C) ${b - r}`, `D) ${r * 2}`], bonne_reponse: 0, explication: `${p}% de ${b} = ${b} × (${p}/100) = ${r}.`, niveau: 1, theme_auto: "Maths : Pourcentages" };
   },
   equation() {
-    const a = Math.floor(Math.random() * 4) + 2;
-    const x = Math.floor(Math.random() * 8) + 1;
-    const b = Math.floor(Math.random() * 9) + 1;
-    const c = a * x + b;
-    const opts = [`A) x = ${x}`, `B) x = ${x + 2}`, `C) x = ${c}`, `D) x = ${x - 1}`];
-    return { enonce: `Résoudre l'équation : ${a}x + ${b} = ${c}`, options: opts, bonne_reponse: 0, explication: `${a}x = ${c} - ${b} → ${a}x = ${c - b} → x = ${x}.`, niveau: 3, indice: `Isole l'inconnue x en soustrayant d'abord ${b} de chaque côté.`, theme_auto: "Maths : Équations" };
+    const a = Math.floor(Math.random() * 4) + 2, x = Math.floor(Math.random() * 8) + 1, b = Math.floor(Math.random() * 9) + 1, c = a * x + b;
+    return { enonce: `Résoudre l'équation : ${a}x + ${b} = ${c}`, options: [`A) x = ${x}`, `B) x = ${x + 2}`, `C) x = ${c}`, `D) x = ${x - 1}`], bonne_reponse: 0, explication: `${a}x = ${c} - ${b} → ${a}x = ${c - b} → x = ${x}.`, niveau: 3, indice: `Isole x en soustrayant d'abord ${b} des deux côtés.`, theme_auto: "Maths : Équations" };
   },
   pythagore() {
-    const triplets = [[3,4,5], [5,12,13], [6,8,10], [9,12,15]];
-    const [a, b, c] = triplets[Math.floor(Math.random() * triplets.length)];
-    const opts = [`A) ${c} cm`, `B) ${a + b} cm`, `C) ${c + 2} cm`, `D) ${c * c} cm`];
-    return { enonce: `Un triangle rectangle possède des côtés de ${a} cm et ${b} cm. Combien mesure son hypoténuse ?`, options: opts, bonne_reponse: 0, explication: `D'après Pythagore : c² = ${a}² + ${b}² = ${a*a} + ${b*b} = ${c*c}. Donc c = √${c*c} = ${c} cm.`, niveau: 3, indice: "L'hypoténuse est le côté le plus long opposé à l'angle droit. Applique la formule de la somme des carrés.", theme_auto: "Maths : Pythagore" };
+    const triplets = [[3,4,5], [5,12,13], [6,8,10]], [a, b, c] = triplets[Math.floor(Math.random() * triplets.length)];
+    return { enonce: `Un triangle rectangle possède des côtés de de ${a} cm et ${b} cm. Combien mesure son hypoténuse ?`, options: [`A) ${c} cm`, `B) ${a + b} cm`, `C) ${c + 2} cm`, `D) ${c * c} cm`], bonne_reponse: 0, explication: `D'après le théorème de Pythagore : c² = ${a}² + ${b}² = ${a*a} + ${b*b} = ${c*c}. Donc c = √${c*c} = ${c} cm.`, niveau: 3, indice: "L'hypoténuse est le côté le plus long. Applique la formule de la somme des carrés.", theme_auto: "Maths : Pythagore" };
   },
   puissances() {
-    const n = Math.floor(Math.random() * 5) + 2; // exposant 1
-    const m = Math.floor(Math.random() * 4) + 2; // exposant 2
-    const opts = [`A) 10^${n+m}`, `B) 10^${n*m}`, `C) 10^${n-m}`, `D) 100^${n+m}`];
-    return { enonce: `Écrire sous la forme d'une puissance de 10 le produit suivant : 10^${n} × 10^${m}`, options: opts, bonne_reponse: 0, explication: `Propriété des puissances : 10^a × 10^b = 10^(a+b). Ici, 10^${n} × 10^${m} = 10^(${n}+${m}) = 10^${n+m}.`, niveau: 2, theme_auto: "Maths : Puissances" };
+    const n = Math.floor(Math.random() * 5) + 2, m = Math.floor(Math.random() * 4) + 2;
+    return { enonce: `Écrire sous la forme d'une puissance de 10 le produit suivant : 10^${n} × 10^${m}`, options: [`A) 10^${n+m}`, `B) 10^${n*m}`, `C) 10^${n-m}`, `D) 100^${n+m}`], bonne_reponse: 0, explication: `Propriété : 10^a × 10^b = 10^(a+b). Ici, 10^${n} × 10^${m} = 10^(${n}+${m}) = 10^${n+m}.`, niveau: 2, theme_auto: "Maths : Puissances" };
   },
   fractions() {
-    const num = [1, 3, 5, 7][Math.floor(Math.random() * 4)];
-    const den = [2, 4, 3][Math.floor(Math.random() * 3)];
-    const prod = num * 2;
-    const opts = [`A) ${prod}/${den}`, `B) ${num}/${den*2}`, `C) ${num+2}/${den}`, `D) ${num}/${den}`];
-    return { enonce: `Calculer et donner le résultat de : 2 × (${num}/${den})`, options: opts, bonne_reponse: 0, explication: `Pour multiplier un nombre par une fraction, on multiplie le numérateur par ce nombre : 2 × ${num}/${den} = (2×${num})/${den} = ${prod}/${den}.`, niveau: 2, theme_auto: "Maths : Fractions" };
-  },
-  calcul_litteral() {
-    const k = Math.floor(Math.random() * 4) + 2;
-    const a = Math.floor(Math.random() * 3) + 2;
-    const b = Math.floor(Math.random() * 5) + 1;
-    const opts = [`A) ${k*a}x + ${k*b}`, `B) ${k+a}x + ${k+b}`, `C) ${k*a}x + ${b}`, `D) ${k*a*b}x`];
-    return { enonce: `Développer l'expression suivante : ${k}(${a}x + ${b})`, options: opts, bonne_reponse: 0, explication: `On applique la distributivité simple : k(a + b) = ka + kb. Donc, ${k}×${a}x + ${k}×${b} = ${k*a}x + ${k*b}.`, niveau: 3, indice: `Distribue le nombre multiplicateur ${k} sur chacun des termes à l'intérieur de la parenthèse.`, theme_auto: "Maths : Calcul Littéral" };
+    const num = [1, 3, 5, 7][Math.floor(Math.random() * 4)], den = [2, 4, 3][Math.floor(Math.random() * 3)], prod = num * 2;
+    return { enonce: `Calculer et donner le résultat simplifié de : 2 × (${num}/${den})`, options: [`A) ${prod}/${den}`, `B) ${num}/${den*2}`, `C) ${num+2}/${den}`, `D) ${num}/${den}`], bonne_reponse: 0, explication: `Pour multiplier un nombre par une fraction, on multiplie le numérateur : 2 × ${num}/${den} = (2×${num})/${den} = ${prod}/${den}.`, niveau: 2, theme_auto: "Maths : Fractions" };
   },
   loi_ohm() {
-    const r = [10, 20, 50, 100][Math.floor(Math.random() * 4)];
-    const i = [1, 2, 0.5, 3][Math.floor(Math.random() * 4)];
-    const u = r * i;
-    const opts = [`A) ${u} V`, `B) ${r + i} V`, `C) ${(r/i).toFixed(1)} V`, `D) ${u * 2} V`];
-    return { enonce: `Un conducteur ohmique a une résistance R = ${r} Ω et est traversé par un courant I = ${i} A. Quelle est la tension U à ses bornes ?`, options: opts, bonne_reponse: 0, explication: `Formule de la loi d'Ohm : U = R × I. Ici U = ${r} × ${i} = ${u} V.`, niveau: 2, theme_auto: "Physique : Électricité" };
-  },
-  grammaire() {
-    const phrases = [
-      { t: "Bien qu'il ___ fatigué, il continue de travailler.", r: "soit", o: ["soit", "est", "était", "sera"], e: "Après la conjonction 'bien que', on utilise obligatoirement le mode subjonctif.", n: 2 },
-      { t: "Les pommes que j'ai ___ étaient délicieuses.", r: "cueillies", o: ["cueillies", "cueilli", "cueillis", "cueillie"], e: "Le participe passé conjugué avec 'avoir' s'accorde avec le COD ('que', mis pour les pommes) placé avant le verbe.", n: 3, i: "Trouve le COD de l'action et regarde où il se situe par rapport au verbe." }
-    ];
-    const p = phrases[Math.floor(Math.random() * phrases.length)];
-    return { enonce: `Complète la phrase correctement : "${p.t}"`, options: p.o.map((o, idx) => `${o}`), bonne_reponse: p.o.indexOf(p.r), explication: p.e, niveau: p.n, indice: p.i || null, theme_auto: "Français : Syntaxe" };
+    const r = [10, 20, 50, 100][Math.floor(Math.random() * 4)], i = [1, 2, 0.5, 3][Math.floor(Math.random() * 4)], u = r * i;
+    return { enonce: `Un composant a une résistance R = ${r} Ω et est traversé par un courant I = ${i} A. Quelle est la tension U à ses bornes ?`, options: [`A) ${u} V`, `B) ${r + i} V`, `C) ${(r/i).toFixed(1)} V`, `D) ${u * 2} V`], bonne_reponse: 0, explication: `Loi d'Ohm : U = R × I. Ici U = ${r} × ${i} = ${u} V.`, niveau: 2, theme_auto: "Physique : Électricité" };
   }
 };
 
 function genererSerieAleatoire(chapId, baseQuiz = [], taille = 5) {
-  let depar = Array.isArray(baseQuiz) ? [...baseQuiz] : [];
+  let depar = Array.isArray(baseQuiz) && baseQuiz.length > 0 ? [...baseQuiz] : [];
   const clesMutations = Object.keys(Mutations);
   while (depar.length < taille) {
     const clé = clesMutations[Math.floor(Math.random() * clesMutations.length)];
@@ -108,13 +76,12 @@ function retirerDuCarnet(enonce) {
   localStorage.setItem('rb_carnet_erreurs', JSON.stringify(AppState.carnetErreurs));
   updateBadgesMenu();
 }
-
 function loadProgress() {
   try { AppState.progress = JSON.parse(localStorage.getItem('rb_progress') || '{}'); } catch { AppState.progress = {}; }
 }
 function saveProgress() { localStorage.setItem('rb_progress', JSON.stringify(AppState.progress)); }
 
-// ── NAVIGATION & INTERFACE ────────────────────────────────────
+// ── NAVIGATION ET VUES ───────────────────────────────────────
 function buildNav() {
   const menu = document.getElementById('sidebar-menu');
   if (!menu) return;
@@ -131,10 +98,9 @@ function buildNav() {
   updateBadgesMenu();
 }
 
-function setNav(id, el) {
+function setNav(id) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  if (id) { const t = document.getElementById(id); if (t) t.classList.add('active'); }
-  else if (el) el.classList.add('active');
+  const t = document.getElementById(id); if (t) t.classList.add('active');
 }
 
 function updateBadgesMenu() {
@@ -143,8 +109,7 @@ function updateBadgesMenu() {
 }
 
 function updateProgressRing() {
-  const circle = document.getElementById('global-progress-circle');
-  const pctEl  = document.getElementById('global-progress-percent');
+  const circle = document.getElementById('global-progress-circle'), pctEl = document.getElementById('global-progress-percent');
   if (!circle || !pctEl) return;
   const vals = Object.values(AppState.progress), total = vals.length, acquis = vals.filter(v => v === 'acquis').length;
   const pct = total > 0 ? Math.round(acquis / total * 100) : 0, circ = 52 * 2 * Math.PI;
@@ -153,37 +118,29 @@ function updateProgressRing() {
   pctEl.textContent = pct;
 }
 
-// ── GESTION DES STRUCTURES DE RENDU ───────────────────────────
 function renderDashboard() {
   const container = document.getElementById('app-view-container');
   if (!container) return;
-  container.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h2 style="color:var(--text-primary);">Mes matières de révision</h2>
-    </div>
-    <div class="matieres-grid" id="matieres-grid"></div>
-  `;
+  container.innerHTML = `<h2>Mes matières de révision</h2><div class="matieres-grid" id="matieres-grid"></div>`;
+  if (!AppState.data || !AppState.data.matieres) return;
   AppState.data.matieres.forEach(mat => {
     const card = document.createElement('div');
     card.className = 'card';
     card.style.borderLeft = `5px solid ${mat.couleur}`;
-    card.innerHTML = `<h3>${mat.emoji} ${mat.label.split(' — ')[0]}</h3><p style="font-size:.8rem;color:var(--text-secondary);">Accéder aux fiches et exercices autonomes.</p>`;
+    card.innerHTML = `<h3>${mat.emoji} ${mat.label.split(' — ')[0]}</h3><p style="font-size:.8rem;color:var(--text-secondary);">Accéder aux chapitres et exercices.</p>`;
     card.addEventListener('click', () => renderMatiere(mat.id));
     document.getElementById('matieres-grid').appendChild(card);
   });
 }
 
 function renderMatiere(matId) {
-  const mat = AppState.data.matieres.find(m => m.id === matId);
-  const container = document.getElementById('app-view-container');
+  const mat = AppState.data.matieres.find(m => m.id === matId), container = document.getElementById('app-view-container');
   if (!mat || !container) return;
-
   container.innerHTML = `
     <button onclick="renderDashboard()" style="background:none;border:1px solid var(--border-color);padding:6px 12px;border-radius:6px;cursor:pointer;margin-bottom:14px;">← Retour</button>
     <h2>${mat.emoji} ${mat.label}</h2>
     <div class="chapitres-list" id="chapitres-list" style="margin-top:14px;display:flex;flex-direction:column;gap:12px;"></div>
   `;
-
   mat.chapitres.forEach(chap => {
     const card = document.createElement('div');
     card.className = 'card';
@@ -192,12 +149,9 @@ function renderMatiere(matId) {
       <p style="font-size:.8rem;color:var(--text-secondary);margin:4px 0 10px 0;">${chap.fiche}</p>
       <button class="btn-primary id-trigger-btn">🎯 Commencer la série</button>
     `;
-    
-    // Écouteur d'événement pur js hautement sécurisé pour les ID complexes
     card.querySelector('.id-trigger-btn').addEventListener('click', () => {
       lancerQuizDepuisChapitre(mat.id, chap.id);
     });
-    
     document.getElementById('chapitres-list').appendChild(card);
   });
 }
@@ -212,32 +166,30 @@ function renderCarnetVue() {
   container.innerHTML = `
     <div style="background:var(--color-danger);color:white;padding:16px;border-radius:8px;margin-bottom:14px;">
       <h3>📕 Carnet d'erreurs Actif</h3>
-      <p style="font-size:.85rem;margin:4px 0 10px 0;">Contient ${AppState.carnetErreurs.length} question(s) à corriger.</p>
+      <p style="font-size:.85rem;margin:4px 0 10px 0;">Contient ${AppState.carnetErreurs.length} question(s).</p>
       <button class="btn-primary" style="background:white;color:var(--color-danger);" onclick="startQuizRattrapage()">🚀 Corriger mes erreurs</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;" id="liste-erreurs"></div>
   `;
-  AppState.carnetErreurs.forEach((q, i) => {
-    const div = document.createElement('div');
-    div.className = 'card';
+  AppState.carnetErreurs.forEach(q => {
+    const div = document.createElement('div'); div.className = 'card';
     div.innerHTML = `<p style="font-weight:600;margin:0;">${escHtml(q.enonce)}</p><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px;">Explication : ${escHtml(q.explication)}</p>`;
     document.getElementById('liste-erreurs').appendChild(div);
   });
 }
 
 function renderProgramme() {
-  document.getElementById('app-view-container').innerHTML = `<h2>📅 Programme d'études</h2><p style="color:var(--text-secondary);">Le planning d'entraînement automatisé s'adapte à ton rythme.</p>`;
+  document.getElementById('app-view-container').innerHTML = `<h2>📅 Programme d'études</h2><p style="color:var(--text-secondary);">Moteur autonome synchronisé pour la session 2026.</p>`;
 }
 
-// ── CONTRÔLEUR DE QUIZ (SÉCURISÉ ET MUTABLE) ──────────────────────
+// ── RESTAURATION ET FORCE DU POP-UP DE QUIZ ───────────────────
 function lancerQuizDepuisChapitre(matId, chapId) {
   const mat = AppState.data?.matieres?.find(m => m.id === matId);
   const chap = mat?.chapitres?.find(c => c.id === chapId);
-  
   const baseQuiz = chap?.quiz || [];
   const nomMatiere = mat ? mat.label : "Révision";
 
-  // Sauvegarde absolue du matId et chapitreId pour le bouton Re-générer de fin
+  // Initialisation stricte de l'état du Quiz
   AppState.quiz = {
     matId: matId,
     chapitreId: chapId,
@@ -249,52 +201,38 @@ function lancerQuizDepuisChapitre(matId, chapId) {
     estRattrapage: false
   };
 
-  if (!AppState.quiz.questions || AppState.quiz.questions.length === 0) {
-    AppState.quiz.questions = genererSerieAleatoire(chapId, SECOURS, 5);
-  }
-
-  // Mélanger dynamiquement les réponses de chaque question
+  // Sécurité absolue : Mélange des propositions
   AppState.quiz.questions = AppState.quiz.questions.map(q => melangerOptions(q));
 
+  // Rendu de la première question
   afficherQuestion();
   
+  // FORCE L'OUVERTURE DE LA FENÊTRE POP-UP (Supprime le masquage et ajoute l'activation)
   const modalQuiz = document.getElementById('quiz-modal');
   if (modalQuiz) {
+    modalQuiz.classList.remove('hidden'); 
     modalQuiz.classList.add('active');
-    modalQuiz.classList.remove('hidden');
+    modalQuiz.style.display = 'flex'; // Force le rendu flexbox de la fenêtre modale
   }
 }
 
 function startQuizRattrapage() {
-  AppState.quiz = {
-    matId: null,
-    chapitreId: 'carnet_erreurs',
-    matLabel: 'Rattrapage',
-    questions: shuffleArr([...AppState.carnetErreurs]).slice(0, 5).map(q => melangerOptions(q)),
-    index: 0,
-    score: 0,
-    infini: false,
-    estRattrapage: true
-  };
+  if(AppState.carnetErreurs.length === 0) return;
+  AppState.quiz = { matId: null, chapitreId: 'carnet_erreurs', matLabel: 'Rattrapage', questions: shuffleArr([...AppState.carnetErreurs]).slice(0, 5).map(q => melangerOptions(q)), index: 0, score: 0, infini: false, estRattrapage: true };
   afficherQuestion();
-  document.getElementById('quiz-modal').classList.add('active');
+  const mq = document.getElementById('quiz-modal');
+  if (mq) { mq.classList.remove('hidden'); mq.classList.add('active'); mq.style.display = 'flex'; }
 }
 
 function startExamenBlanc() {
   let toutes = [];
-  AppState.data.matieres.forEach(m => m.chapitres.forEach(c => { toutes = toutes.concat(c.quiz || []); }));
-  AppState.quiz = {
-    matId: null,
-    chapitreId: 'examen_blanc',
-    matLabel: 'Examen Blanc',
-    questions: genererSerieAleatoire('blanc', toutes, 10).map(q => melangerOptions(q)),
-    index: 0,
-    score: 0,
-    infini: true,
-    estRattrapage: false
-  };
+  if(AppState.data && AppState.data.matieres) {
+    AppState.data.matieres.forEach(m => m.chapitres.forEach(c => { toutes = toutes.concat(c.quiz || []); }));
+  }
+  AppState.quiz = { matId: null, chapitreId: 'examen_blanc', matLabel: 'Examen Blanc', questions: genererSerieAleatoire('blanc', toutes, 10).map(q => melangerOptions(q)), index: 0, score: 0, infini: true, estRattrapage: false };
   afficherQuestion();
-  document.getElementById('quiz-modal').classList.add('active');
+  const mq = document.getElementById('quiz-modal');
+  if (mq) { mq.classList.remove('hidden'); mq.classList.add('active'); mq.style.display = 'flex'; }
 }
 
 function melangerOptions(q) {
@@ -308,47 +246,44 @@ function melangerOptions(q) {
 
 function afficherQuestion() {
   const quiz = AppState.quiz, q = quiz.questions[quiz.index];
+  if (!q) return;
   const pct = Math.round((quiz.index / quiz.questions.length) * 100);
 
-  document.getElementById('quiz-progress-fill').style.width = pct + '%';
-  document.getElementById('quiz-progress').innerHTML = `${quiz.matLabel} — Question ${quiz.index + 1}/${quiz.questions.length}`;
+  const fill = document.getElementById('quiz-progress-fill'); if (fill) fill.style.width = pct + '%';
+  const prog = document.getElementById('quiz-progress'); if (prog) prog.innerHTML = `${quiz.matLabel} — Question ${quiz.index + 1}/${quiz.questions.length}`;
 
   const qContainer = document.getElementById('quiz-question-text');
-  qContainer.innerHTML = (q.theme_auto ? `<span style="background:#FEF3C7;color:#92400E;padding:2px 6px;font-size:.7rem;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:6px;">⚡ ${q.theme_auto}</span><br>` : '') + escHtml(q.enonce);
+  if (qContainer) {
+    qContainer.innerHTML = (q.theme_auto ? `<span style="background:#FEF3C7;color:#92400E;padding:2px 6px;font-size:.7rem;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:6px;">⚡ ${q.theme_auto}</span><br>` : '') + escHtml(q.enonce);
 
-  if (parseInt(q.niveau) === 3) {
-    const btnInd = document.createElement('button');
-    btnInd.className = 'btn-indice';
-    btnInd.style.cssText = "background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;padding:4px 10px;border-radius:12px;font-size:.75rem;cursor:pointer;margin-top:8px;display:block;";
-    btnInd.textContent = "💡 Demander un indice";
-
-    const boxInd = document.createElement('div');
-    boxInd.className = 'hidden';
-    boxInd.style.cssText = "background:#FFFBEB;border-left:3px solid #F59E0B;padding:8px;font-size:.8rem;color:#78350F;margin-top:6px;border-radius:4px;";
-    boxInd.textContent = q.indice || "Observe bien les valeurs numériques ou la structure syntaxique pour déduire la réponse.";
-
-    btnInd.addEventListener('click', () => {
-      boxInd.classList.toggle('hidden');
-      btnInd.textContent = boxInd.classList.contains('hidden') ? "💡 Demander un indice" : "🙈 Masquer l'indice";
-    });
-    qContainer.appendChild(btnInd);
-    qContainer.appendChild(boxInd);
+    if (parseInt(q.niveau) === 3) {
+      const btnInd = document.createElement('button');
+      btnInd.style.cssText = "background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;padding:4px 10px;border-radius:12px;font-size:.75rem;cursor:pointer;margin-top:8px;display:block;";
+      btnInd.textContent = "💡 Demander un indice";
+      const boxInd = document.createElement('div');
+      boxInd.className = 'hidden';
+      boxInd.style.cssText = "background:#FFFBEB;border-left:3px solid #F59E0B;padding:8px;font-size:.8rem;color:#78350F;margin-top:6px;border-radius:4px;";
+      boxInd.textContent = q.indice || "Observe attentivement les variables pour déduire le résultat.";
+      btnInd.addEventListener('click', () => {
+        boxInd.classList.toggle('hidden');
+        btnInd.textContent = boxInd.classList.contains('hidden') ? "💡 Demander un indice" : "🙈 Masquer l'indice";
+      });
+      qContainer.appendChild(btnInd); qContainer.appendChild(boxInd);
+    }
   }
 
-  document.getElementById('quiz-explanation').classList.add('hidden');
-  document.getElementById('quiz-next-btn').classList.add('hidden');
+  document.getElementById('quiz-explanation')?.classList.add('hidden');
+  document.getElementById('quiz-next-btn')?.classList.add('hidden');
 
   const optsEl = document.getElementById('quiz-options-container');
-  optsEl.innerHTML = '';
-  optsEl.classList.remove('shake');
-
-  q.options.forEach((opt, idx) => {
-    const b = document.createElement('button');
-    b.className = 'btn-option';
-    b.textContent = opt;
-    b.addEventListener('click', () => verifierReponse(b, idx, q, optsEl));
-    optsEl.appendChild(b);
-  });
+  if (optsEl) {
+    optsEl.innerHTML = ''; optsEl.classList.remove('shake');
+    q.options.forEach((opt, idx) => {
+      const b = document.createElement('button'); b.className = 'btn-option'; b.textContent = opt;
+      b.addEventListener('click', () => verifierReponse(b, idx, q, optsEl));
+      optsEl.appendChild(b);
+    });
+  }
 }
 
 function verifierReponse(btn, idx, q, optsEl) {
@@ -364,42 +299,38 @@ function verifierReponse(btn, idx, q, optsEl) {
     btn.style.cssText += 'background:#FEE2E2;border-color:#EF4444;color:#7F1D1D;';
     const bonne = optsEl.children[q.bonne_reponse];
     if (bonne) bonne.style.cssText += 'background:#D1FAE5;border-color:#10B981;color:#064E3B;font-weight:700;';
-    
     if (!AppState.quiz.estRattrapage) ajouterAuCarnet(q);
   }
 
-  document.getElementById('explanation-text').textContent = q.explication;
-  document.getElementById('quiz-explanation').classList.remove('hidden');
-  document.getElementById('quiz-next-btn').classList.remove('hidden');
+  const expTxt = document.getElementById('explanation-text'); if (expTxt) expTxt.textContent = q.explication;
+  document.getElementById('quiz-explanation')?.classList.remove('hidden');
+  document.getElementById('quiz-next-btn')?.classList.remove('hidden');
 }
 
-document.getElementById('quiz-next-btn').addEventListener('click', () => {
+document.getElementById('quiz-next-btn')?.addEventListener('click', () => {
   AppState.quiz.index++;
-  if (AppState.quiz.index < AppState.quiz.questions.length) {
-    afficherQuestion();
-  } else {
-    terminerSessionQuiz();
-  }
+  if (AppState.quiz.index < AppState.quiz.questions.length) { afficherQuestion(); } 
+  else { terminerSessionQuiz(); }
 });
 
 function terminerSessionQuiz() {
   const quiz = AppState.quiz;
-  document.getElementById('quiz-modal').classList.remove('active');
+  const mq = document.getElementById('quiz-modal');
+  if (mq) { mq.classList.remove('active'); mq.style.display = 'none'; }
 
   const pct = Math.round((quiz.score / quiz.questions.length) * 100);
   if (pct >= 80 && quiz.chapitreId !== 'examen_blanc' && quiz.chapitreId !== 'carnet_erreurs') {
-    AppState.progress[quiz.chapitreId] = 'acquis';
-    saveProgress();
+    AppState.progress[quiz.chapitreId] = 'acquis'; saveProgress();
   }
 
   const container = document.getElementById('app-view-container');
+  if (!container) return;
   container.innerHTML = `
     <div style="max-width:500px;margin:20px auto;text-align:center;background:var(--bg-card);padding:24px;border-radius:12px;box-shadow:var(--shadow-card);">
       <span style="font-size:3.5rem;">${pct >= 70 ? '🏆' : '💪'}</span>
       <h2 style="color:var(--text-primary);margin-top:10px;">Série terminée !</h2>
       <div style="font-size:2.5rem;font-weight:800;color:var(--color-primary);margin:14px 0;">${quiz.score} / ${quiz.questions.length}</div>
-      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">Tu as validé ${pct}% des objectifs sur cette session.</p>
-      
+      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">Tu as validé ${pct}% du module en cours.</p>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <button id="btn-generer-nouveau" class="btn-primary" style="background:linear-gradient(135deg,#2EC4B6,#3D5A99);border:none;padding:12px;font-size:0.95rem;">
           🔄 Générer un nouveau quiz inédit (Illimité)
@@ -411,71 +342,47 @@ function terminerSessionQuiz() {
     </div>
   `;
 
-  // Le bouton de régénération n'est accessible QU'ICI, validant la contrainte pédagogique
   document.getElementById('btn-generer-nouveau').addEventListener('click', () => {
-    if (quiz.chapitreId === 'carnet_erreurs') {
-      startQuizRattrapage();
-    } else if (quiz.chapitreId === 'examen_blanc') {
-      startExamenBlanc();
-    } else {
-      // Routage sécurisé par les variables d'état du quiz d'origine
-      lancerQuizDepuisChapitre(quiz.matId, quiz.chapitreId);
-    }
+    if (quiz.chapitreId === 'carnet_erreurs') startQuizRattrapage();
+    else if (quiz.chapitreId === 'examen_blanc') startExamenBlanc();
+    else lancerQuizDepuisChapitre(quiz.matId, quiz.chapitreId);
   });
-
   updateProgressRing();
 }
 
-// ── INITIALISATION GÉNÉRALE ──────────────────────────────────
+// ── CHARGEMENT INITIAL VIA FETCH ─────────────────────────────
 async function loadData() {
   try {
     const res = await fetch('troisieme.json');
     if (res.ok) { AppState.data = await res.json(); return true; }
-  } catch {}
+  } catch(e) { console.log("Erreur de chargement JSON, bascule Secours.", e); }
+  
+  // Repli automatique local en cas d'absence du fichier de données
   AppState.data = {
     matieres: [
-      { id: 'maths', label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99', chapitres: [{ id: 'maths_01', titre: 'Automatismes numériques', fiche: 'Entraînement aux calculs de brevets.', quiz: SECOURS }] },
-      { id: 'fr', label: 'Français', emoji: '📖', couleur: '#9B5DE5', chapitres: [{ id: 'fr_01', titre: 'Grammaire et syntaxe', fiche: 'Maîtriser les accords complexes.', quiz: [] }] }
+      { id: 'maths', label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99', chapitres: [{ id: 'maths_01', titre: '⚡ Automatismes officiels DNB 2026', fiche: 'Calcul mental et automatismes complets.', quiz: [] }] }
     ]
   };
   return true;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  loadProgress();
-  chargerCarnetErreurs();
-  await loadData();
-  buildNav();
-  renderDashboard();
-  updateProgressRing();
+  loadProgress(); chargerCarnetErreurs();
+  await loadData(); buildNav(); renderDashboard(); updateProgressRing();
   
-  // Forcer le masquage de l'ancienne boîte modale API inutile
-  const modalApi = document.getElementById('modal-api');
-  if (modalApi) {
-    modalApi.classList.add('hidden');
-    modalApi.classList.remove('active');
-  }
+  // Fermer de force l'ancienne fenêtre API
+  const mApi = document.getElementById('modal-api'); if (mApi) { mApi.classList.add('hidden'); mApi.classList.remove('active'); }
 
-  document.getElementById('btn-settings')?.addEventListener('click', () => {
-    document.getElementById('modal-api')?.classList.remove('hidden');
+  document.getElementById('quiz-close-btn')?.addEventListener('click', () => {
+    const mq = document.getElementById('quiz-modal'); if (mq) { mq.classList.remove('active'); mq.style.display = 'none'; }
   });
-
+  
   const toggleTheme = () => document.body.classList.toggle('dark-mode');
   document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
   document.getElementById('theme-toggle-mobile')?.addEventListener('click', toggleTheme);
-
-  document.getElementById('quiz-close-btn')?.addEventListener('click', () => {
-    document.getElementById('quiz-modal').classList.remove('active');
-  });
-  document.getElementById('close-modal-api')?.addEventListener('click', () => document.getElementById('modal-api').classList.add('hidden'));
-  document.getElementById('btn-skip-api')?.addEventListener('click', () => document.getElementById('modal-api').classList.add('hidden'));
 });
 
 function shuffleArr(arr) {
   const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a;
 }
 function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function showToast(msg) {
-  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2500);
-}
