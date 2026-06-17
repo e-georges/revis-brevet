@@ -31,14 +31,14 @@ const Mutations = {
     const r = b * p / 100;
     const opts = shuffleArr([r, r + p, b / p, r * 2]).slice(0, 4).map((v, i) => `${['A','B','C','D'][i]}) ${v}`);
     const bon = opts.findIndex(o => o.includes(`) ${r}`));
-    return { enonce: `Calculer ${p}% de ${b} (sans calculatrice).`, options: bon >= 0 ? opts : [`A) ${r}`, `B) ${r+p}`, `C) ${r*2}`, `D) ${b/p}`], bonne_reponse: bon >= 0 ? bon : 0, explication: `${p}% de ${b} = ${b}×${p}/100 = ${r}.`, niveau: 1, _mute: true };
+    return { id: `mut_pct_${Date.now()}_${Math.random()}`, enonce: `Calculer ${p}% de ${b} (sans calculatrice).`, options: bon >= 0 ? opts : [`A) ${r}`, `B) ${r+p}`, `C) ${r*2}`, `D) ${b/p}`], bonne_reponse: bon >= 0 ? bon : 0, explication: `${p}% de ${b} = ${b}×${p}/100 = ${r}.`, niveau: 1, _mute: true, theme_auto: "Automatismes : Pourcentages" };
   },
   angles() {
     const a = Math.floor(Math.random() * 60) + 20;
     const b = Math.floor(Math.random() * (140 - a - 10)) + 10;
     const c = 180 - a - b;
     const opts = [`A) ${c}°`, `B) ${a + b}°`, `C) ${c + 10}°`, `D) ${360 - a - b}°`];
-    return { enonce: `Triangle : angles ${a}° et ${b}°. Le 3e angle vaut ?`, options: opts, bonne_reponse: 0, explication: `Somme = 180°. 3e angle = 180 − ${a} − ${b} = ${c}°.`, niveau: 1, _mute: true };
+    return { id: `mut_ang_${Date.now()}_${Math.random()}`, enonce: `Triangle : angles ${a}° et ${b}°. Le 3e angle vaut ?`, options: opts, bonne_reponse: 0, explication: `Somme = 180°. 3e angle = 180 − ${a} − ${b} = ${c}°.`, niveau: 1, _mute: true, theme_auto: "Géométrie : Angles" };
   },
   equation() {
     const a = Math.floor(Math.random() * 5) + 2;
@@ -46,13 +46,13 @@ const Mutations = {
     const b = Math.floor(Math.random() * 10) + 1;
     const c = a * x + b;
     const opts = [`A) x = ${x}`, `B) x = ${x + 1}`, `C) x = ${c}`, `D) x = ${x - 1}`];
-    return { enonce: `Résoudre : ${a}x + ${b} = ${c}`, options: opts, bonne_reponse: 0, explication: `${a}x = ${c - b} → x = ${x}. Vérif : ${a}×${x}+${b}=${c} ✓`, niveau: 2, _mute: true };
+    return { id: `mut_equ_${Date.now()}_${Math.random()}`, enonce: `Résoudre : ${a}x + ${b} = ${c}`, options: opts, bonne_reponse: 0, explication: `${a}x = ${c - b} → x = ${x}. Vérif : ${a}×${x}+${b}=${c} ✓`, niveau: 2, _mute: true, theme_auto: "Algèbre : Équations" };
   },
   pythagore() {
     const triplets = [[3,4,5],[5,12,13],[6,8,10],[8,15,17],[9,12,15]];
     const [a, b, c] = triplets[Math.floor(Math.random() * triplets.length)];
     const opts = [`A) ${c} cm`, `B) ${a + b} cm`, `C) ${c + 1} cm`, `D) ${c - 1} cm`];
-    return { enonce: `Triangle rectangle, cathètes ${a} cm et ${b} cm. Hypoténuse ?`, options: opts, bonne_reponse: 0, explication: `c² = ${a}² + ${b}² = ${a*a+b*b}. c = ${c} cm.`, niveau: 2, _mute: true };
+    return { id: `mut_pyt_${Date.now()}_${Math.random()}`, enonce: `Triangle rectangle, cathètes ${a} cm et ${b} cm. Hypoténuse ?`, options: opts, bonne_reponse: 0, explication: `c² = ${a}² + ${b}² = ${a*a+b*b}. c = ${c} cm.`, niveau: 2, _mute: true, theme_auto: "Géométrie : Pythagore" };
   },
   moyenne() {
     const n = Math.floor(Math.random() * 3) + 4;
@@ -60,7 +60,7 @@ const Mutations = {
     const somme = notes.reduce((s, v) => s + v, 0);
     const moy = Math.round(somme / n * 10) / 10;
     const opts = [`A) ${moy}`, `B) ${moy + 1}`, `C) ${somme}`, `D) ${moy - 0.5}`];
-    return { enonce: `Notes : ${notes.join(', ')}. Moyenne ?`, options: opts, bonne_reponse: 0, explication: `(${notes.join('+')} ) ÷ ${n} = ${somme} ÷ ${n} = ${moy}.`, niveau: 1, _mute: true };
+    return { id: `mut_moy_${Date.now()}_${Math.random()}`, enonce: `Notes : ${notes.join(', ')}. Moyenne ?`, options: opts, bonne_reponse: 0, explication: `(${notes.join('+')} ) ÷ ${n} = ${somme} ÷ ${n} = ${moy}.`, niveau: 1, _mute: true, theme_auto: "Statistiques : Moyennes" };
   },
   loi_ohm() {
     const cas = [
@@ -69,7 +69,7 @@ const Mutations = {
       { enonce: `U = 15 V, I = 3 A. Résistance R = ?`, r: 5, opts: ['A) 5 Ω','B) 18 Ω','C) 45 Ω','D) 0,2 Ω'], expl: 'R = U/I = 15/3 = 5 Ω.' }
     ];
     const c = cas[Math.floor(Math.random() * cas.length)];
-    return { enonce: c.enonce, options: c.opts, bonne_reponse: 0, explication: c.expl, niveau: 1, _mute: true };
+    return { id: `mut_ohm_${Date.now()}_${Math.random()}`, enonce: c.enonce, options: c.opts, bonne_reponse: 0, explication: c.expl, niveau: 1, _mute: true, theme_auto: "Physique : Électricité" };
   },
   probabilite() {
     const rouge = Math.floor(Math.random() * 5) + 2;
@@ -79,7 +79,7 @@ const Mutations = {
     const g = gcd(rouge, tot);
     const rs = `${rouge/g}/${tot/g}`;
     const opts = [`A) ${rs}`, `B) ${bleu}/${tot}`, `C) ${rouge}/${rouge}`, `D) 1/${rouge}`];
-    return { enonce: `Sac : ${rouge} billes rouges et ${bleu} bleues. P(rouge) = ?`, options: opts, bonne_reponse: 0, explication: `P = ${rouge}/${tot}${g > 1 ? ' = ' + rs : ''}.`, niveau: 1, _mute: true };
+    return { id: `mut_prob_${Date.now()}_${Math.random()}`, enonce: `Sac : ${rouge} billes rouges et ${bleu} bleues. P(rouge) = ?`, options: opts, bonne_reponse: 0, explication: `P = ${rouge}/${tot}${g > 1 ? ' = ' + rs : ''}.`, niveau: 1, _mute: true, theme_auto: "Probabilités" };
   }
 };
 
@@ -100,7 +100,7 @@ function genererMutations(chapId, nb = 3) {
     const nom = disponibles[Math.floor(Math.random() * disponibles.length)];
     try {
       const fn = Mutations[nom] || Mutations.pourcentage;
-      questions.push({ id: `mut_${nom}_${Date.now()}_${i}`, ...fn() });
+      questions.push({ ...fn() });
     } catch(e) { /* ignorer */ }
   }
   return questions;
@@ -135,37 +135,72 @@ function selectionnerQuestions(chapId, questionsBase, nb = 5) {
   const s = getAdaptiveState(chapId);
   const niveau = s.niveau;
 
-  // 1. Questions en cache IA
+  // 1. Questions de l'IA (depuis localStorage si générées)
   const cache = getCacheIA(chapId);
 
-  // 2. Mutations dynamiques (3 questions fraîches)
+  // 2. Mutations dynamiques (on injecte 3 questions fraîches et mutées)
   const mutees = genererMutations(chapId, 3);
 
-  // 3. Questions JSON de base avec options mélangées, filtrées par niveau
-  const baseNiveau = questionsBase.filter(q => (q.niveau || 2) === niveau).map(q => melangerOptions(q));
-  const baseTout   = questionsBase.map(q => melangerOptions(q));
+  // 3. Questions JSON de base filtrées par niveau, ou complétées si pas assez
+  let baseNiveau = questionsBase.filter(q => (q.niveau || 2) === niveau);
+  if (baseNiveau.length === 0) baseNiveau = questionsBase;
 
-  // Assembler et dédoublonner
-  const pool = [...cache, ...mutees, ...baseNiveau, ...baseTout];
-  const vus = s.vus || [];
-  const nonVus = pool.filter(q => !vus.includes(q.id));
-  const final = nonVus.length >= nb ? nonVus : pool;
+  // Concaténation de toutes les sources
+  const pool = [...cache, ...mutees, ...baseNiveau];
+  
+  // Dédoublonnage par ID ou Enoncé pour éviter les clones
+  const uniquePool = [];
+  const vusSet = new Set();
+  pool.forEach(q => {
+    const uniqueKey = q.id || q.enonce;
+    if (!vusSet.has(uniqueKey)) {
+      vusSet.add(uniqueKey);
+      uniquePool.push(q);
+    }
+  });
 
-  const selection = shuffleArr(final).slice(0, nb);
+  // Éviter la répétition immédiate d'historique (s.vus)
+  const vusRecents = s.vus || [];
+  let nonVusRecents = uniquePool.filter(q => !vusRecents.includes(q.id || q.enonce));
+  if (nonVusRecents.length < nb) nonVusRecents = uniquePool;
 
-  // Mémoriser les ids vus (max 15)
-  selection.forEach(q => { if (q.id && !vus.includes(q.id)) vus.push(q.id); });
-  if (vus.length > 15) vus.splice(0, vus.length - 15);
-  s.vus = vus;
+  // Sélection aléatoire finale et SOLUTION 1 : Mélange obligatoire des options de réponse
+  const selection = shuffleArr(nonVusRecents).slice(0, nb).map(q => melangerOptions(q));
+
+  // Enregistrement dans l'historique anti-répétition local
+  selection.forEach(q => { 
+    const k = q.id || q.enonce;
+    if (!vusRecents.includes(k)) vusRecents.push(k); 
+  });
+  if (vusRecents.length > 15) vusRecents.splice(0, vusRecents.length - 15);
+  s.vus = vusRecents;
   saveAdaptiveState();
 
   return selection;
 }
 
+// SOLUTION 1 : Mélangeur d'options robuste préservant la bonne réponse
 function melangerOptions(q) {
-  const bonne = q.options[q.bonne_reponse];
-  const opts = shuffleArr([...q.options]);
-  return { ...q, options: opts, bonne_reponse: opts.indexOf(bonne) };
+  if (!q.options || q.options.length === 0) return q;
+  
+  // Nettoyer les préfixes A), B), C), D) pour éviter les incohérences visuelles après mélange
+  const optionsNettoyees = q.options.map(opt => opt.replace(/^[A-D]\)\s*/, ''));
+  const texteBonneOption = optionsNettoyees[q.bonne_reponse];
+  
+  // Mélanger le tableau de chaînes pures
+  const optionsMelangees = shuffleArr([...optionsNettoyees]);
+  
+  // Retrouver le nouvel index de la bonne réponse
+  const nouvelIndex = optionsMelangees.indexOf(texteBonneOption);
+  
+  // Re-formater avec les préfixes propres ordonnés A), B), C), D)
+  const optionsFormatees = optionsMelangees.map((opt, idx) => `${['A', 'B', 'C', 'D'][idx]}) ${opt}`);
+  
+  return {
+    ...q,
+    options: optionsFormatees,
+    bonne_reponse: nouvelIndex >= 0 ? nouvelIndex : 0
+  };
 }
 
 // ── CACHE QUESTIONS IA ────────────────────────────────────────
@@ -228,6 +263,7 @@ function loadProgress() {
   } catch { AppState.progress = {}; }
 }
 
+// SOLUTION INTERNE COMPATIBLE GITHUB PAGES : Écriture instantanée
 function saveProgress() {
   localStorage.setItem('rb_progress', JSON.stringify(AppState.progress));
 }
@@ -248,7 +284,6 @@ function updateProgressRing() {
 
 // ── CHARGEMENT JSON ───────────────────────────────────────────
 async function loadData() {
-  // Essayer plusieurs chemins
   const chemins = ['troisieme.json', './troisieme.json', 'data/troisieme.json'];
   for (const chemin of chemins) {
     try {
@@ -273,7 +308,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const ok = await loadData();
 
   if (!ok) {
-    // Utiliser la banque de secours
     AppState.data = {
       matieres: [
         { id: 'maths',   label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99', chapitres: [{ id: 'secours_maths', titre: 'Questions de secours', fiche: 'Quelques questions de base.', quiz: SECOURS.slice(0,3), priorite: 'haute' }] },
@@ -283,7 +317,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     showToast('⚠️ troisieme.json introuvable — mode secours activé');
   }
 
-  // Initialiser la progression
   AppState.data.matieres.forEach(m => {
     m.chapitres.forEach(c => {
       if (!AppState.progress[c.id]) AppState.progress[c.id] = 'a_reviser';
@@ -455,7 +488,7 @@ function renderMatiere(matId) {
       <span style="font-size:2rem;">${mat.emoji}</span>
       <div>
         <h2 style="color:var(--text-primary);">${mat.label.split(' — ')[0]}</h2>
-        <p style="font-size:.78rem;color:var(--text-secondary);">${mat.duree_epreuve || ''} · coeff. ${mat.coeff || 2} · ${mat.chapitres.length} chapitres</p>
+        <p style="font-size:.78rem;color:var(--text-secondary);">${mat.duree_epreube || mat.duree_epreuve || ''} · coeff. ${mat.coeff || 2} · ${mat.chapitres.length} chapitres</p>
       </div>
     </div>
     ${mat.conseil_strategique ? `<div style="background:#EEF2FF;border-left:4px solid var(--color-primary);padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:18px;font-size:.82rem;color:#1E3A8A;line-height:1.6;">💡 <strong>Stratégie :</strong> ${mat.conseil_strategique}</div>` : ''}
@@ -480,7 +513,7 @@ function renderMatiere(matId) {
         <span class="status-badge status-${stat}">${stat === 'acquis' ? '✅ Acquis' : stat === 'en_cours' ? '⏳ En cours' : '○ À réviser'}</span>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <span style="font-size:.7rem;padding:2px 8px;border-radius:10px;font-weight:600;background:${nivCfg[2]};color:${nivCfg[3]};">${nivCfg[0]} Niv. ${niv} — ${nivCfg[1]}</span>
-          <span style="font-size:.7rem;color:var(--text-secondary);">${chap.quiz.length} QCM${cacheIA.length > 0 ? ` + ${cacheIA.length} IA` : ''}</span>
+          <span style="font-size:.7rem;color:var(--text-secondary);">${chap.quiz ? chap.quiz.length : 0} QCM${cacheIA.length > 0 ? ` + ${cacheIA.length} IA` : ''}</span>
         </div>
       </div>
       <h4 style="color:var(--text-primary);margin-bottom:6px;">${chap.titre}</h4>
@@ -506,7 +539,7 @@ function renderMatiere(matId) {
       e.stopPropagation();
       AppState.progress[chap.id] = 'acquis';
       saveProgress();
-      renderMatiere(matId);
+      renderMatiere(mat.id);
       updateProgressRing();
     });
 
@@ -538,8 +571,14 @@ async function lancerGenerationIA(chapId, titre, matiere, apiKey, btn) {
 
 // ── QUIZ ──────────────────────────────────────────────────────
 function startQuizAdaptatif(chap, mat) {
-  if (!chap.quiz?.length) return showToast('Pas de questions pour ce chapitre.');
-  const questions = selectionnerQuestions(chap.id, chap.quiz, 5);
+  const baseQuiz = chap.quiz || [];
+  const cacheIA = getCacheIA(chap.id);
+  
+  if (baseQuiz.length === 0 && cacheIA.length === 0) {
+    return showToast('Pas de questions pour ce chapitre.');
+  }
+  
+  const questions = selectionnerQuestions(chap.id, baseQuiz, 5);
   AppState.quiz = { chapitreId: chap.id, matLabel: mat?.label || '', questions, index: 0, score: 0, infini: false };
   afficherQuestion();
   document.getElementById('quiz-modal').classList.add('active');
@@ -547,10 +586,14 @@ function startQuizAdaptatif(chap, mat) {
 
 function startExamenBlanc() {
   let toutes = [];
-  AppState.data.matieres.forEach(m => m.chapitres.forEach(c => { toutes = toutes.concat(c.quiz || []); }));
+  AppState.data.matieres.forEach(m => m.chapitres.forEach(c => { 
+    toutes = toutes.concat(c.quiz || []); 
+    toutes = toutes.concat(getCacheIA(c.id));
+  }));
+  
   if (!toutes.length) return;
   toutes = shuffleArr(toutes).slice(0, 20);
-  AppState.quiz = { chapitreId: 'examen_blanc', matLabel: 'Toutes matières', questions: toutes, index: 0, score: 0, infini: true };
+  AppState.quiz = { chapitreId: 'examen_blanc', matLabel: 'Toutes matières', questions: toutes.map(q => melangerOptions(q)), index: 0, score: 0, infini: true };
   afficherQuestion();
   document.getElementById('quiz-modal').classList.add('active');
 }
@@ -565,7 +608,7 @@ function afficherQuestion() {
   document.getElementById('quiz-progress-fill').style.width = pct + '%';
   document.getElementById('quiz-progress').innerHTML = quiz.infini
     ? `🔥 Examen blanc — Q${quiz.index + 1}/${quiz.questions.length} · Score : ${quiz.score}`
-    : `Q${quiz.index + 1}/${quiz.questions.length} · ${nCfg[s.niveau]} · Score : ${quiz.score}`;
+    : `Q${quiz.index + 1}/${quiz.questions.length} · ${nCfg[s.niveau] || '🟢 Consolidation'} · Score : ${quiz.score}`;
 
   document.getElementById('quiz-question-text').innerHTML =
     (q.theme_auto ? `<span style="font-size:.7rem;background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:5px;display:inline-block;margin-bottom:8px;">⚡ ${q.theme_auto}</span><br>` : '') +
@@ -771,7 +814,6 @@ function setupEvents() {
   document.getElementById('theme-toggle-mobile')?.addEventListener('click', toggle);
   document.getElementById('btn-settings')?.addEventListener('click', () => { setNav(null, document.getElementById('btn-settings')); renderSettings(); });
 
-  // Modale API
   document.getElementById('show-key-toggle').addEventListener('change', e => {
     document.getElementById('api-key-input').type = e.target.checked ? 'text' : 'password';
   });
