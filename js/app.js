@@ -132,12 +132,19 @@ function buildNavigationMenu() {
         <li><a class="nav-item" id="btn-auto"><span>⚡</span><span>Automatismes MEN</span></a></li>
         <li><a class="nav-item" id="btn-infini" style="background:linear-gradient(135deg,#E84855,#3D5A99);color:white;border-radius:6px;font-weight:bold;margin-top:10px;">
             <span>🔥</span><span>EXAMEN BLANC</span></a></li>
+        <li style="margin-top:auto;padding-top:12px;border-top:1px solid var(--border-color,#E5E7EB);">
+            <a class="nav-item" id="btn-settings"><span>⚙️</span><span>Paramètres IA</span></a>
+        </li>
     `;
 
     document.getElementById("btn-home").addEventListener("click", () => { setActiveNav("btn-home"); renderDashboardHome(); });
     document.getElementById("btn-programme").addEventListener("click", () => { setActiveNav("btn-programme"); renderProgrammeProgression(); });
     document.getElementById("btn-auto").addEventListener("click", () => { setActiveNav("btn-auto"); renderAutomatismes(); });
     document.getElementById("btn-infini").addEventListener("click", startExamenBlanc);
+    document.getElementById("btn-settings").addEventListener("click", () => {
+        setActiveNav("btn-settings");
+        renderSettings();
+    });
 
     AppState.data.matieres.forEach(mat => {
         const li = document.createElement("li");
@@ -504,22 +511,31 @@ function renderMatiereView(matId) {
         const btnEnrichir = card.querySelector(".btn-enrichir");
         if (btnEnrichir) btnEnrichir.addEventListener("click", async (e) => {
             e.stopPropagation();
-            const apiKey = localStorage.getItem("rb_claude_key") || prompt("Clé API Claude (sk-ant-...) :");
-            if (!apiKey) return;
-            localStorage.setItem("rb_claude_key", apiKey);
-            btnEnrichir.textContent = "⏳...";
-            btnEnrichir.disabled = true;
-            try {
-                const niveau = getNiveauActuel(chap.id);
-                const qs = await genererEtCacherQuestions(
-                    chap.id, chap.titre, mat.label, niveau, apiKey, 15
-                );
-                showToast(`✅ ${qs.length} nouvelles questions IA ajoutées pour "${chap.titre.substring(0,25)}..." !`);
-                btnEnrichir.textContent = `🤖 +${qs.length} IA`;
-            } catch(err) {
-                showToast(`❌ ${err.message}`);
-                btnEnrichir.textContent = "🤖 +IA";
-                btnEnrichir.disabled = false;
+            // Utiliser la clé en cache ou ouvrir la modale de configuration
+            const apiKey = localStorage.getItem("rb_claude_key");
+            if (apiKey) {
+                btnEnrichir.textContent = "⏳...";
+                btnEnrichir.disabled = true;
+                try {
+                    const niveau = getNiveauActuel(chap.id);
+                    const qs = await genererEtCacherQuestions(
+                        chap.id, chap.titre, mat.label, niveau, apiKey, 15
+                    );
+                    showToast(`✅ ${qs.length} nouvelles questions IA ajoutées !`);
+                    btnEnrichir.textContent = `🤖 +${qs.length}`;
+                } catch(err) {
+                    if (err.message.includes('401') || err.message.includes('auth') || err.message.includes('API')) {
+                        // Clé invalide → ouvrir la modale
+                        localStorage.removeItem("rb_claude_key");
+                        ouvrirModaleApiKey(chap.id, chap.titre, mat.label, btnEnrichir);
+                    } else {
+                        showToast(`❌ ${err.message}`);
+                        btnEnrichir.textContent = "🤖 +IA";
+                        btnEnrichir.disabled = false;
+                    }
+                }
+            } else {
+                ouvrirModaleApiKey(chap.id, chap.titre, mat.label, btnEnrichir);
             }
         });
 
@@ -731,6 +747,257 @@ function setupEventListeners() {
         renderDashboardHome();
         updateGlobalProgressRing();
     });
+}
+
+
+
+// ── PAGE PARAMÈTRES ───────────────────────────────────────────
+function renderSettings() {
+    const container = document.getElementById("app-view-container");
+    const hasKey = !!localStorage.getItem("rb_claude_key");
+    const stats = getCacheStats();
+    const key = localStorage.getItem("rb_claude_key") || "";
+    const keyMasked = key ? key.substring(0,8) + "••••••••••••" + key.slice(-4) : "Aucune clé enregistrée";
+
+    container.innerHTML = `
+        <h2 style="color:var(--text-primary);margin-bottom:6px;">⚙️ Paramètres</h2>
+        <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:24px;">Configuration de l'IA et de la progression</p>
+
+        <!-- Section Clé API -->
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <h3 style="color:var(--text-primary);font-size:0.95rem;margin-bottom:4px;">🤖 Clé API Claude (Anthropic)</h3>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:14px;line-height:1.5;">
+                Permet de générer des questions illimitées et variées via l'IA. 
+                Stockée uniquement sur cet appareil.
+            </p>
+            <div style="background:var(--bg-app);border-radius:8px;padding:10px 14px;font-size:0.85rem;font-family:monospace;color:${hasKey ? '#166534' : 'var(--text-secondary)'};margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                <span>${hasKey ? '✅' : '❌'}</span>
+                <span>${keyMasked}</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button id="btn-config-cle" style="background:#3D5A99;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem;">
+                    ${hasKey ? '✏️ Modifier la clé' : '➕ Ajouter une clé'}
+                </button>
+                ${hasKey ? '<button id="btn-suppr-cle" style="background:none;border:1.5px solid #DC2626;color:#DC2626;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;">🗑️ Supprimer</button>' : ''}
+                <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener"
+                   style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border-color);color:var(--text-secondary);font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;">
+                    Créer un compte →
+                </a>
+            </div>
+        </div>
+
+        <!-- Section Cache IA -->
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <h3 style="color:var(--text-primary);font-size:0.95rem;margin-bottom:4px;">💾 Cache de questions IA</h3>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:14px;">
+                Questions générées par l'IA et sauvegardées sur cet appareil pour éviter de recharger.
+            </p>
+            <div style="background:var(--bg-app);border-radius:8px;padding:10px 14px;font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;">
+                📚 <strong style="color:var(--text-primary);">${stats.questions}</strong> questions en cache 
+                sur <strong style="color:var(--text-primary);">${stats.chapitres}</strong> chapitres
+            </div>
+            <button id="btn-vider-cache" style="background:none;border:1.5px solid var(--border-color);color:var(--text-secondary);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;">
+                🗑️ Vider le cache (forcer régénération)
+            </button>
+        </div>
+
+        <!-- Section Progression -->
+        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <h3 style="color:var(--text-primary);font-size:0.95rem;margin-bottom:4px;">📊 Progression</h3>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:14px;">
+                Réinitialise tous les statuts de chapitres et l'historique de niveau adaptatif.
+            </p>
+            <button id="btn-reset-progress" style="background:none;border:1.5px solid #DC2626;color:#DC2626;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;">
+                ⚠️ Remettre la progression à zéro
+            </button>
+        </div>
+
+        <!-- Sans IA -->
+        <div style="background:#FEF9C3;border:1px solid #FCD34D;border-radius:12px;padding:16px;">
+            <p style="font-size:0.82rem;color:#713F12;line-height:1.6;">
+                <strong>💡 Sans clé API, l'application fonctionne à 100%</strong> avec les questions 
+                intégrées (JSON) + les mutations automatiques (nombres aléatoires pour les maths). 
+                La clé API n'ajoute que des questions supplémentaires générées par l'IA.
+            </p>
+        </div>
+    `;
+
+    document.getElementById("btn-config-cle").addEventListener("click", () => {
+        ouvrirModaleApiKey();
+    });
+
+    document.getElementById("btn-suppr-cle")?.addEventListener("click", () => {
+        if (confirm("Supprimer la clé API ? Elle ne sera plus utilisée pour générer des questions.")) {
+            localStorage.removeItem("rb_claude_key");
+            renderSettings();
+            showToast("Clé API supprimée.");
+        }
+    });
+
+    document.getElementById("btn-vider-cache").addEventListener("click", () => {
+        if (confirm("Vider le cache ? Les questions IA seront regénérées au prochain clic +IA.")) {
+            viderCache();
+            renderSettings();
+            showToast("✅ Cache vidé.");
+        }
+    });
+
+    document.getElementById("btn-reset-progress").addEventListener("click", () => {
+        if (confirm("⚠️ Remettre TOUTE la progression à zéro ? Cette action est irréversible.")) {
+            localStorage.removeItem("rb_progress");
+            localStorage.removeItem("rb_adaptive");
+            AppState.progress = {};
+            loadPedagogicalData();
+            showToast("Progression réinitialisée.");
+        }
+    });
+}
+
+// ── MODALE CLÉ API ────────────────────────────────────────────
+// Appelée quand aucune clé n'est en cache ou qu'elle est invalide
+function ouvrirModaleApiKey(chapId = null, chapTitre = null, matLabel = null, btnOrigine = null) {
+    // Créer la modale si elle n'existe pas encore
+    let modale = document.getElementById("modale-api-key");
+    if (!modale) {
+        modale = document.createElement("div");
+        modale.id = "modale-api-key";
+        modale.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px;backdrop-filter:blur(4px);";
+        modale.innerHTML = `
+            <div style="background:var(--bg-card,#fff);border-radius:16px;padding:28px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h3 style="color:var(--text-primary);font-size:1.1rem;">🤖 Activer les questions IA</h3>
+                    <button id="close-api-modale" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-secondary);line-height:1;">×</button>
+                </div>
+
+                <div style="background:#EEF2FF;border-radius:10px;padding:14px;margin-bottom:18px;font-size:0.85rem;color:#3730A3;line-height:1.6;">
+                    <strong>Pourquoi une clé API ?</strong><br>
+                    Claude génère des questions uniques et illimitées pour chaque chapitre. 
+                    La clé est <strong>stockée uniquement sur cet appareil</strong> (localStorage), 
+                    jamais envoyée ailleurs.
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-primary);margin-bottom:6px;">
+                        Clé API Claude (Anthropic)
+                    </label>
+                    <input 
+                        type="password" 
+                        id="input-api-key-modale"
+                        placeholder="sk-ant-api03-..."
+                        autocomplete="off"
+                        style="width:100%;padding:10px 12px;border:1.5px solid var(--border-color,#E5E7EB);border-radius:8px;font-size:0.9rem;background:var(--bg-app,#F4F6FB);color:var(--text-primary);font-family:monospace;outline:none;"
+                    >
+                    <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+                        <input type="checkbox" id="toggle-show-key" style="cursor:pointer;">
+                        <label for="toggle-show-key" style="font-size:0.78rem;color:var(--text-secondary);cursor:pointer;">Afficher la clé</label>
+                        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" 
+                           style="margin-left:auto;font-size:0.78rem;color:#3D5A99;text-decoration:none;">
+                            Obtenir une clé gratuite →
+                        </a>
+                    </div>
+                </div>
+
+                <div style="background:#FEF9C3;border-radius:8px;padding:10px 14px;font-size:0.78rem;color:#713F12;margin-bottom:18px;line-height:1.5;">
+                    💡 <strong>Sans clé API</strong>, l'app fonctionne normalement avec les questions JSON + mutations automatiques. La clé n'est nécessaire que pour générer des questions supplémentaires.
+                </div>
+
+                <p id="api-key-error" style="color:#DC2626;font-size:0.82rem;margin-bottom:10px;display:none;"></p>
+
+                <div style="display:flex;gap:10px;">
+                    <button id="btn-valider-api-key" 
+                        style="flex:1;background:#3D5A99;color:white;border:none;padding:11px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.9rem;">
+                        ✅ Enregistrer et générer
+                    </button>
+                    <button id="btn-sans-ia"
+                        style="background:none;border:1.5px solid var(--border-color,#E5E7EB);color:var(--text-secondary);padding:11px 16px;border-radius:8px;cursor:pointer;font-size:0.85rem;white-space:nowrap;">
+                        Continuer sans IA
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modale);
+
+        // Toggle affichage clé
+        document.getElementById("toggle-show-key").addEventListener("change", (e) => {
+            document.getElementById("input-api-key-modale").type = e.target.checked ? "text" : "password";
+        });
+
+        // Fermeture
+        document.getElementById("close-api-modale").addEventListener("click", () => fermerModaleApiKey());
+        document.getElementById("btn-sans-ia").addEventListener("click", () => fermerModaleApiKey());
+        modale.addEventListener("click", (e) => { if (e.target === modale) fermerModaleApiKey(); });
+    }
+
+    // Pré-remplir si une ancienne clé existe (probablement expirée)
+    const oldKey = localStorage.getItem("rb_claude_key") || "";
+    const input = document.getElementById("input-api-key-modale");
+    if (oldKey) input.value = oldKey;
+    input.focus();
+
+    // Stocker le contexte pour l'action de validation
+    modale._chapId    = chapId;
+    modale._chapTitre = chapTitre;
+    modale._matLabel  = matLabel;
+    modale._btnOrigine = btnOrigine;
+
+    // Bouton valider
+    const btnValider = document.getElementById("btn-valider-api-key");
+    // Supprimer l'ancien listener avant d'en ajouter un nouveau
+    btnValider.replaceWith(btnValider.cloneNode(true));
+    document.getElementById("btn-valider-api-key").addEventListener("click", async () => {
+        const key = document.getElementById("input-api-key-modale").value.trim();
+        const errEl = document.getElementById("api-key-error");
+        const btn = document.getElementById("btn-valider-api-key");
+
+        if (!key || !key.startsWith("sk-")) {
+            errEl.textContent = "La clé doit commencer par "sk-".";
+            errEl.style.display = "block";
+            return;
+        }
+        errEl.style.display = "none";
+
+        // Sauvegarder la clé
+        localStorage.setItem("rb_claude_key", key);
+
+        const m = document.getElementById("modale-api-key");
+        if (m._chapId) {
+            // Lancer la génération pour le chapitre demandé
+            btn.textContent = "⏳ Génération en cours...";
+            btn.disabled = true;
+            try {
+                const niveau = getNiveauActuel(m._chapId);
+                const qs = await genererEtCacherQuestions(
+                    m._chapId, m._chapTitre, m._matLabel, niveau, key, 15
+                );
+                fermerModaleApiKey();
+                showToast(`✅ ${qs.length} nouvelles questions IA ajoutées !`);
+                if (m._btnOrigine) {
+                    m._btnOrigine.textContent = `🤖 +${qs.length}`;
+                    m._btnOrigine.disabled = false;
+                }
+            } catch(err) {
+                btn.textContent = "✅ Enregistrer et générer";
+                btn.disabled = false;
+                errEl.textContent = `Erreur : ${err.message}`;
+                errEl.style.display = "block";
+            }
+        } else {
+            fermerModaleApiKey();
+            showToast("✅ Clé API enregistrée sur cet appareil.");
+        }
+    });
+
+    // Entrée clavier
+    document.getElementById("input-api-key-modale").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("btn-valider-api-key").click();
+    });
+
+    modale.style.display = "flex";
+}
+
+function fermerModaleApiKey() {
+    const m = document.getElementById("modale-api-key");
+    if (m) m.style.display = "none";
 }
 
 // Exposer renderDashboardHome pour les onclick inline
