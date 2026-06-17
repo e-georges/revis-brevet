@@ -1,6 +1,6 @@
 // ============================================================
-// RévisBrevet 2026 — app.js (Version Synchrone Intégrale)
-// Pop-up Centré Historique & Affichage des Niveaux de Difficulté
+// RévisBrevet 2026 — app.js (Moteur Pop-up & Niveaux Corrigés)
+// Sans clé API payante — Entièrement local et autonome
 // ============================================================
 
 const AppState = {
@@ -11,10 +11,9 @@ const AppState = {
   quiz: { matId: null, chapitreId: null, matLabel: '', questions: [], index: 0, score: 0, infini: false, estRattrapage: false }
 };
 
-// Banque de secours si troisieme.json est absent ou bloqué localement
 const SECOURS = [
   { enonce: "Calculer 20% de 60.", options: ["A) 10", "B) 12", "C) 15", "D) 8"], bonne_reponse: 1, explication: "10% de 60 = 6, donc 20% = 12.", niveau: 1 },
-  { enonce: "'Ses yeux étaient deux étoiles' — Quelle est la figure de style ?", options: ["A) Comparaison", "B) Métaphore", "C) Hyperbole", "D) Personnification"], bonne_reponse: 1, explication: "Métaphore : comparaison directe sans outil de comparaison.", niveau: 3, indice: "Regarde s'il y a un mot de liaison comparatif." },
+  { enonce: "'Ses yeux étaient deux étoiles' — figure de style ?", options: ["A) Comparaison", "B) Métaphore", "C) Hyperbole", "D) Personnification"], bonne_reponse: 1, explication: "Métaphore : comparaison sans outil ('comme').", niveau: 3, indice: "Vérifie l'absence de mot de comparaison." },
   { enonce: "En quelle année l'ONU a-t-elle été fondée ?", options: ["A) 1918", "B) 1939", "C) 1945", "D) 1962"], bonne_reponse: 2, explication: "L'ONU a été créée en 1945.", niveau: 2 }
 ];
 
@@ -63,14 +62,14 @@ function loadProgress() {
 }
 function saveProgress() { localStorage.setItem('rb_progress', JSON.stringify(AppState.progress)); }
 
-// ── VUES & INTERFACE PRINCIPALE ──────────────────────────────
+// ── NAVIGATION & INTERFACE PRINCIPALE ────────────────────────
 function buildNav() {
   const menu = document.getElementById('sidebar-menu');
   if (!menu) return;
   menu.innerHTML = `
     <li><a class="nav-item active" id="btn-home"><span>🏠</span><span>Accueil</span></a></li>
-    <li><a class="nav-item" id="btn-programme"><span>📅</span><span>Programme</span></a></li>
-    <li><a class="nav-item nav-item-danger" id="btn-carnet"><span>📕</span><span>Carnet d'erreurs <b id="carnet-count-badge" style="background:#EF4444;color:white;padding:1px 6px;border-radius:10px;font-size:0.65rem;margin-left:5px;display:none;">0</b></span></a></li>
+    <li><a class="nav-item" id="btn-programme"><span>📅</span><span>Planning</span></a></li>
+    <li><a class="nav-item nav-item-danger" id="btn-carnet"><span>📕</span><span>Erreurs <b id="carnet-count-badge" style="background:#EF4444;color:white;padding:1px 6px;border-radius:10px;font-size:0.65rem;margin-left:5px;display:none;">0</b></span></a></li>
     <li><a class="nav-item" id="btn-infini" style="background:linear-gradient(135deg,#E84855,#3D5A99);color:white;border-radius:6px;font-weight:700;margin-top:8px;"><span>🔥</span><span>Examen blanc</span></a></li>
   `;
   document.getElementById('btn-home').addEventListener('click', () => { setNav('btn-home'); renderDashboard(); });
@@ -109,7 +108,8 @@ function renderDashboard() {
     const card = document.createElement('div');
     card.className = 'card';
     card.style.borderLeft = `5px solid ${mat.couleur}`;
-    card.innerHTML = `<h3>${mat.emoji} ${mat.label.split(' — ')[0]}</h3><p style="font-size:.8rem;color:var(--text-secondary);margin-top:6px;">Accéder aux chapitres d'étude.</p>`;
+    card.style.cursor = 'pointer';
+    card.innerHTML = `<h3>${mat.emoji} ${mat.label.split(' — ')[0]}</h3><p style="font-size:.8rem;color:var(--text-secondary);margin-top:6px;">Accéder aux exercices.</p>`;
     card.addEventListener('click', () => renderMatiere(mat.id));
     document.getElementById('matieres-grid').appendChild(card);
   });
@@ -162,10 +162,10 @@ function renderCarnetVue() {
 }
 
 function renderProgramme() {
-  document.getElementById('app-view-container').innerHTML = `<h2>📅 Programme d'études</h2><p style="color:var(--text-secondary);">Cycle autonome programmé pour la session DNB 2026.</p>`;
+  document.getElementById('app-view-container').innerHTML = `<h2>📅 Planning d'études</h2><p style="color:var(--text-secondary);">Génération autonome programmée pour le Brevet 2026.</p>`;
 }
 
-// ── FONCTIONS D'OUVERTURE ET DE GESTION DU POP-UP Centré ──────────
+// ── OUVERTURE ET COMPORTEMENT DE LA MODALE QUIZ ─────────────────
 function lancerQuizDepuisChapitre(matId, chapId) {
   const mat = AppState.data?.matieres?.find(m => m.id === matId);
   const chap = mat?.chapitres?.find(c => c.id === chapId);
@@ -206,18 +206,18 @@ function startExamenBlanc() {
 }
 
 function ouvrirPopUp() {
-  const modalQuiz = document.getElementById('quiz-modal');
-  if (modalQuiz) {
-    modalQuiz.classList.remove('hidden');
-    modalQuiz.classList.add('active');
+  const mq = document.getElementById('quiz-modal');
+  if (mq) {
+    mq.classList.remove('hidden');
+    mq.classList.add('active');
   }
 }
 
 function fermerModaleQuiz() {
-  const modalQuiz = document.getElementById('quiz-modal');
-  if (modalQuiz) {
-    modalQuiz.classList.remove('active');
-    modalQuiz.classList.add('hidden');
+  const mq = document.getElementById('quiz-modal');
+  if (mq) {
+    mq.classList.remove('active');
+    mq.classList.add('hidden');
   }
 }
 
@@ -230,7 +230,7 @@ function melangerOptions(q) {
   return { ...q, options: rMelangee.map((o, idx) => `${['A','B','C','D'][idx]}) ${o}`), bonne_reponse: nIdx >= 0 ? nIdx : 0 };
 }
 
-// ── INJECTION DES QUESTIONS AVEC STYLE DU NIVEAU DE DIFFICULTÉ ───
+// ── INJECTION DES QUESTIONS ET BADGES DE DIFFICULTÉ ──────────────
 function afficherQuestion() {
   const quiz = AppState.quiz, q = quiz.questions[quiz.index];
   if (!q) return;
@@ -243,41 +243,40 @@ function afficherQuestion() {
   if (qContainer) {
     qContainer.innerHTML = '';
 
-    // GESTION ET REPRISE DES STYLES DE DIFFICULTÉ DU FICHIER CSS (.niveau-X)
+    // GESTION DU BADGE DE DIFFICULTÉ DYNAMIQUE (Niveau 1, 2 ou 3)
     const nv = parseInt(q.niveau) || 1;
-    let labelNiveau = "Facile";
-    if (nv === 2) labelNiveau = "Intermédiaire";
-    if (nv === 3) labelNiveau = "Difficile";
+    let badgeCouleur = "#10B981", texteNiveau = "Niveau : Facile";
+    if (nv === 2) { badgeCouleur = "#F59E0B"; texteNiveau = "Niveau : Intermédiaire"; }
+    else if (nv === 3) { badgeCouleur = "#EF4444"; texteNiveau = "Niveau : Difficile"; }
 
     const badgeDiff = document.createElement('span');
-    badgeDiff.className = `niveau-badge niveau-${nv}`;
-    badgeDiff.style.marginRight = "6px";
-    badgeDiff.textContent = labelNiveau;
+    badgeDiff.style.cssText = `background:${badgeCouleur};color:white;padding:3px 10px;font-size:.7rem;border-radius:12px;font-weight:700;display:inline-block;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;`;
+    badgeDiff.textContent = texteNiveau;
     qContainer.appendChild(badgeDiff);
 
     if (q.theme_auto) {
       const bAuto = document.createElement('span');
-      bAuto.style.cssText = "background:var(--bg-card-hover);color:var(--color-primary);padding:2px 8px;font-size:.72rem;border-radius:10px;font-weight:600;";
+      bAuto.style.cssText = "background:var(--bg-card-hover);color:var(--color-primary);padding:3px 10px;font-size:.7rem;border-radius:12px;font-weight:700;display:inline-block;margin-left:6px;margin-bottom:10px;";
       bAuto.textContent = `⚡ ${q.theme_auto}`;
       qContainer.appendChild(bAuto);
     }
 
     const pEnonce = document.createElement('p');
-    pEnonce.style.cssText = "margin-top:12px;color:var(--text-primary);";
+    pEnonce.style.cssText = "font-size:1.05rem;font-weight:600;margin:6px 0 12px 0;line-height:1.45;color:var(--text-primary);";
     pEnonce.textContent = q.enonce;
     qContainer.appendChild(pEnonce);
 
     if (nv === 3) {
       const btnInd = document.createElement('button');
-      btnInd.style.cssText = "background:none;border:1px dashed var(--color-warning);color:var(--color-warning);padding:3px 8px;border-radius:6px;font-size:.72rem;cursor:pointer;margin-top:8px;display:block;font-weight:600;";
-      btnInd.textContent = "💡 Indice disponible";
+      btnInd.style.cssText = "background:none;border:1px dashed var(--color-warning);color:var(--color-warning);padding:4px 10px;border-radius:6px;font-size:.72rem;cursor:pointer;margin-top:4px;display:block;font-weight:600;";
+      btnInd.textContent = "💡 Débloquer l'indice de cours";
       const boxInd = document.createElement('div');
       boxInd.className = 'hidden';
-      boxInd.style.cssText = "background:var(--bg-card-hover);border-left:3px solid var(--color-warning);padding:8px;font-size:.78rem;margin-top:6px;border-radius:4px;";
-      boxInd.textContent = q.indice || "Prends ton temps, analyse l'énoncé étape par étape.";
+      boxInd.style.cssText = "background:var(--bg-card-hover);border-left:3px solid var(--color-warning);padding:8px 12px;font-size:.78rem;margin-top:6px;border-radius:4px;line-height:1.4;";
+      boxInd.textContent = q.indice || "Prends un brouillon, décompose la question et procède par élimination.";
       btnInd.addEventListener('click', () => {
         boxInd.classList.toggle('hidden');
-        btnInd.textContent = boxInd.classList.contains('hidden') ? "💡 Indice disponible" : "🙈 Masquer l'indice";
+        btnInd.textContent = boxInd.classList.contains('hidden') ? "💡 Débloquer l'indice de cours" : "🙈 Masquer l'indice";
       });
       qContainer.appendChild(btnInd); qContainer.appendChild(boxInd);
     }
@@ -325,7 +324,7 @@ document.getElementById('quiz-next-btn')?.addEventListener('click', () => {
 
 function terminerSessionQuiz() {
   const quiz = AppState.quiz;
-  fermerModaleQuiz();
+  fermarModaleQuiz();
 
   const pct = Math.round((quiz.score / quiz.questions.length) * 100);
   if (pct >= 80 && quiz.chapitreId !== 'examen_blanc' && quiz.chapitreId !== 'carnet_erreurs') {
@@ -339,7 +338,7 @@ function terminerSessionQuiz() {
       <span style="font-size:3.5rem;">${pct >= 70 ? '🏆' : '💪'}</span>
       <h2 style="color:var(--text-primary);margin-top:10px;">Série terminée !</h2>
       <div style="font-size:2.5rem;font-weight:800;color:var(--color-primary);margin:14px 0;">${quiz.score} / ${quiz.questions.length}</div>
-      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">Tu as validé ${pct}% de la série.</p>
+      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">Tu as validé ${pct}% des objectifs du module.</p>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <button id="btn-generer-nouveau" class="btn-primary">🔄 Relancer une série d'exercices</button>
         <button onclick="renderDashboard()" style="background:none;border:1px solid var(--border-color);padding:10px;border-radius:6px;cursor:pointer;font-size:0.85rem;color:var(--text-secondary);">🏠 Tableau de bord</button>
@@ -355,11 +354,19 @@ function terminerSessionQuiz() {
   updateProgressRing();
 }
 
+function fermerModaleQuiz() {
+  const mq = document.getElementById('quiz-modal');
+  if (mq) { 
+    mq.classList.remove('active'); 
+    mq.classList.add('hidden');
+  }
+}
+
 async function loadData() {
   try {
     const res = await fetch('troisieme.json');
     if (res.ok) { AppState.data = await res.json(); return true; }
-  } catch(e) { console.warn("Fichier de données absent. Repli autonome activé."); }
+  } catch(e) { console.warn("Fichier troisieme.json non trouvé. Repli autonome."); }
   AppState.data = {
     matieres: [
       { id: 'maths', label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99', chapitres: [{ id: 'maths_01', titre: '⚡ Automatismes officiels DNB 2026', fiche: 'Calcul mental et révisions.', quiz: [] }] }
@@ -374,11 +381,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   const mApi = document.getElementById('modal-api'); if (mApi) { mApi.style.display = 'none'; mApi.classList.add('hidden'); }
 
-  // Gestionnaire d'événement de la croix (X) de fermeture pour masquer le pop-up
+  // Liaison de l'événement clic de la croix de fermeture du quiz (ligne 89 de l'index)
   document.getElementById('quiz-close-btn')?.addEventListener('click', (e) => {
     e.preventDefault();
     fermerModaleQuiz();
   });
+
+  document.getElementById('btn-settings')?.addEventListener('click', () => {
+    document.getElementById('modal-api')?.classList.remove('hidden');
+  });
+  document.getElementById('close-modal-api')?.addEventListener('click', () => document.getElementById('modal-api').classList.add('hidden'));
+  document.getElementById('btn-skip-api')?.addEventListener('click', () => document.getElementById('modal-api').classList.add('hidden'));
   
   const toggleTheme = () => document.body.classList.toggle('dark-mode');
   document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
