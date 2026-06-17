@@ -119,3 +119,19 @@ body{font-family:var(--font-main);background:var(--bg-app);color:var(--text-prim
   .dashboard-welcome{padding:16px;flex-direction:column;}
   .matieres-grid{grid-template-columns:1fr;}
 }
+
+/* Forçage de l'état actif pour le pop-up centré */
+.modal.active {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Alignement et lisibilité de la croix de fermeture */
+#quiz-close-btn {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+#quiz-close-btn:hover {
+  transform: scale(1.2);
+  color: #DC2626 !important; /* Rouge vif au survol */
+}
