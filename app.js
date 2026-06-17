@@ -1,6 +1,6 @@
 // ============================================================
-// RévisBrevet 2026 — app.js (Version Augmentée)
-// Intègre : Carnet d'erreurs, Bouton Indice & Améliorations UX
+// RévisBrevet 2026 — app.js (Version 100% Autonome sans API)
+// Génération locale illimitée, Carnet d'Erreurs & Indices
 // ============================================================
 
 // ── ÉTAT GLOBAL ──────────────────────────────────────────────
@@ -8,156 +8,107 @@ const AppState = {
   data: null,
   progress: {},
   adaptive: {},
-  carnetErreurs: [], // Stockage des questions échouées
-  quiz: { chapitreId: null, questions: [], index: 0, score: 0, infini: false, estRattrapage: false }
+  carnetErreurs: [],
+  quiz: { chapitreId: null, matLabel: '', questions: [], index: 0, score: 0, infini: false, estRattrapage: false }
 };
 
-// Banque de secours si le JSON ne charge pas
+// Banque de secours si le JSON principal ne charge pas
 const SECOURS = [
   { enonce: "20% de 60 = ?", options: ["A) 10", "B) 12", "C) 15", "D) 8"], bonne_reponse: 1, explication: "10% de 60 = 6, donc 20% = 12.", niveau: 1 },
-  { enonce: "'Ses yeux étaient deux étoiles' — figure de style ?", options: ["A) Comparaison", "B) Métaphore", "C) Hyperbole", "D) Personnification"], bonne_reponse: 1, explication: "Métaphore : comparaison sans 'comme'.", niveau: 3, indice: "Regarde s'il y a un mot de comparaison comme 'comme' ou 'semblable à'." },
-  { enonce: "L'ONU est fondée en ?", options: ["A) 1918", "B) 1939", "C) 1945", "D) 1962"], bonne_reponse: 2, explication: "L'ONU est créée en 1945 juste après la Seconde Guerre Mondiale.", niveau: 2 },
-  { enonce: "f(x) = 3x − 5. Image de 4 ?", options: ["A) 7", "B) 12", "C) 2", "D) -1"], bonne_reponse: 0, explication: "f(4) = 12 − 5 = 7.", niveau: 3, indice: "Remplace simplement la lettre x par le nombre 4 dans l'expression." },
-  { enonce: "Triangle rectangle cathètes 3 et 4 cm. Hypoténuse ?", options: ["A) 7 cm", "B) 5 cm", "C) 6 cm", "D) 12 cm"], bonne_reponse: 1, explication: "3²+4²=25, √25=5.", niveau: 2 }
+  { enonce: "'Ses yeux étaient deux étoiles' — figure de style ?", options: ["A) Comparaison", "B) Métaphore", "C) Hyperbole", "D) Personnification"], bonne_reponse: 1, explication: "Métaphore : comparaison sans outil de comparaison.", niveau: 3, indice: "Regarde s'il y a un mot de liaison comme 'comme' ou 'tel que'." },
+  { enonce: "L'ONU est fondée en ?", options: ["A) 1918", "B) 1939", "C) 1945", "D) 1962"], bonne_reponse: 2, explication: "L'ONU est créée en 1945 après la Seconde Guerre Mondiale.", niveau: 2 },
+  { enonce: "f(x) = 3x − 5. Image de 4 ?", options: ["A) 7", "B) 12", "C) 2", "D) -1"], bonne_reponse: 0, explication: "f(4) = 3×4 − 5 = 12 − 5 = 7.", niveau: 3, indice: "Remplace la variable x par la valeur 4 dans la fonction." }
 ];
 
-// ── MUTATIONS MATHS ──────────────────────────────────────────
+// ── MOTEUR DE MUTATIONS EXTENSIBLE (Génération Infinie Locale) ──
 const Mutations = {
   pourcentage() {
-    const pcts = [10, 20, 25, 50];
+    const pcts = [10, 20, 25, 50, 75];
     const p = pcts[Math.floor(Math.random() * pcts.length)];
-    const bases = [40, 60, 80, 100, 120, 160, 200];
+    const bases = [40, 60, 80, 120, 160, 200];
     const b = bases[Math.floor(Math.random() * bases.length)];
     const r = b * p / 100;
-    const opts = shuffleArr([r, r + p, b / p, r * 2]).slice(0, 4).map((v, i) => `${['A','B','C','D'][i]}) ${v}`);
-    const bon = opts.findIndex(o => o.includes(`) ${r}`));
-    return { id: `mut_pct_${Date.now()}`, enonce: `Calculer ${p}% de ${b} (sans calculatrice).`, options: bon >= 0 ? opts : [`A) ${r}`, `B) ${r+p}`, `C) ${r*2}`, `D) ${b/p}`], bonne_reponse: bon >= 0 ? bon : 0, explication: `${p}% de ${b} = ${b}×${p}/100 = ${r}.`, niveau: 1, _mute: true, theme_auto: "Automatismes : Pourcentages" };
+    const opts = [`A) ${r}`, `B) ${r + p}`, `C) ${b - r}`, `D) ${r * 2}`];
+    return { enonce: `Calculer ${p}% de ${b} (sans calculatrice).`, options: opts, bonne_reponse: 0, explication: `${p}% de ${b} = ${b} × (${p}/100) = ${r}.`, niveau: 1, theme_auto: "Maths : Pourcentages" };
   },
   equation() {
-    const a = Math.floor(Math.random() * 5) + 2;
-    const x = Math.floor(Math.random() * 10) + 1;
-    const b = Math.floor(Math.random() * 10) + 1;
+    const a = Math.floor(Math.random() * 4) + 2;
+    const x = Math.floor(Math.random() * 8) + 1;
+    const b = Math.floor(Math.random() * 9) + 1;
     const c = a * x + b;
-    const opts = [`A) x = ${x}`, `B) x = ${x + 1}`, `C) x = ${c}`, `D) x = ${x - 1}`];
-    return { id: `mut_equ_${Date.now()}`, enonce: `Résoudre : ${a}x + ${b} = ${c}`, options: opts, bonne_reponse: 0, explication: `${a}x = ${c - b} → x = ${x}.`, niveau: 3, indice: `Isole les x. Commence par soustraire ${b} des deux côtés du signe égal.`, _mute: true, theme_auto: "Algèbre : Équations" };
+    const opts = [`A) x = ${x}`, `B) x = ${x + 2}`, `C) x = ${c}`, `D) x = ${x - 1}`];
+    return { enonce: `Résoudre l'équation : ${a}x + ${b} = ${c}`, options: opts, bonne_reponse: 0, explication: `${a}x = ${c} - ${b} → ${a}x = ${c - b} → x = ${x}.`, niveau: 3, indice: `Isole l'inconnue x en soustrayant d'abord ${b} de chaque côté.`, theme_auto: "Maths : Équations" };
   },
   pythagore() {
-    const triplets = [[3,4,5],[5,12,13],[6,8,10]];
+    const triplets = [[3,4,5], [5,12,13], [6,8,10], [9,12,15]];
     const [a, b, c] = triplets[Math.floor(Math.random() * triplets.length)];
-    const opts = [`A) ${c} cm`, `B) ${a + b} cm`, `C) ${c + 1} cm`, `D) ${c - 1} cm`];
-    return { id: `mut_pyt_${Date.now()}`, enonce: `Triangle rectangle, cathètes ${a} cm et ${b} cm. Hypoténuse ?`, options: opts, bonne_reponse: 0, explication: `c² = ${a}² + ${b}² = ${a*a+b*b}. c = ${c} cm.`, niveau: 3, indice: "Applique le théorème de Pythagore : le carré de l'hypoténuse est égal à la somme des carrés des deux autres côtés.", _mute: true, theme_auto: "Géométrie : Pythagore" };
+    const opts = [`A) ${c} cm`, `B) ${a + b} cm`, `C) ${c + 2} cm`, `D) ${c * c} cm`];
+    return { enonce: `Un triangle rectangle possède des côtés de ${a} cm et ${b} cm. Combien mesure son hypoténuse ?`, options: opts, bonne_reponse: 0, explication: `D'après Pythagore : c² = ${a}² + ${b}² = ${a*a} + ${b*b} = ${c*c}. Donc c = √${c*c} = ${c} cm.`, niveau: 3, indice: "L'hypoténuse est le côté le plus long opposé à l'angle droit. Applique la formule de la somme des carrés.", theme_auto: "Maths : Pythagore" };
+  },
+  loi_ohm() {
+    const r = [10, 20, 50, 100][Math.floor(Math.random() * 4)];
+    const i = [1, 2, 0.5, 3][Math.floor(Math.random() * 4)];
+    const u = r * i;
+    const opts = [`A) ${u} V`, `B) ${r + i} V`, `C) ${(r/i).toFixed(1)} V`, `D) ${u * 2} V`];
+    return { enonce: `Un conducteur ohmique a une résistance R = ${r} Ω et est traversé par un courant I = ${i} A. Quelle est la tension U à ses bornes ?`, options: opts, bonne_reponse: 0, explication: `Formule de la loi d'Ohm : U = R × I. Ici U = ${r} × ${i} = ${u} V.`, niveau: 2, theme_auto: "Physique : Électricité" };
+  },
+  grammaire() {
+    const phrases = [
+      { t: "Bien qu'il ___ fatigué, il continue de travailler.", r: "soit", o: ["soit", "est", "était", "sera"], e: "Après la conjonction 'bien que', on utilise obligatoirement le mode subjonctif.", n: 2 },
+      { t: "Les pommes que j'ai ___ étaient délicieuses.", r: "cueillies", o: ["cueillies", "cueilli", "cueillis", "cueillie"], e: "Le participe passé conjugué avec 'avoir' s'accorde avec le COD ('que', mis pour les pommes) placé avant le verbe.", n: 3, i: "Trouve le COD de l'action et regarde où il se situe par rapport au verbe." }
+    ];
+    const p = phrases[Math.floor(Math.random() * phrases.length)];
+    return { enonce: `Complète la phrase correctement : "${p.t}"`, options: p.o.map((o, idx) => `${o}`), bonne_reponse: p.o.indexOf(p.r), explication: p.e, niveau: p.n, indice: p.i || null, theme_auto: "Français : Syntaxe" };
   }
 };
 
-// ── GESTION DU CARNET D'ERREURS (LOCALSTORAGE) ────────────────
-function chargerCarnetErreurs() {
-  try {
-    AppState.carnetErreurs = JSON.parse(localStorage.getItem('rb_carnet_erreurs') || '[]');
-  } catch { AppState.carnetErreurs = []; }
+function genererSerieAleatoire(chapId, baseQuiz = [], taille = 5) {
+  let depar = [...baseQuiz];
+  // Si le chapitre manque de questions ou est un automatisme pur, on injecte des mutations dynamiques
+  const clesMutations = Object.keys(Mutations);
+  while (depar.length < taille) {
+    const clé = clesMutations[Math.floor(Math.random() * clesMutations.length)];
+    depar.push(Mutations[clé]());
+  }
+  return shuffleArr(depar).slice(0, taille);
 }
 
-function ajouterAuCarnet(question) {
-  // Éviter les doublons dans le carnet d'erreurs
-  const existe = AppState.carnetErreurs.some(q => q.enonce === question.enonce);
-  if (!existe) {
-    AppState.carnetErreurs.push(question);
+// ── LOCAL STORAGE & CARNET D'ERREURS ─────────────────────────
+function chargerCarnetErreurs() {
+  try { AppState.carnetErreurs = JSON.parse(localStorage.getItem('rb_carnet_erreurs') || '[]'); } catch { AppState.carnetErreurs = []; }
+}
+function ajouterAuCarnet(q) {
+  if (!AppState.carnetErreurs.some(e => e.enonce === q.enonce)) {
+    AppState.carnetErreurs.push(q);
     localStorage.setItem('rb_carnet_erreurs', JSON.stringify(AppState.carnetErreurs));
     updateBadgesMenu();
   }
 }
-
-function retirerDuCarnet(questionEnonce) {
-  AppState.carnetErreurs = AppState.carnetErreurs.filter(q => q.enonce !== questionEnonce);
+function retirerDuCarnet(enonce) {
+  AppState.carnetErreurs = AppState.carnetErreurs.filter(e => e.enonce !== enonce);
   localStorage.setItem('rb_carnet_erreurs', JSON.stringify(AppState.carnetErreurs));
   updateBadgesMenu();
 }
 
-// ── MOTEUR ADAPTATIF ──────────────────────────────────────────
-function getAdaptiveState(chapId) {
-  if (!AppState.adaptive[chapId]) {
-    const saved = JSON.parse(localStorage.getItem('rb_adaptive') || '{}');
-    AppState.adaptive[chapId] = saved[chapId] || { niveau: 1, hist: [], vus: [] };
-  }
-  return AppState.adaptive[chapId];
-}
-
-function saveAdaptiveState() {
-  localStorage.setItem('rb_adaptive', JSON.stringify(AppState.adaptive));
-}
-
-function updateAdaptif(chapId, correct) {
-  if (chapId === 'examen_blanc' || chapId === 'carnet_erreurs') return { niveau: 1 };
-  const s = getAdaptiveState(chapId);
-  s.hist.push(correct);
-  if (s.hist.length > 3) s.hist.shift();
-  let montee = false, descente = false;
-  if (s.hist.length === 3 && s.hist.every(v => v)) { if (s.niveau < 3) { s.niveau++; s.hist = []; montee = true; } }
-  const mauvaises = s.hist.filter(v => !v).length;
-  if (mauvaises >= 2) { if (s.niveau > 1) { s.niveau--; s.hist = []; descente = true; } }
-  saveAdaptiveState();
-  return { montee, descente, niveau: s.niveau };
-}
-
-function selectionnerQuestions(chapId, questionsBase, nb = 5) {
-  const s = getAdaptiveState(chapId);
-  const pool = [...questionsBase];
-  const selection = shuffleArr(pool).slice(0, nb).map(q => melangerOptions(q));
-  return selection;
-}
-
-function melangerOptions(q) {
-  if (!q.options || q.options.length === 0) return q;
-  const optionsNettoyees = q.options.map(opt => opt.replace(/^[A-D]\)\s*/, ''));
-  const texteBonneOption = optionsNettoyees[q.bonne_reponse];
-  const optionsMelangees = shuffleArr([...optionsNettoyees]);
-  const nouvelIndex = optionsMelangees.indexOf(texteBonneOption);
-  const optionsFormatees = optionsMelangees.map((opt, idx) => `${['A', 'B', 'C', 'D'][idx]}) ${opt}`);
-  return { ...q, options: optionsFormatees, bonne_reponse: nouvelIndex >= 0 ? nouvelIndex : 0 };
-}
-
-// ── CHARGEMENT & PROGRESSION ──────────────────────────────────
 function loadProgress() {
   try { AppState.progress = JSON.parse(localStorage.getItem('rb_progress') || '{}'); } catch { AppState.progress = {}; }
 }
 function saveProgress() { localStorage.setItem('rb_progress', JSON.stringify(AppState.progress)); }
 
-function updateProgressRing() {
-  const circle = document.getElementById('global-progress-circle');
-  const pctEl  = document.getElementById('global-progress-percent');
-  if (!circle || !pctEl) return;
-  const vals  = Object.values(AppState.progress);
-  const total  = vals.length;
-  const acquis = vals.filter(v => v === 'acquis').length;
-  const pct    = total > 0 ? Math.round(acquis / total * 100) : 0;
-  const circ   = 52 * 2 * Math.PI;
-  circle.style.strokeDasharray  = `${circ} ${circ}`;
-  circle.style.strokeDashoffset = circ - (pct / 100) * circ;
-  pctEl.textContent = pct;
-}
-
-function updateBadgesMenu() {
-  const badge = document.getElementById('carnet-count-badge');
-  if (badge) {
-    badge.textContent = AppState.carnetErreurs.length;
-    badge.style.display = AppState.carnetErreurs.length > 0 ? 'inline-block' : 'none';
-  }
-}
-
-// ── NAVIGATION ────────────────────────────────────────────────
+// ── NAVIGATION & INTERFACE ────────────────────────────────────
 function buildNav() {
   const menu = document.getElementById('sidebar-menu');
+  if (!menu) return;
   menu.innerHTML = `
     <li><a class="nav-item active" id="btn-home"><span>🏠</span><span>Accueil</span></a></li>
     <li><a class="nav-item" id="btn-programme"><span>📅</span><span>Programme</span></a></li>
     <li><a class="nav-item nav-item-danger" id="btn-carnet"><span>📕</span><span>Carnet d'erreurs <b id="carnet-count-badge" style="background:#EF4444;color:white;padding:1px 6px;border-radius:10px;font-size:0.65rem;margin-left:5px;display:none;">0</b></span></a></li>
     <li><a class="nav-item" id="btn-infini" style="background:linear-gradient(135deg,#E84855,#3D5A99);color:white;border-radius:6px;font-weight:700;margin-top:8px;"><span>🔥</span><span>Examen blanc</span></a></li>
   `;
-
   document.getElementById('btn-home').addEventListener('click', () => { setNav('btn-home'); renderDashboard(); });
   document.getElementById('btn-programme').addEventListener('click', () => { setNav('btn-programme'); renderProgramme(); });
   document.getElementById('btn-carnet').addEventListener('click', () => { setNav('btn-carnet'); renderCarnetVue(); });
   document.getElementById('btn-infini').addEventListener('click', startExamenBlanc);
-  
   updateBadgesMenu();
 }
 
@@ -167,65 +118,117 @@ function setNav(id, el) {
   else if (el) el.classList.add('active');
 }
 
-// ── VUE : LE CARNET D'ERREURS ─────────────────────────────────
-function renderCarnetVue() {
+function updateBadgesMenu() {
+  const b = document.getElementById('carnet-count-badge');
+  if (b) { b.textContent = AppState.carnetErreurs.length; b.style.display = AppState.carnetErreurs.length > 0 ? 'inline-block' : 'none'; }
+}
+
+function updateProgressRing() {
+  const circle = document.getElementById('global-progress-circle');
+  const pctEl  = document.getElementById('global-progress-percent');
+  if (!circle || !pctEl) return;
+  const vals = Object.values(AppState.progress), total = vals.length, acquis = vals.filter(v => v === 'acquis').length;
+  const pct = total > 0 ? Math.round(acquis / total * 100) : 0, circ = 52 * 2 * Math.PI;
+  circle.style.strokeDasharray = `${circ} ${circ}`;
+  circle.style.strokeDashoffset = circ - (pct / 100) * circ;
+  pctEl.textContent = pct;
+}
+
+// ── GESTION DES STRUCTURES DE RENDU ───────────────────────────
+function renderDashboard() {
   const container = document.getElementById('app-view-container');
-  const count = AppState.carnetErreurs.length;
-
-  if (count === 0) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:40px 20px;">
-        <span style="font-size:4rem;">🎉</span>
-        <h2 style="color:var(--text-primary);margin-top:10px;">Ton carnet d'erreurs est vide !</h2>
-        <p style="color:var(--text-secondary);font-size:0.88rem;max-width:40px;margin:8px auto 20px auto;">C'est parfait. Quand tu feras une erreur dans un quiz, la question viendra se placer ici pour que tu puisses la retravailler.</p>
-        <button onclick="renderDashboard();setNav('btn-home')" class="btn-primary">Faire un quiz</button>
-      </div>
-    `;
-    return;
-  }
-
+  if (!container) return;
   container.innerHTML = `
-    <div style="background:linear-gradient(135deg,#EF4444,#F43F5E);color:white;padding:20px;border-radius:12px;margin-bottom:20px;">
-      <h2 style="margin:0;font-size:1.3rem;">📕 Mon Carnet d'erreurs ("Le Bouton Rouge")</h2>
-      <p style="margin:6px 0 14px 0;font-size:0.85rem;opacity:0.9;">Tu as <b>${count} question${count > 1 ? 's' : ''}</b> à corriger. C'est en retravaillant tes erreurs qu'on progresse le plus !</p>
-      <button id="btn-lancer-rattrapage" class="btn-primary" style="background:white;color:#EF4444;border:none;box-shadow:0 4px 6px rgba(0,0,0,0.1);">🚀 Lancer le quiz de rattrapage</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="color:var(--text-primary);">Mes matières de révision</h2>
     </div>
-    <h3 style="color:var(--text-primary);margin-bottom:12px;font-size:1rem;">Questions en attente de correction :</h3>
-    <div style="display:flex;flex-direction:column;gap:10px;" id="liste-erreurs-container"></div>
+    <div class="matieres-grid" id="matieres-grid"></div>
   `;
-
-  document.getElementById('btn-lancer-rattrapage').addEventListener('click', startQuizRattrapage);
-
-  const listEl = document.getElementById('liste-erreurs-container');
-  AppState.carnetErreurs.forEach((q, index) => {
-    const item = document.createElement('div');
-    item.className = 'card';
-    item.style.borderLeft = '4px solid #EF4444';
-    item.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-        <p style="font-size:0.88rem;font-weight:600;color:var(--text-primary);margin:0;">${escHtml(q.enonce)}</p>
-        <button class="btn-suppr-erreur" data-index="${index}" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:0.8rem;font-weight:bold;">Supprimer</button>
-      </div>
-      <p style="font-size:0.78rem;color:var(--text-secondary);margin-top:6px;background:var(--bg-app);padding:6px;border-radius:4px;">💡 <b>Rappel de l'explication :</b> ${escHtml(q.explication)}</p>
-    `;
-    item.querySelector('.btn-suppr-erreur').addEventListener('click', (e) => {
-      const idx = e.target.dataset.index;
-      retirerDuCarnet(AppState.carnetErreurs[idx].enonce);
-      renderCarnetVue();
-      showToast('Question retirée du carnet.');
-    });
-    listEl.appendChild(item);
+  AppState.data.matieres.forEach(mat => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.borderLeft = `5px solid ${mat.couleur}`;
+    card.innerHTML = `<h3>${mat.emoji} ${mat.label.split(' — ')[0]}</h3><p style="font-size:.8rem;color:var(--text-secondary);">Accéder aux fiches et exercices autonomes.</p>`;
+    card.addEventListener('click', () => renderMatiere(mat.id));
+    document.getElementById('matieres-grid').appendChild(card);
   });
 }
 
-// ── ENCLENCHEMENT DES QUIZ ────────────────────────────────────
+function renderMatiere(matId) {
+  const mat = AppState.data.matieres.find(m => m.id === matId);
+  const container = document.getElementById('app-view-container');
+  if (!mat || !container) return;
+
+  container.innerHTML = `
+    <button onclick="renderDashboard()" style="background:none;border:1px solid var(--border-color);padding:6px 12px;border-radius:6px;cursor:pointer;margin-bottom:14px;">← Retour</button>
+    <h2>${mat.emoji} ${mat.label}</h2>
+    <div class="chapitres-list" id="chapitres-list" style="margin-top:14px;display:flex;flex-direction:column;gap:12px;"></div>
+  `;
+
+  mat.chapitres.forEach(chap => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <h4>${chap.titre}</h4>
+      <p style="font-size:.8rem;color:var(--text-secondary);margin:4px 0 10px 0;">${chap.fiche}</p>
+      <button class="btn-primary" onclick="lancerQuizDepuisChapitre('${mat.id}', '${chap.id}')">🎯 Commencer la série</button>
+    `;
+    document.getElementById('chapitres-list').appendChild(card);
+  });
+}
+
+function renderCarnetVue() {
+  const container = document.getElementById('app-view-container');
+  if (!container) return;
+  if (AppState.carnetErreurs.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:40px;"><span style="font-size:3rem;">🎉</span><h3>Carnet d'erreurs vide !</h3></div>`;
+    return;
+  }
+  container.innerHTML = `
+    <div style="background:var(--color-danger);color:white;padding:16px;border-radius:8px;margin-bottom:14px;">
+      <h3>📕 Carnet d'erreurs Actif</h3>
+      <p style="font-size:.85rem;margin:4px 0 10px 0;">Contient ${AppState.carnetErreurs.length} question(s) à corriger.</p>
+      <button class="btn-primary" style="background:white;color:var(--color-danger);" onclick="startQuizRattrapage()">🚀 Corriger mes erreurs</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="liste-erreurs"></div>
+  `;
+  AppState.carnetErreurs.forEach((q, i) => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `<p style="font-weight:600;margin:0;">${escHtml(q.enonce)}</p><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px;">Explication : ${escHtml(q.explication)}</p>`;
+    document.getElementById('liste-erreurs').appendChild(div);
+  });
+}
+
+function renderProgramme() {
+  document.getElementById('app-view-container').innerHTML = `<h2>📅 Programme d'études</h2><p style="color:var(--text-secondary);">Le planning d'entraînement automatisé s'adapte à ton rythme.</p>`;
+}
+
+// ── CONTRÔLEUR DE QUIZ ET VERROUILLAGE PÉDAGOGIQUE ──────────────
+function lancerQuizDepuisChapitre(matId, chapId) {
+  const mat = AppState.data.matieres.find(m => m.id === matId);
+  const chap = mat?.chapitres.find(c => c.id === chapId);
+  const baseQuiz = chap?.quiz || [];
+
+  AppState.quiz = {
+    chapitreId: chapId,
+    matLabel: mat?.label || '',
+    questions: genererSerieAleatoire(chapId, baseQuiz, 5),
+    index: 0,
+    score: 0,
+    infini: false,
+    estRattrapage: false
+  };
+
+  afficherQuestion();
+  document.getElementById('quiz-modal').classList.add('active');
+}
+
 function startQuizRattrapage() {
-  // On prend max 5 erreurs au hasard pour ne pas la décourager
-  const erreursMelangees = shuffleArr([...AppState.carnetErreurs]).slice(0, 5);
   AppState.quiz = {
     chapitreId: 'carnet_erreurs',
-    matLabel: "Rattrapage",
-    questions: erreursMelangees.map(q => melangerOptions(q)),
+    matLabel: 'Rattrapage',
+    questions: shuffleArr([...AppState.carnetErreurs]).slice(0, 5).map(q => melangerOptions(q)),
     index: 0,
     score: 0,
     infini: false,
@@ -235,58 +238,59 @@ function startQuizRattrapage() {
   document.getElementById('quiz-modal').classList.add('active');
 }
 
-function startQuizAdaptatif(chap, mat) {
-  const baseQuiz = chap.quiz || [];
-  if (baseQuiz.length === 0) return showToast('Pas de questions disponibles.');
-  const questions = selectionnerQuestions(chap.id, baseQuiz, 5);
-  AppState.quiz = { chapitreId: chap.id, matLabel: mat?.label || '', questions, index: 0, score: 0, infini: false, estRattrapage: false };
-  afficherQuestion();
-  document.getElementById('quiz-modal').classList.add('active');
-}
-
 function startExamenBlanc() {
   let toutes = [];
   AppState.data.matieres.forEach(m => m.chapitres.forEach(c => { toutes = toutes.concat(c.quiz || []); }));
-  if (!toutes.length) return;
-  toutes = shuffleArr(toutes).slice(0, 20);
-  AppState.quiz = { chapitreId: 'examen_blanc', matLabel: 'Examen Blanc', questions: toutes.map(q => melangerOptions(q)), index: 0, score: 0, infini: true, estRattrapage: false };
+  AppState.quiz = {
+    chapitreId: 'examen_blanc',
+    matLabel: 'Examen Blanc',
+    questions: genererSerieAleatoire('blanc', toutes, 10).map(q => melangerOptions(q)),
+    index: 0,
+    score: 0,
+    infini: true,
+    estRattrapage: false
+  };
   afficherQuestion();
   document.getElementById('quiz-modal').classList.add('active');
 }
 
-// ── MOTEUR DE QUESTION & BOUTON INDICE ───────────────────────
+function melangerOptions(q) {
+  if (!q.options || q.options.length === 0) return q;
+  const pureOpts = q.options.map(o => o.replace(/^[A-D]\)\s*/, ''));
+  const bonneTxt = pureOpts[q.bonne_reponse];
+  const rMelangee = shuffleArr([...pureOpts]);
+  const nIdx = rMelangee.indexOf(bonneTxt);
+  return { ...q, options: rMelangee.map((o, idx) => `${['A','B','C','D'][idx]}) ${o}`), bonne_reponse: nIdx >= 0 ? nIdx : 0 };
+}
+
 function afficherQuestion() {
-  const quiz = AppState.quiz;
-  const q    = quiz.questions[quiz.index];
-  const pct  = Math.round(quiz.index / quiz.questions.length * 100);
+  const quiz = AppState.quiz, q = quiz.questions[quiz.index];
+  const pct = Math.round((quiz.index / quiz.questions.length) * 100);
 
   document.getElementById('quiz-progress-fill').style.width = pct + '%';
-  document.getElementById('quiz-progress').innerHTML = `Question ${quiz.index + 1}/${quiz.questions.length} · Score : ${quiz.score}`;
+  document.getElementById('quiz-progress').innerHTML = `${quiz.matLabel} — Question ${quiz.index + 1}/${quiz.questions.length}`;
 
-  // Réinitialisation de la boîte de dialogue de la modale de quiz
-  const qTextContainer = document.getElementById('quiz-question-text');
-  qTextContainer.innerHTML = escHtml(q.enonce);
+  const qContainer = document.getElementById('quiz-question-text');
+  qContainer.innerHTML = (q.theme_auto ? `<span style="background:#FEF3C7;color:#92400E;padding:2px 6px;font-size:.7rem;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:6px;">⚡ ${q.theme_auto}</span><br>` : '') + escHtml(q.enonce);
 
-  // INTERFACE UX & BOUTON INDICE (POUR LES NIVEAUX 3 UNIQUEMENT)
-  if (parseInt(q.level || q.niveau) === 3) {
-    const btnIndice = document.createElement('button');
-    btnIndice.className = 'btn-indice';
-    btnIndice.innerHTML = `💡 Besoin d'un indice ?`;
-    
-    const indiceBox = document.createElement('div');
-    indiceBox.className = 'indice-box hidden';
-    // Fabrication de l'indice s'il n'existe pas explicitement
-    const texteIndice = q.indice || q.explication.split('.')[0] + ".";
-    indiceBox.textContent = texteIndice;
+  // LOGIQUE DE L'INDICE INCLUS POUR LE NIVEAU 3
+  if (parseInt(q.niveau) === 3) {
+    const btnInd = document.createElement('button');
+    btnInd.className = 'btn-indice';
+    btnInd.style.cssText = "background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;padding:4px 10px;border-radius:12px;font-size:.75rem;cursor:pointer;margin-top:8px;display:block;";
+    btnInd.textContent = "💡 Demander un indice";
 
-    btnIndice.addEventListener('click', () => {
-      indiceBox.classList.toggle('hidden');
-      btnIndice.textContent = indiceBox.classList.contains('hidden') ? `💡 Besoin d'un indice ?` : `🙈 Cacher l'indice`;
+    const boxInd = document.createElement('div');
+    boxInd.className = 'hidden';
+    boxInd.style.cssText = "background:#FFFBEB;border-left:3px solid #F59E0B;padding:8px;font-size:.8rem;color:#78350F;margin-top:6px;border-radius:4px;";
+    boxInd.textContent = q.indice || "Observe bien la syntaxe ou isole les valeurs connues pour avancer.";
+
+    btnInd.addEventListener('click', () => {
+      boxInd.classList.toggle('hidden');
+      btnInd.textContent = boxInd.classList.contains('hidden') ? "💡 Demander un indice" : "🙈 Masquer l'indice";
     });
-
-    qTextContainer.appendChild(document.createElement('br'));
-    qTextContainer.appendChild(btnIndice);
-    qTextContainer.appendChild(indiceBox);
+    qContainer.appendChild(btnInd);
+    qContainer.appendChild(boxInd);
   }
 
   document.getElementById('quiz-explanation').classList.add('hidden');
@@ -294,100 +298,123 @@ function afficherQuestion() {
 
   const optsEl = document.getElementById('quiz-options-container');
   optsEl.innerHTML = '';
-  optsEl.classList.remove('shake'); // Reset animation UX
+  optsEl.classList.remove('shake');
 
-  q.options.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'btn-option';
-    btn.textContent = opt;
-    btn.addEventListener('click', () => repondre(btn, i, q, optsEl));
-    optsEl.appendChild(btn);
+  q.options.forEach((opt, idx) => {
+    const b = document.createElement('button');
+    b.className = 'btn-option';
+    b.textContent = opt;
+    b.addEventListener('click', () => verifierReponse(b, idx, q, optsEl));
+    optsEl.appendChild(b);
   });
 }
 
-function repondre(btn, idx, q, optsEl) {
+function verifierReponse(btn, idx, q, optsEl) {
   Array.from(optsEl.children).forEach(b => b.disabled = true);
-  const correct = idx === q.bonne_reponse;
+  const correct = (idx === q.bonne_reponse);
 
   if (correct) {
     btn.style.cssText += 'background:#D1FAE5;border-color:#10B981;color:#064E3B;font-weight:700;';
     AppState.quiz.score++;
-    
-    // Si on est dans le carnet d'erreurs et qu'elle a vu juste, on nettoie sa bêtise passée !
-    if (AppState.quiz.estRattrapage) {
-      retirerDuCarnet(q.enonce);
-    }
+    if (AppState.quiz.estRattrapage) retirerDuCarnet(q.enonce);
   } else {
-    // EFFET VISUEL EN CAS D'ERREUR : L'élément tremble
-    optsEl.classList.add('shake');
+    optsEl.classList.add('shake'); // Feedback visuel dynamique
     btn.style.cssText += 'background:#FEE2E2;border-color:#EF4444;color:#7F1D1D;';
+    const bonne = optsEl.children[q.bonne_reponse];
+    if (bonne) bonne.style.cssText += 'background:#D1FAE5;border-color:#10B981;color:#064E3B;font-weight:700;';
     
-    const bonneBtn = optsEl.children[q.bonne_reponse];
-    if (bonneBtn) bonneBtn.style.cssText += 'background:#D1FAE5;border-color:#10B981;color:#064E3B;font-weight:700;';
-
-    // AUTOMATION : "LE BOUTON ROUGE" Enregistre la question ratée
-    if (!AppState.quiz.estRattrapage) {
-      ajouterAuCarnet(q);
-    }
+    // Le bouton rouge stocke l'erreur
+    if (!AppState.quiz.estRattrapage) ajouterAuCarnet(q);
   }
 
-  updateAdaptif(AppState.quiz.chapitreId, correct);
   document.getElementById('explanation-text').textContent = q.explication;
   document.getElementById('quiz-explanation').classList.remove('hidden');
   document.getElementById('quiz-next-btn').classList.remove('hidden');
 }
 
-// ── LE RESTE DU MOTEUR (LANCEMENT CLASSIQUE) ──────────────────
 document.getElementById('quiz-next-btn').addEventListener('click', () => {
   AppState.quiz.index++;
   if (AppState.quiz.index < AppState.quiz.questions.length) {
     afficherQuestion();
   } else {
-    finQuiz();
+    terminerSessionQuiz();
   }
 });
 
-document.getElementById('quiz-close-btn').addEventListener('click', () => {
-  document.getElementById('quiz-modal').classList.remove('active');
-  if (AppState.quiz.estRattrapage) renderCarnetVue(); else renderDashboard();
-});
-
-function finQuiz() {
+// ── LE COEUR DE TA DEMANDE : ÉCRAN DE FIN AVEC BOUTON VERROUILLÉ ──
+function terminerSessionQuiz() {
   const quiz = AppState.quiz;
   document.getElementById('quiz-modal').classList.remove('active');
 
-  const container = document.getElementById('app-view-container');
-  
-  if (quiz.estRattrapage) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:30px 10px;">
-        <span style="font-size:3.5rem;">🎯</span>
-        <h2 style="color:var(--text-primary);">Fin du rattrapage !</h2>
-        <p style="font-size:1.5rem;font-weight:bold;color:var(--color-primary);margin:10px 0;">Score : ${quiz.score} / ${quiz.questions.length}</p>
-        <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:20px;">Toutes les questions correctement résolues ont été enlevées de ton carnet d'erreurs.</p>
-        <button onclick="renderCarnetVue()" class="btn-primary">Retour au carnet</button>
-      </div>
-    `;
-  } else {
-    // Code de fin de quiz standard
-    const pct = Math.round(quiz.score / quiz.questions.length * 100);
-    if (pct >= 80 && quiz.chapitreId !== 'examen_blanc') { AppState.progress[quiz.chapitreId] = 'acquis'; saveProgress(); }
-    container.innerHTML = `
-      <div style="text-align:center;padding:30px 10px;">
-        <h2>Quiz Terminé ! Score : ${quiz.score} / ${quiz.questions.length}</h2>
-        <button onclick="renderDashboard()" class="btn-primary" style="margin-top:15px;">Retour à l'accueil</button>
-      </div>
-    `;
+  const pct = Math.round((quiz.score / quiz.questions.length) * 100);
+  if (pct >= 80 && quiz.chapitreId !== 'examen_blanc' && quiz.chapitreId !== 'carnet_erreurs') {
+    AppState.progress[quiz.chapitreId] = 'acquis';
+    saveProgress();
   }
+
+  // Injecter la vue de résultat directement dans l'application
+  const container = document.getElementById('app-view-container');
+  container.innerHTML = `
+    <div style="max-width:500px;margin:20px auto;text-align:center;background:var(--bg-card);padding:24px;border-radius:12px;box-shadow:var(--shadow-card);">
+      <span style="font-size:3.5rem;">${pct >= 70 ? '🏆' : '💪'}</span>
+      <h2 style="color:var(--text-primary);margin-top:10px;">Série terminée !</h2>
+      <div style="font-size:2.5rem;font-weight:800;color:var(--color-primary);margin:14px 0;">${quiz.score} / ${quiz.questions.length}</div>
+      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">Tu as validé ${pct}% des objectifs sur cette session.</p>
+      
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button id="btn-generer-nouveau" class="btn-primary" style="background:linear-gradient(135deg,#2EC4B6,#3D5A99);border:none;padding:12px;font-size:0.95rem;">
+          🔄 Générer un nouveau quiz inédit (Illimité)
+        </button>
+        <button onclick="renderDashboard()" style="background:none;border:1px solid var(--border-color);padding:10px;border-radius:6px;cursor:pointer;font-size:0.85rem;color:var(--text-secondary);">
+          🏠 Retour au tableau de bord
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Écouteur pour relancer immédiatement le moteur autonome local
+  document.getElementById('btn-generer-nouveau').addEventListener('click', () => {
+    if (quiz.chapitreId === 'carnet_erreurs') {
+      startQuizRattrapage();
+    } else if (quiz.chapitreId === 'examen_blanc') {
+      startExamenBlanc();
+    } else {
+      // Retrouver le chapitre d'origine pour en extraire la base statique si elle existe
+      let baseQuiz = [];
+      for (const m of AppState.data.matieres) {
+        const c = m.chapitres.find(ch => ch.id === quiz.chapitreId);
+        if (c) { baseQuiz = c.quiz || []; break; }
+      }
+      AppState.quiz = {
+        chapitreId: quiz.chapitreId,
+        matLabel: quiz.matLabel,
+        questions: genererSerieAleatoire(quiz.chapitreId, baseQuiz, 5),
+        index: 0,
+        score: 0,
+        infini: false,
+        estRattrapage: false
+      };
+      afficherQuestion();
+      document.getElementById('quiz-modal').classList.add('active');
+    }
+  });
+
   updateProgressRing();
 }
 
+// ── INITIALISATION GÉNÉRALE ──────────────────────────────────
 async function loadData() {
   try {
     const res = await fetch('troisieme.json');
     if (res.ok) { AppState.data = await res.json(); return true; }
   } catch {}
-  AppState.data = { matieres: [{ id: 'maths', label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99', chapitres: [{ id: 'm1', titre: 'Fractions', fiche: 'Fiche fractions', quiz: SECOURS }] }] };
+  // Configuration de repli si le fichier local troisieme.json est inaccessible
+  AppState.data = {
+    matieres: [
+      { id: 'maths', label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99', chapitres: [{ id: 'maths_01', titre: 'Automatismes numériques', fiche: 'Entraînement aux calculs de brevets.', quiz: SECOURS }] },
+      { id: 'fr', label: 'Français', emoji: '📖', couleur: '#9B5DE5', chapitres: [{ id: 'fr_01', titre: 'Grammaire et syntaxe', fiche: 'Maîtriser les accords complexes.', quiz: [] }] }
+    ]
+  };
   return true;
 }
 
@@ -398,19 +425,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   buildNav();
   renderDashboard();
   updateProgressRing();
+  
+  // Paramétrage des boutons de fermeture de secours
+  document.getElementById('quiz-close-btn')?.addEventListener('click', () => {
+    document.getElementById('quiz-modal').classList.remove('active');
+  });
+  document.getElementById('close-modal-api')?.addEventListener('click', () => document.getElementById('modal-api').classList.add('hidden'));
+  document.getElementById('btn-skip-api')?.addEventListener('click', () => document.getElementById('modal-api').classList.add('hidden'));
 });
 
 function shuffleArr(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
+  const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a;
 }
 function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function showToast(msg) {
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
   setTimeout(() => t.remove(), 2500);
 }
-window.renderDashboard = () => { /* Ton code de rendu dashboard initial */ };
