@@ -1,6 +1,7 @@
 // ============================================================
-// RévisBrevet 2026 — app.js v2.0
+// RévisBrevet 2026 — app.js v3.0
 // Moteur 100% autonome — Génération procédurale infinie
+// Automatismes MEN respectés intégralement (42 questions)
 // Zéro API payante — Zéro dépendance réseau
 // ============================================================
 
@@ -13,302 +14,246 @@ const AppState = {
     questions: [], index: 0, score: 0,
     infini: false, estRattrapage: false, serieTerminee: false
   },
-  derniereSession: null // { matId, chapId, matLabel, score, total } — persist après fermeture
+  derniereSession: null
 };
 
 // ─────────────────────────────────────────────────────────────
-// MOTEUR DE GÉNÉRATION PROCÉDURALE — 14 factories
-// Chaque factory retourne une question UNIQUE avec des valeurs
-// aléatoires et des distracteurs cognitifs plausibles
+// MOTEUR DE GÉNÉRATION PROCÉDURALE — 13 factories
+// Chaque factory retourne une question UNIQUE avec valeurs
+// aléatoires et distracteurs cognitifs plausibles
 // ─────────────────────────────────────────────────────────────
 const GenerateurProcedural = {
 
-  // MATHS — Niv. 1
   pourcentage() {
-    const pcts = [10, 20, 25, 50, 30, 75], p = pcts[~~(Math.random()*pcts.length)];
-    const bases = [40, 60, 80, 120, 200, 150, 48, 90], b = bases[~~(Math.random()*bases.length)];
-    const r = b * p / 100;
-    const d1 = r + p, d2 = b - r, d3 = Math.round(b * p / 10);
+    const pcts=[10,20,25,50,30,75], p=pcts[~~(Math.random()*pcts.length)];
+    const bases=[40,60,80,120,200,150,48,90], b=bases[~~(Math.random()*bases.length)];
+    const r=b*p/100;
     return {
-      enonce: `Calculer ${p}% de ${b} (sans calculatrice).`,
-      options: shuffleOpts([r, d1, d2, d3 !== r ? d3 : d3+1]),
-      explication: `${p}% de ${b} : on divise ${b} par 100 puis on multiplie par ${p}. Résultat = ${r}.`,
-      niveau: 1, theme_auto: "Pourcentages"
+      enonce:`Calculer ${p}% de ${b} (sans calculatrice).`,
+      options:shuffleOpts([r, r+p, b-r, r*2]),
+      explication:`${p}% de ${b} : diviser ${b} par 100 puis multiplier par ${p} → ${r}.`,
+      niveau:1, theme_auto:"Pourcentages"
     };
   },
 
-  // MATHS — Niv. 2
   equation() {
-    const a = ~~(Math.random()*4)+2, x = ~~(Math.random()*8)+1, b = ~~(Math.random()*10)+1;
-    const c = a * x + b;
-    // Distracteurs cognitifs : oubli de la soustraction, division par c, erreur de signe
-    const d1 = x + 2, d2 = Math.round(c/a * 10)/10, d3 = -x;
+    const a=~~(Math.random()*4)+2, x=~~(Math.random()*8)+1, b=~~(Math.random()*10)+1, c=a*x+b;
     return {
-      enonce: `Résoudre : ${a}x + ${b} = ${c}`,
-      options: shuffleOpts([x, d1 !== x ? d1 : x+3, d2 !== x ? d2 : x-1, d3 !== x ? d3 : x+5]),
-      explication: `${a}x = ${c} − ${b} = ${c-b}. Donc x = ${c-b} ÷ ${a} = ${x}.`,
-      niveau: 2, theme_auto: "Équations du 1er degré"
+      enonce:`Résoudre : ${a}x + ${b} = ${c}`,
+      options:shuffleOpts([x, x+2, Math.round(c/a*10)/10, -x]),
+      explication:`${a}x = ${c}−${b} = ${c-b}. Donc x = ${c-b}÷${a} = ${x}.`,
+      niveau:2, theme_auto:"Équations du 1er degré"
     };
   },
 
-  // MATHS — Niv. 2
   pythagore() {
-    const triplets = [[3,4,5],[5,12,13],[6,8,10],[8,15,17],[9,40,41]];
-    const [a,b,c] = triplets[~~(Math.random()*triplets.length)];
-    const k = ~~(Math.random()*3)+1;
-    const [A,B,C] = [a*k, b*k, c*k];
-    const d1 = A+B, d2 = Math.round(Math.sqrt(A*A - B*B)*10)/10, d3 = C+k;
+    const triplets=[[3,4,5],[5,12,13],[6,8,10],[8,15,17],[9,40,41]];
+    const [a,b,c]=triplets[~~(Math.random()*triplets.length)];
+    const k=~~(Math.random()*3)+1, [A,B,C]=[a*k,b*k,c*k];
     return {
-      enonce: `Triangle rectangle. Les deux côtés de l'angle droit mesurent ${A} cm et ${B} cm. Quelle est la longueur de l'hypoténuse ?`,
-      options: shuffleOpts([C, d1, d2 > 0 ? d2 : C-1, d3]),
-      explication: `Théorème de Pythagore : hyp² = ${A}² + ${B}² = ${A*A} + ${B*B} = ${C*C}. Donc hyp = √${C*C} = ${C} cm.`,
-      niveau: 2, theme_auto: "Théorème de Pythagore",
-      indice: "L'hypoténuse est le côté OPPOSÉ à l'angle droit — c'est le plus long."
+      enonce:`Triangle rectangle. Les deux côtés de l'angle droit mesurent ${A} cm et ${B} cm. Longueur de l'hypoténuse ?`,
+      options:shuffleOpts([C, A+B, Math.round(Math.sqrt(A*A-B*B)*10)/10||C-1, C+k]),
+      explication:`Pythagore : hyp² = ${A}²+${B}² = ${A*A}+${B*B} = ${C*C} → hyp = ${C} cm.`,
+      niveau:2, theme_auto:"Théorème de Pythagore",
+      indice:"L'hypoténuse est le côté OPPOSÉ à l'angle droit — c'est le plus long."
     };
   },
 
-  // MATHS — Niv. 1
   fraction() {
-    const denoms = [2,3,4,5,6,8,10], d = denoms[~~(Math.random()*denoms.length)];
-    const n = ~~(Math.random()*(d-1))+1;
-    const base = [12,18,20,24,30,36,40,48,60][~~(Math.random()*9)];
-    const r = (base * n) / d;
-    if (!Number.isInteger(r)) return GenerateurProcedural.fraction();
-    const d1 = base * d, d2 = base / n || base-r, d3 = r + d;
+    const denoms=[2,3,4,5,6,8,10], d=denoms[~~(Math.random()*denoms.length)];
+    const n=~~(Math.random()*(d-1))+1;
+    const bases=[12,18,20,24,30,36,40,48,60], base=bases[~~(Math.random()*bases.length)];
+    const r=(base*n)/d;
+    if(!Number.isInteger(r)) return GenerateurProcedural.fraction();
     return {
-      enonce: `Calculer ${n}/${d} de ${base}.`,
-      options: shuffleOpts([r, d1 !== r ? d1 : r+5, d3, Math.round(d2) !== r ? Math.round(d2) : r-3]),
-      explication: `${n}/${d} de ${base} = (${base} ÷ ${d}) × ${n} = ${base/d} × ${n} = ${r}.`,
-      niveau: 1, theme_auto: "Fractions d'un nombre"
+      enonce:`Calculer ${n}/${d} de ${base}.`,
+      options:shuffleOpts([r, base*d, r+d, r*2]),
+      explication:`${n}/${d} de ${base} = (${base}÷${d})×${n} = ${base/d}×${n} = ${r}.`,
+      niveau:1, theme_auto:"Fractions d'un nombre"
     };
   },
 
-  // MATHS — Niv. 2
   proportionnalite() {
-    const prix_u = [3,4,5,6,8,9,12][~~(Math.random()*7)];
-    const qte = [6,7,8,9,10,11,12,15][~~(Math.random()*8)];
-    const total = prix_u * qte;
-    const qte2 = qte + ~~(Math.random()*5)+1;
-    const total2 = prix_u * qte2;
-    const d1 = total + qte2, d2 = total * qte2, d3 = total2 + prix_u;
+    const pu=[3,4,5,6,8,9,12][~~(Math.random()*7)];
+    const q1=[6,7,8,9,10,11,12,15][~~(Math.random()*8)];
+    const t1=pu*q1, q2=q1+~~(Math.random()*5)+1, t2=pu*q2;
     return {
-      enonce: `${qte} cahiers coûtent ${total} €. Quel est le prix de ${qte2} cahiers au même tarif ?`,
-      options: shuffleOpts([total2, d1 !== total2 ? d1 : total2+1, d3 !== total2 ? d3 : total2-1, d2 > 9999 ? total2+10 : d2]),
-      explication: `Prix unitaire : ${total} ÷ ${qte} = ${prix_u} €. Donc ${qte2} cahiers : ${qte2} × ${prix_u} = ${total2} €.`,
-      niveau: 2, theme_auto: "Proportionnalité"
+      enonce:`${q1} cahiers coûtent ${t1} €. Quel est le prix de ${q2} cahiers au même tarif ?`,
+      options:shuffleOpts([t2, t1+q2, t2+pu, t1*q2 > 9999 ? t2+10 : t1*q2]),
+      explication:`Prix unitaire : ${t1}÷${q1} = ${pu} €. Donc ${q2} × ${pu} = ${t2} €.`,
+      niveau:2, theme_auto:"Proportionnalité"
     };
   },
 
-  // MATHS — Niv. 3
   probabilite() {
-    const couleurs = [
-      {t:'rouge',n:3,tot:10},{t:'bleu',n:2,tot:8},{t:'vert',n:4,tot:12},{t:'jaune',n:1,tot:5}
-    ];
-    const obj = couleurs[~~(Math.random()*couleurs.length)];
-    const {t, n, tot} = obj;
-    const autre = tot - n;
-    // Fraction simplifiée
-    function pgcd(a,b){ return b===0?a:pgcd(b,a%b); }
-    const g = pgcd(n, tot);
-    const numS = n/g, denS = tot/g;
-    const d1_n = n+1, d2_n = autre, d3_n = tot;
+    function pgcd(a,b){return b===0?a:pgcd(b,a%b);}
+    const configs=[{t:'rouge',n:3,tot:10},{t:'bleu',n:2,tot:8},{t:'vert',n:4,tot:12},{t:'jaune',n:1,tot:5}];
+    const {t,n,tot}=configs[~~(Math.random()*configs.length)];
+    const autre=tot-n, g=pgcd(n,tot), numS=n/g, denS=tot/g;
     return {
-      enonce: `Un sac contient ${tot} boules : ${n} ${t}s et ${autre} autres. On tire une boule au hasard. Quelle est la probabilité de tirer une boule ${t} ?`,
-      options: shuffleOpts([`${numS}/${denS}`, `${d1_n}/${tot}`, `${d2_n}/${tot}`, `${n}/${n+1}`]),
-      explication: `P(${t}) = nombre de ${t}s / total = ${n}/${tot}${g>1?' = '+numS+'/'+denS:''}.`,
-      niveau: 3, theme_auto: "Probabilités",
-      indice: "Probabilité = (cas favorables) ÷ (nombre total de cas possibles)."
+      enonce:`Un sac contient ${tot} boules : ${n} ${t}s et ${autre} autres. Probabilité de tirer une boule ${t} ?`,
+      options:shuffleOpts([`${numS}/${denS}`, `${n+1}/${tot}`, `${autre}/${tot}`, `${n}/${n+1}`]),
+      explication:`P(${t}) = ${n}/${tot}${g>1?' = '+numS+'/'+denS:''}.`,
+      niveau:3, theme_auto:"Probabilités",
+      indice:"Probabilité = (cas favorables) ÷ (nombre total de cas possibles)."
     };
   },
 
-  // MATHS — Niv. 2
   notation_scientifique() {
-    const mantisses = [1.5, 2.3, 3.0, 4.7, 6.2, 9.1, 1.8];
-    const exposants = [3, 4, 5, 6, -2, -3];
-    const m = mantisses[~~(Math.random()*mantisses.length)];
-    const e = exposants[~~(Math.random()*exposants.length)];
-    const valDecimale = (m * Math.pow(10, e)).toLocaleString('fr-FR');
-    const d1 = `${m+1} × 10^${e}`, d2 = `${m} × 10^${e+1}`, d3 = `${m} × 10^${e-1}`;
+    const ms=[1.5,2.3,3.0,4.7,6.2,9.1,1.8], m=ms[~~(Math.random()*ms.length)];
+    const es=[3,4,5,6,-2,-3], e=es[~~(Math.random()*es.length)];
+    const val=(m*Math.pow(10,e)).toLocaleString('fr-FR');
     return {
-      enonce: `Écrire ${valDecimale} en notation scientifique.`,
-      options: shuffleOpts([`${m} × 10^${e}`, d1, d2, d3]),
-      explication: `${valDecimale} = ${m} × 10^${e}. La mantisse doit être entre 1 et 10 (inclus), et l'exposant est ${e}.`,
-      niveau: 2, theme_auto: "Notation scientifique"
+      enonce:`Écrire ${val} en notation scientifique.`,
+      options:shuffleOpts([`${m} × 10^${e}`, `${m+1} × 10^${e}`, `${m} × 10^${e+1}`, `${m} × 10^${e-1}`]),
+      explication:`${val} = ${m} × 10^${e}. La mantisse doit être comprise entre 1 et 10.`,
+      niveau:2, theme_auto:"Notation scientifique"
     };
   },
 
-  // MATHS — Niv. 2
   aire_volume() {
-    const formes = ['rectangle','triangle','disque','cube','cylindre'];
-    const f = formes[~~(Math.random()*formes.length)];
-    if (f === 'rectangle') {
-      const L = ~~(Math.random()*8)+3, l = ~~(Math.random()*5)+2;
-      const A = L * l;
-      return { enonce:`Aire d'un rectangle de longueur ${L} cm et largeur ${l} cm ?`, options:shuffleOpts([A, L+l, 2*(L+l), A+L]), explication:`Aire rectangle = L × l = ${L} × ${l} = ${A} cm².`, niveau:2, theme_auto:"Aires & Volumes" };
-    } else if (f === 'triangle') {
-      const b = (~~(Math.random()*6)+2)*2, h = ~~(Math.random()*8)+3;
-      const A = b*h/2;
-      return { enonce:`Aire d'un triangle de base ${b} cm et hauteur ${h} cm ?`, options:shuffleOpts([A, b*h, A+b, A-h]), explication:`Aire triangle = (base × hauteur) ÷ 2 = (${b} × ${h}) ÷ 2 = ${A} cm².`, niveau:2, theme_auto:"Aires & Volumes" };
-    } else if (f === 'cube') {
-      const c = ~~(Math.random()*5)+2;
-      const V = c*c*c;
-      return { enonce:`Volume d'un cube d'arête ${c} cm ?`, options:shuffleOpts([V, c*c, 6*c*c, V+c]), explication:`Volume cube = arête³ = ${c}³ = ${V} cm³.`, niveau:2, theme_auto:"Aires & Volumes" };
-    } else if (f === 'cylindre') {
-      const r = ~~(Math.random()*4)+2, h = ~~(Math.random()*6)+3;
-      const V = Math.round(Math.PI * r * r * h * 100) / 100;
-      const V_arrondi = Math.round(V);
-      return { enonce:`Volume d'un cylindre de rayon ${r} cm et hauteur ${h} cm ? (π ≈ 3,14)`, options:shuffleOpts([V_arrondi, r*r*h, Math.round(2*Math.PI*r*h), V_arrondi+r*2]), explication:`V = π × r² × h ≈ 3,14 × ${r}² × ${h} = 3,14 × ${r*r} × ${h} ≈ ${V_arrondi} cm³.`, niveau:2, theme_auto:"Aires & Volumes" };
-    } else {
-      const r = ~~(Math.random()*5)+2;
-      const A = Math.round(Math.PI * r * r * 100) / 100;
-      const A_arrondi = Math.round(A);
-      return { enonce:`Aire d'un disque de rayon ${r} cm ? (π ≈ 3,14)`, options:shuffleOpts([A_arrondi, 2*Math.round(Math.PI*r), A_arrondi*2, r*r]), explication:`Aire disque = π × r² ≈ 3,14 × ${r}² = 3,14 × ${r*r} ≈ ${A_arrondi} cm².`, niveau:2, theme_auto:"Aires & Volumes" };
+    const f=['rectangle','triangle','disque','cube','cylindre'][~~(Math.random()*5)];
+    if(f==='rectangle'){
+      const L=~~(Math.random()*8)+3, l=~~(Math.random()*5)+2, A=L*l;
+      return{enonce:`Aire d'un rectangle ${L} cm × ${l} cm ?`,options:shuffleOpts([A,L+l,2*(L+l),A+L]),explication:`Aire = L×l = ${L}×${l} = ${A} cm².`,niveau:2,theme_auto:"Aires & Volumes"};
+    }else if(f==='triangle'){
+      const b=(~~(Math.random()*6)+2)*2, h=~~(Math.random()*8)+3, A=b*h/2;
+      return{enonce:`Aire d'un triangle base ${b} cm, hauteur ${h} cm ?`,options:shuffleOpts([A,b*h,A+b,A-h]),explication:`Aire = (b×h)÷2 = (${b}×${h})÷2 = ${A} cm².`,niveau:2,theme_auto:"Aires & Volumes"};
+    }else if(f==='cube'){
+      const c=~~(Math.random()*5)+2, V=c*c*c;
+      return{enonce:`Volume d'un cube d'arête ${c} cm ?`,options:shuffleOpts([V,c*c,6*c*c,V+c]),explication:`Volume = arête³ = ${c}³ = ${V} cm³.`,niveau:2,theme_auto:"Aires & Volumes"};
+    }else if(f==='cylindre'){
+      const r=~~(Math.random()*4)+2, h=~~(Math.random()*6)+3, V=Math.round(Math.PI*r*r*h);
+      return{enonce:`Volume d'un cylindre r=${r} cm, h=${h} cm ? (π≈3,14)`,options:shuffleOpts([V,r*r*h,Math.round(2*Math.PI*r*h),V+r*2]),explication:`V = π×r²×h ≈ 3,14×${r}²×${h} ≈ ${V} cm³.`,niveau:2,theme_auto:"Aires & Volumes"};
+    }else{
+      const r=~~(Math.random()*5)+2, A=Math.round(Math.PI*r*r);
+      return{enonce:`Aire d'un disque de rayon ${r} cm ? (π≈3,14)`,options:shuffleOpts([A,2*Math.round(Math.PI*r),A*2,r*r]),explication:`Aire = π×r² ≈ 3,14×${r}² ≈ ${A} cm².`,niveau:2,theme_auto:"Aires & Volumes"};
     }
   },
 
-  // FRANÇAIS — Niv. 3
   figure_de_style() {
-    const figures = [
-      { phrase:"Ses mains étaient des serres d'aigle.", figure:"Métaphore", autres:["Comparaison","Hyperbole","Personnification"], exp:"Métaphore = comparaison SANS outil ('comme', 'tel que'). 'Ses mains ÉTAIENT des serres' = assimilation directe.", indice:"Y a-t-il un mot de comparaison ? Si non, c'est une métaphore." },
-      { phrase:"Il pleuvait des cordes.", figure:"Métaphore", autres:["Comparaison","Litote","Oxymore"], exp:"Expression figée = métaphore. La pluie ne ressemble pas à des cordes, c'est une image directe sans 'comme'.", indice:"Cherche si la comparaison est directe (métaphore) ou avec un outil ('comme' → comparaison)." },
-      { phrase:"Je meurs de faim !", figure:"Hyperbole", autres:["Métaphore","Litote","Antithèse"], exp:"Hyperbole = exagération volontaire pour intensifier un sentiment. Personne ne meurt vraiment de faim ici.", indice:"L'auteur exagère-t-il volontairement pour créer un effet ?" },
-      { phrase:"Le soleil se levait, souriant sur la vallée.", figure:"Personnification", autres:["Métaphore","Comparaison","Allitération"], exp:"Personnification = on attribue des caractéristiques humaines (sourire) à un élément non humain (le soleil).", indice:"Est-ce qu'un être inanimé ou une abstraction se comporte comme un humain ?" },
-      { phrase:"Il était rapide comme l'éclair.", figure:"Comparaison", autres:["Métaphore","Hyperbole","Personnification"], exp:"Comparaison = outil de comparaison présent ('comme'). Sans 'comme', ce serait une métaphore.", indice:"Y a-t-il un mot comme 'comme', 'tel', 'semblable à' ?" },
-      { phrase:"Ce n'est pas sans mérite.", figure:"Litote", autres:["Métaphore","Euphémisme","Ironie"], exp:"Litote = on dit moins pour suggérer plus. 'Pas sans mérite' signifie en réalité 'c'est très bien'.", indice:"L'auteur dit-il moins que ce qu'il pense pour atténuer ?" },
+    const figures=[
+      {phrase:"Ses mains étaient des serres d'aigle.",figure:"Métaphore",autres:["Comparaison","Hyperbole","Personnification"],exp:"Métaphore = comparaison SANS outil ('comme'). Assimilation directe.",indice:"Y a-t-il un 'comme' ? Si non, c'est une métaphore."},
+      {phrase:"Il pleuvait des cordes.",figure:"Métaphore",autres:["Comparaison","Litote","Oxymore"],exp:"Expression figée = métaphore. Image directe sans outil de comparaison.",indice:"Cherche si la comparaison est directe (métaphore) ou avec outil ('comme')."},
+      {phrase:"Je meurs de faim !",figure:"Hyperbole",autres:["Métaphore","Litote","Antithèse"],exp:"Hyperbole = exagération volontaire pour intensifier un sentiment.",indice:"L'auteur exagère-t-il volontairement ?"},
+      {phrase:"Le soleil se levait, souriant sur la vallée.",figure:"Personnification",autres:["Métaphore","Comparaison","Allitération"],exp:"Personnification = caractéristiques humaines (sourire) attribuées au soleil.",indice:"Un être inanimé se comporte-t-il comme un humain ?"},
+      {phrase:"Il était rapide comme l'éclair.",figure:"Comparaison",autres:["Métaphore","Hyperbole","Personnification"],exp:"Comparaison = outil présent ('comme'). Sans 'comme' ce serait une métaphore.",indice:"Y a-t-il un mot de comparaison ('comme', 'tel', 'semblable à') ?"},
+      {phrase:"Ce n'est pas sans mérite.",figure:"Litote",autres:["Métaphore","Euphémisme","Ironie"],exp:"Litote = dire moins pour suggérer plus. Signifie en réalité 'c'est très bien'.",indice:"L'auteur dit-il moins que ce qu'il pense ?"},
     ];
-    const f = figures[~~(Math.random()*figures.length)];
-    return {
-      enonce: `Identifie la figure de style : « ${f.phrase} »`,
-      options: shuffleOpts([f.figure, ...f.autres]),
-      explication: f.exp,
-      niveau: 3, theme_auto: "Figures de style",
-      indice: f.indice
-    };
+    const f=figures[~~(Math.random()*figures.length)];
+    return{enonce:`Identifie la figure de style : « ${f.phrase} »`,options:shuffleOpts([f.figure,...f.autres]),explication:f.exp,niveau:3,theme_auto:"Figures de style",indice:f.indice};
   },
 
-  // FRANÇAIS — Niv. 2
   accord_participe() {
-    const cas = [
-      { phrase:"Les fleurs que j'ai ___ hier sont magnifiques.", verbe:"cueillir", accord:"cueillies", autres:["cueilli","cueillie","cueillis"], exp:"Le participe passé employé avec 'avoir' s'accorde avec le COD placé AVANT. 'que' = les fleurs (féminin pluriel) → cueillies." },
-      { phrase:"Elle s'est ___ vers la sortie.", verbe:"tourner", accord:"tournée", autres:["tourné","tournés","tournées"], exp:"Verbe pronominal → accord avec le sujet. Elle (féminin singulier) → tournée.", indice:"Avec un verbe pronominal, le participe s'accorde généralement avec le sujet." },
-      { phrase:"Les lettres qu'il a ___ sont claires.", verbe:"écrire", accord:"écrites", autres:["écrit","écrite","écrits"], exp:"COD 'que' = les lettres (féminin pluriel) placé avant l'auxiliaire 'avoir' → écrites." },
-      { phrase:"Elle a ___ toute la nuit.", verbe:"travailler", accord:"travaillé", autres:["travaillée","travaillés","travaillées"], exp:"Pas de COD avant → pas d'accord. Le participe reste invariable : travaillé.", indice:"Cherche un COD AVANT l'auxiliaire 'avoir'. S'il n'y en a pas, pas d'accord." },
+    const cas=[
+      {phrase:"Les fleurs que j'ai ___ hier sont magnifiques.",verbe:"cueillir",accord:"cueillies",autres:["cueilli","cueillie","cueillis"],exp:"COD 'que' = les fleurs (fém. plur.) AVANT 'avoir' → cueillies.",indice:"Le COD est-il placé AVANT l'auxiliaire avoir ?"},
+      {phrase:"Elle s'est ___ vers la sortie.",verbe:"tourner",accord:"tournée",autres:["tourné","tournés","tournées"],exp:"Verbe pronominal → accord avec le sujet. Elle (fém. sing.) → tournée.",indice:"Avec un verbe pronominal, le participe s'accorde avec le sujet."},
+      {phrase:"Les lettres qu'il a ___ sont claires.",verbe:"écrire",accord:"écrites",autres:["écrit","écrite","écrits"],exp:"COD 'que' = les lettres (fém. plur.) avant 'avoir' → écrites.",indice:"Cherche un COD féminin pluriel AVANT l'auxiliaire."},
+      {phrase:"Elle a ___ toute la nuit.",verbe:"travailler",accord:"travaillé",autres:["travaillée","travaillés","travaillées"],exp:"Pas de COD avant 'avoir' → pas d'accord. Reste invariable : travaillé.",indice:"Cherche un COD AVANT l'auxiliaire 'avoir'. S'il n'y en a pas, pas d'accord."},
     ];
-    const c = cas[~~(Math.random()*cas.length)];
-    return {
-      enonce: `Conjugue correctement le participe passé de '${c.verbe}' : « ${c.phrase} »`,
-      options: shuffleOpts([c.accord, ...c.autres]),
-      explication: c.exp,
-      niveau: 2, theme_auto: "Accord du participe passé",
-      indice: c.indice || "Rappel : avec 'avoir', accord avec le COD placé avant. Avec 'être', accord avec le sujet."
-    };
+    const c=cas[~~(Math.random()*cas.length)];
+    return{enonce:`Conjugue '${c.verbe}' : « ${c.phrase} »`,options:shuffleOpts([c.accord,...c.autres]),explication:c.exp,niveau:2,theme_auto:"Accord du participe passé",indice:c.indice};
   },
 
-  // FRANÇAIS — Niv. 2
   conjugaison() {
-    const verbes = [
-      { inf:"FINIR", pers:"nous", temps:"imparfait", forme:"finissions", autres:["finisions","finissons","finirions"], exp:"Imparfait : radical 'finiss-' + terminaison '-ions'. Attention au double 's' !" },
-      { inf:"VENIR", pers:"ils", temps:"conditionnel présent", forme:"viendraient", autres:["viendront","veniraient","vendraient"], exp:"Conditionnel : radical du futur 'viendr-' + terminaison '-aient'. Le radical du futur/conditionnel de venir est irrégulier : 'viendr-'." },
-      { inf:"SAVOIR", pers:"tu", temps:"subjonctif présent", forme:"saches", autres:["sais","sauras","sachais"], exp:"Subjonctif présent de savoir : radical irrégulier 'sach-' + '-es'." },
-      { inf:"ÊTRE", pers:"vous", temps:"passé simple", forme:"fûtes", autres:["étiez","aviez été","êtes"], exp:"Passé simple d'être : je fus, tu fus, il fut, nous fûmes, vous fûtes, ils furent." },
-      { inf:"TENIR", pers:"nous", temps:"futur simple", forme:"tiendrons", autres:["tenons","tiendrons pas","tenirions"], exp:"Futur de TENIR : radical irrégulier 'tiendr-' + '-ons'." },
+    const verbes=[
+      {inf:"FINIR",pers:"nous",temps:"imparfait",forme:"finissions",autres:["finisions","finissons","finirions"],exp:"Imparfait : radical 'finiss-' + '-ions'. Attention au double 's' !"},
+      {inf:"VENIR",pers:"ils",temps:"conditionnel présent",forme:"viendraient",autres:["viendront","veniraient","vendraient"],exp:"Conditionnel : radical futur 'viendr-' + '-aient'."},
+      {inf:"SAVOIR",pers:"tu",temps:"subjonctif présent",forme:"saches",autres:["sais","sauras","sachais"],exp:"Subjonctif présent de savoir : radical irrégulier 'sach-' + '-es'."},
+      {inf:"ÊTRE",pers:"vous",temps:"passé simple",forme:"fûtes",autres:["étiez","aviez été","êtes"],exp:"Passé simple d'être : je fus, tu fus, il fut, nous fûmes, vous fûtes, ils furent."},
+      {inf:"TENIR",pers:"nous",temps:"futur simple",forme:"tiendrons",autres:["tenons","tiendrons pas","tenirions"],exp:"Futur de TENIR : radical irrégulier 'tiendr-' + '-ons'."},
     ];
-    const v = verbes[~~(Math.random()*verbes.length)];
-    return {
-      enonce: `Conjugue ${v.inf} à la ${v.pers.padStart(2)} personne du ${v.temps} : '${v.pers} ___'`,
-      options: shuffleOpts([v.forme, ...v.autres]),
-      explication: v.exp,
-      niveau: 2, theme_auto: "Conjugaison",
-      indice: `Mode : ${v.temps.includes('subjonctif')?'Subjonctif (que '+v.pers+'...)':v.temps.includes('conditionnel')?'Conditionnel (radical futur + terminaisons imparfait)':'Applique les règles du '+v.temps+'.'}`
-    };
+    const v=verbes[~~(Math.random()*verbes.length)];
+    return{enonce:`Conjugue ${v.inf} (${v.pers}, ${v.temps}) : '${v.pers} ___'`,options:shuffleOpts([v.forme,...v.autres]),explication:v.exp,niveau:2,theme_auto:"Conjugaison",indice:`Mode : ${v.temps.includes('subjonctif')?'Subjonctif (que '+v.pers+'...)':v.temps.includes('conditionnel')?'Conditionnel (radical futur + terminaisons imparfait)':'Applique les règles du '+v.temps+'.'}`};
   },
 
-  // PHYSIQUE-CHIMIE — Niv. 2
   vitesse_distance_temps() {
-    const vitesses = [60,80,90,100,120,50,72], v = vitesses[~~(Math.random()*vitesses.length)];
-    const durees = [0.5,1,1.5,2,2.5,3], t = durees[~~(Math.random()*durees.length)];
-    const d = v * t;
-    const types = ['d','v','t'];
-    const typ = types[~~(Math.random()*types.length)];
-    if (typ === 'd') {
-      const d1=v+t, d2=d+v, d3=d*2;
-      return { enonce:`Un véhicule roule à ${v} km/h pendant ${t} h. Quelle distance parcourt-il ?`, options:shuffleOpts([d, d1, d2 !== d ? d2 : d-10, d3 !== d ? d3 : d+20]), explication:`d = v × t = ${v} × ${t} = ${d} km.`, niveau:2, theme_auto:"Vitesse / Distance / Temps" };
-    } else if (typ === 'v') {
-      const v_calc = d / t;
-      const d1=d*t, d2=d/2, d3=v_calc+10;
-      return { enonce:`Un cycliste parcourt ${d} km en ${t} h. Quelle est sa vitesse moyenne ?`, options:shuffleOpts([v_calc, d1 > 999 ? v_calc+5 : d1, d2 !== v_calc ? d2 : d2+1, d3]), explication:`v = d ÷ t = ${d} ÷ ${t} = ${v_calc} km/h.`, niveau:2, theme_auto:"Vitesse / Distance / Temps" };
-    } else {
-      const t_calc = d / v;
-      const d1=d*v, d2=t_calc+1, d3=d/2;
-      return { enonce:`Une voiture parcourt ${d} km à ${v} km/h. Combien de temps met-elle ?`, options:shuffleOpts([`${t_calc} h`, `${d1 > 9999 ? t_calc+2 : d1} h`, `${d2} h`, `${d3 !== t_calc ? d3 : d3+0.5} h`]), explication:`t = d ÷ v = ${d} ÷ ${v} = ${t_calc} h.`, niveau:2, theme_auto:"Vitesse / Distance / Temps" };
-    }
+    const vs=[60,80,90,100,120,50,72], v=vs[~~(Math.random()*vs.length)];
+    const ts=[0.5,1,1.5,2,2.5,3], t=ts[~~(Math.random()*ts.length)];
+    const d=v*t;
+    const typ=['d','v','t'][~~(Math.random()*3)];
+    if(typ==='d') return{enonce:`Un véhicule roule à ${v} km/h pendant ${t} h. Distance parcourue ?`,options:shuffleOpts([d,v+t,d+v,d*2]),explication:`d = v×t = ${v}×${t} = ${d} km.`,niveau:2,theme_auto:"Vitesse / Distance / Temps"};
+    if(typ==='v') return{enonce:`Un cycliste parcourt ${d} km en ${t} h. Vitesse moyenne ?`,options:shuffleOpts([d/t,d*t,d/2,(d/t)+10]),explication:`v = d÷t = ${d}÷${t} = ${d/t} km/h.`,niveau:2,theme_auto:"Vitesse / Distance / Temps"};
+    return{enonce:`Une voiture parcourt ${d} km à ${v} km/h. Durée du trajet ?`,options:shuffleOpts([`${t} h`,`${t+1} h`,`${t+0.5} h`,`${d} h`]),explication:`t = d÷v = ${d}÷${v} = ${t} h.`,niveau:2,theme_auto:"Vitesse / Distance / Temps"};
   },
 
-  // PHYSIQUE-CHIMIE — Niv. 2
   electricite() {
-    const loi = ['U','I','R'][~~(Math.random()*3)];
-    const U = [6,9,12,24,230][~~(Math.random()*5)];
-    const R = [10,15,20,30,50,100][~~(Math.random()*6)];
-    const I = Math.round(U/R * 1000)/1000;
-    if (loi === 'U') {
-      const I2=[0.5,1,2,3,0.1][~~(Math.random()*5)], R2=[10,20,50,100][~~(Math.random()*4)];
-      const U2 = I2*R2;
-      return { enonce:`Loi d'Ohm : R = ${R2} Ω, I = ${I2} A. Calculer la tension U.`, options:shuffleOpts([`${U2} V`, `${R2/I2} V`, `${U2+R2} V`, `${U2*2} V`]), explication:`U = R × I = ${R2} × ${I2} = ${U2} V.`, niveau:2, theme_auto:"Loi d'Ohm — Électricité" };
-    } else if (loi === 'I') {
-      return { enonce:`Loi d'Ohm : U = ${U} V, R = ${R} Ω. Calculer l'intensité I.`, options:shuffleOpts([`${I} A`, `${U*R} A`, `${U+R} A`, `${Math.round(I*2*100)/100} A`]), explication:`I = U ÷ R = ${U} ÷ ${R} = ${I} A.`, niveau:2, theme_auto:"Loi d'Ohm — Électricité" };
-    } else {
-      const I3=[0.5,1,2,3,0.1][~~(Math.random()*5)];
-      const U3=[6,9,12,24][~~(Math.random()*4)];
-      const R3 = U3/I3;
-      return { enonce:`Loi d'Ohm : U = ${U3} V, I = ${I3} A. Calculer la résistance R.`, options:shuffleOpts([`${R3} Ω`, `${U3*I3} Ω`, `${U3+I3} Ω`, `${R3*2} Ω`]), explication:`R = U ÷ I = ${U3} ÷ ${I3} = ${R3} Ω.`, niveau:2, theme_auto:"Loi d'Ohm — Électricité" };
-    }
+    const loi=['U','I','R'][~~(Math.random()*3)];
+    if(loi==='U'){const I2=[0.5,1,2,3][~~(Math.random()*4)],R2=[10,20,50,100][~~(Math.random()*4)],U2=I2*R2;return{enonce:`Loi d'Ohm : R=${R2} Ω, I=${I2} A. Calculer U.`,options:shuffleOpts([`${U2} V`,`${R2/I2} V`,`${U2+R2} V`,`${U2*2} V`]),explication:`U = R×I = ${R2}×${I2} = ${U2} V.`,niveau:2,theme_auto:"Loi d'Ohm"};}
+    if(loi==='I'){const U=[6,9,12,24][~~(Math.random()*4)],R=[10,15,20,30,50][~~(Math.random()*5)],I=Math.round(U/R*1000)/1000;return{enonce:`Loi d'Ohm : U=${U} V, R=${R} Ω. Calculer I.`,options:shuffleOpts([`${I} A`,`${U*R} A`,`${U+R} A`,`${Math.round(I*2*100)/100} A`]),explication:`I = U÷R = ${U}÷${R} = ${I} A.`,niveau:2,theme_auto:"Loi d'Ohm"};}
+    const I3=[0.5,1,2][~~(Math.random()*3)],U3=[6,9,12,24][~~(Math.random()*4)],R3=U3/I3;
+    return{enonce:`Loi d'Ohm : U=${U3} V, I=${I3} A. Calculer R.`,options:shuffleOpts([`${R3} Ω`,`${U3*I3} Ω`,`${U3+I3} Ω`,`${R3*2} Ω`]),explication:`R = U÷I = ${U3}÷${I3} = ${R3} Ω.`,niveau:2,theme_auto:"Loi d'Ohm"};
   }
 };
 
-// Helper : créer des options A/B/C/D à partir d'un tableau [bonne, d1, d2, d3]
+const CLE_FACTORIES = Object.keys(GenerateurProcedural);
+
+// ─────────────────────────────────────────────────────────────
+// Helper : construire 4 options A/B/C/D + bonne_reponse
+// Le 1er élément du tableau est TOUJOURS la bonne réponse
+// ─────────────────────────────────────────────────────────────
 function shuffleOpts(vals) {
-  const unique = [...new Set(vals.map(String))];
-  while (unique.length < 4) unique.push(`${unique.length * 13 + 7}`);
+  const strs = vals.map(String);
+  const unique = [...new Set(strs)];
+  // Assurer 4 options distinctes
+  while (unique.length < 4) unique.push(String(unique.length * 17 + 3));
   const s = shuffleArr(unique.slice(0, 4));
-  const bonneStr = String(vals[0]);
+  const bonneStr = strs[0];
+  let idx = s.indexOf(bonneStr);
+  if (idx === -1) { s[0] = bonneStr; idx = 0; }
   return {
     options: s.map((v, i) => `${['A','B','C','D'][i]}) ${v}`),
-    bonne_reponse: s.indexOf(bonneStr)
+    bonne_reponse: idx
   };
 }
 
 // ─────────────────────────────────────────────────────────────
-// Génère une série de N questions SANS répétition de factory
+// STRATÉGIE DE GÉNÉRATION PAR TYPE DE CHAPITRE
+//
+// 3 modes distincts :
+//  1. Chapitre "riche" (≥5 questions JSON, ex: automatismes MEN 42q)
+//     → 5 questions 100% du JSON, mélangées aléatoirement
+//     → Garantit que TOUTES les 42 questions MEN sont accessibles
+//
+//  2. Chapitre "pauvre" (1–4 questions JSON)
+//     → On utilise TOUTES les questions JSON + on complète avec les factories
+//
+//  3. Chapitre vide (0 questions JSON, ex: examen blanc)
+//     → 100% procédural, 5 factories différentes tirées aléatoirement
 // ─────────────────────────────────────────────────────────────
-const CLE_MUTATIONS = Object.keys(GenerateurProcedural);
-
 function genererSerieAleatoire(chapId, baseQuiz = [], taille = 5) {
-  // 1. On part des questions du JSON si disponibles
-  let pool = Array.isArray(baseQuiz) && baseQuiz.length > 0 ? shuffleArr([...baseQuiz]) : [];
-  const serie = pool.slice(0, Math.min(3, pool.length, taille));
+  const pool = Array.isArray(baseQuiz) ? [...baseQuiz] : [];
 
-  // 2. On complète avec le moteur procédural, sans répéter la même factory
-  const factoriesDispos = shuffleArr([...CLE_MUTATIONS]);
-  let fi = 0;
-  while (serie.length < taille && fi < factoriesDispos.length) {
-    const factory = GenerateurProcedural[factoriesDispos[fi]];
-    const q = factory();
-    // Résoudre les options si shuffleOpts a retourné {options, bonne_reponse}
-    if (q.options && q.options.options) {
-      q.bonne_reponse = q.options.bonne_reponse;
-      q.options = q.options.options;
-    }
-    serie.push(q);
-    fi++;
+  if (pool.length >= taille) {
+    // Mode 1 : chapitre riche → 100% JSON, tirage aléatoire sans remise
+    return shuffleArr(pool).slice(0, taille);
   }
-  return serie.slice(0, taille);
+
+  if (pool.length > 0) {
+    // Mode 2 : chapitre pauvre → tout le JSON + complétion procédurale
+    const serie = [...pool];
+    const factoriesDispos = shuffleArr([...CLE_FACTORIES]);
+    let fi = 0;
+    while (serie.length < taille && fi < factoriesDispos.length) {
+      serie.push(GenerateurProcedural[factoriesDispos[fi]]());
+      fi++;
+    }
+    return serie.slice(0, taille);
+  }
+
+  // Mode 3 : chapitre vide → 100% procédural, factories sans répétition
+  const serie = [];
+  const factoriesDispos = shuffleArr([...CLE_FACTORIES]);
+  for (let i = 0; i < Math.min(taille, factoriesDispos.length); i++) {
+    serie.push(GenerateurProcedural[factoriesDispos[i]]());
+  }
+  return serie;
 }
 
-// Résout la question si les options sont encore un objet shuffleOpts
+// Normalise une question : résout le sous-objet {options, bonne_reponse} si présent
 function normaliserQuestion(q) {
-  if (q.options && typeof q.options === 'object' && !Array.isArray(q.options) && q.options.options) {
-    q.bonne_reponse = q.options.bonne_reponse;
-    q.options = q.options.options;
+  if (q.options && !Array.isArray(q.options) && q.options.options) {
+    return { ...q, options: q.options.options, bonne_reponse: q.options.bonne_reponse };
   }
   return q;
 }
@@ -376,13 +321,13 @@ function updateProgressRing() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// VUES PRINCIPALES
+// VUES
 // ─────────────────────────────────────────────────────────────
 function renderDashboard() {
   const container = document.getElementById('app-view-container');
   if (!container) return;
 
-  // Bandeau "reprendre" si une session précédente terminée existe
+  // Bandeau "reprendre" si une session terminée existe
   let bandeauHtml = '';
   const ds = AppState.derniereSession;
   if (ds) {
@@ -400,7 +345,7 @@ function renderDashboard() {
   container.innerHTML = `${bandeauHtml}<h2>Mes matières de révision</h2><div class="matieres-grid" id="matieres-grid"></div>`;
 
   if (ds) {
-    document.getElementById('btn-relancer-bandeau')?.addEventListener('click', () => relancerDerniereSession());
+    document.getElementById('btn-relancer-bandeau')?.addEventListener('click', relancerDerniereSession);
   }
 
   if (!AppState.data || !AppState.data.matieres) return;
@@ -424,14 +369,47 @@ function renderMatiere(matId) {
     <div class="chapitres-list" id="chapitres-list" style="margin-top:14px;display:flex;flex-direction:column;gap:12px;"></div>
   `;
   mat.chapitres.forEach(chap => {
+    const nQ = (chap.quiz || []).length;
+    const niveaux = {};
+    (chap.quiz || []).forEach(q => { const nv=q.niveau||1; niveaux[nv]=(niveaux[nv]||0)+1; });
+    const status = AppState.progress[chap.id];
+
+    // Badge source
+    let badgeSource = '';
+    if (nQ >= 5) {
+      badgeSource = `<span style="background:#EEF2FF;color:#3D5A99;border:1px solid #C7D2FE;padding:2px 8px;font-size:.65rem;border-radius:10px;font-weight:700;">📋 ${nQ} questions officielles MEN</span>`;
+    } else if (nQ > 0) {
+      badgeSource = `<span style="background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;padding:2px 8px;font-size:.65rem;border-radius:10px;font-weight:700;">📝 ${nQ} questions + génération</span>`;
+    } else {
+      badgeSource = `<span style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;padding:2px 8px;font-size:.65rem;border-radius:10px;font-weight:700;">⚡ Génération procédurale</span>`;
+    }
+
+    // Badges niveaux
+    const badgesNiv = Object.entries(niveaux).map(([nv, cnt]) => {
+      const couleur = nv==1?'#10B981':nv==2?'#F59E0B':'#EF4444';
+      const label = nv==1?'Facile':nv==2?'Intermédiaire':'Difficile';
+      return `<span style="background:${couleur};color:white;padding:2px 7px;font-size:.6rem;border-radius:8px;font-weight:700;">${label} ×${cnt}</span>`;
+    }).join(' ');
+
+    // Badge de statut
+    const statusBadge = status === 'acquis'
+      ? `<span style="background:#D1FAE5;color:#064E3B;padding:2px 8px;font-size:.65rem;border-radius:10px;font-weight:700;float:right;">✅ Acquis</span>`
+      : '';
+
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
-      <h4>${chap.titre}</h4>
-      <p style="font-size:.8rem;color:var(--text-secondary);margin:4px 0 10px 0;">${chap.fiche || ''}</p>
-      <button class="btn-primary id-trigger-btn">🎯 Commencer la série</button>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <h4 style="margin:0 0 6px;">${chap.titre}</h4>
+        ${statusBadge}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+        ${badgeSource} ${badgesNiv}
+      </div>
+      <p style="font-size:.78rem;color:var(--text-secondary);margin:0 0 10px;line-height:1.4;">${(chap.fiche||'').slice(0,120)}${(chap.fiche||'').length>120?'…':''}</p>
+      <button class="btn-primary id-trigger-btn">🎯 Commencer la série (5 questions)</button>
     `;
-    card.querySelector('.id-trigger-btn').addEventListener('click', (e) => {
+    card.querySelector('.id-trigger-btn').addEventListener('click', e => {
       e.stopPropagation();
       lancerQuizDepuisChapitre(mat.id, chap.id);
     });
@@ -456,8 +434,8 @@ function renderCarnetVue() {
   `;
   AppState.carnetErreurs.forEach(q => {
     const div = document.createElement('div'); div.className = 'card';
-    const theme = q.theme_auto ? `<span style="background:var(--bg-card-hover);color:var(--color-primary);padding:2px 8px;font-size:.7rem;border-radius:10px;font-weight:700;">⚡ ${escHtml(q.theme_auto)}</span>` : '';
-    div.innerHTML = `${theme}<p style="font-weight:600;margin:6px 0 4px;">${escHtml(q.enonce)}</p><p style="font-size:.8rem;color:var(--text-secondary);">💡 ${escHtml(q.explication)}</p>`;
+    const theme = q.theme_auto ? `<span style="background:var(--bg-card-hover);color:var(--color-primary);padding:2px 8px;font-size:.7rem;border-radius:10px;font-weight:700;display:inline-block;margin-bottom:6px;">⚡ ${escHtml(q.theme_auto)}</span>` : '';
+    div.innerHTML = `${theme}<p style="font-weight:600;margin:0 0 4px;">${escHtml(q.enonce)}</p><p style="font-size:.8rem;color:var(--text-secondary);margin:0;">💡 ${escHtml(q.explication)}</p>`;
     document.getElementById('liste-erreurs').appendChild(div);
   });
 }
@@ -467,7 +445,7 @@ function renderProgramme() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// OUVERTURE ET COMPORTEMENT DE LA MODALE QUIZ
+// LANCEMENT DES QUIZ
 // ─────────────────────────────────────────────────────────────
 function lancerQuizDepuisChapitre(matId, chapId) {
   const mat = AppState.data?.matieres?.find(m => m.id === matId);
@@ -483,7 +461,6 @@ function lancerQuizDepuisChapitre(matId, chapId) {
     questions, index: 0, score: 0,
     infini: false, estRattrapage: false, serieTerminee: false
   };
-
   afficherQuestion();
   ouvrirPopUp();
 }
@@ -506,6 +483,7 @@ function startExamenBlanc() {
   if (AppState.data && AppState.data.matieres) {
     AppState.data.matieres.forEach(m => m.chapitres.forEach(c => { toutes = toutes.concat(c.quiz || []); }));
   }
+  // Examen blanc : mélange JSON + procédural, 10 questions
   const questions = genererSerieAleatoire('blanc', toutes, 10)
     .map(q => normaliserQuestion(melangerOptions(q)));
   AppState.quiz = {
@@ -520,6 +498,7 @@ function startExamenBlanc() {
 function relancerDerniereSession() {
   const ds = AppState.derniereSession;
   if (!ds) return;
+  AppState.derniereSession = null;
   if (ds.chapId === 'carnet_erreurs') startQuizRattrapage();
   else if (ds.chapId === 'examen_blanc') startExamenBlanc();
   else lancerQuizDepuisChapitre(ds.matId, ds.chapId);
@@ -529,7 +508,6 @@ function ouvrirPopUp() {
   const mq = document.getElementById('quiz-modal');
   if (mq) { mq.classList.remove('hidden'); mq.classList.add('active'); }
 }
-
 function fermerModaleQuiz() {
   const mq = document.getElementById('quiz-modal');
   if (mq) { mq.classList.remove('active'); mq.classList.add('hidden'); }
@@ -543,8 +521,9 @@ function melangerOptions(q) {
   const pureOpts = q.options.map(o => String(o).replace(/^[A-D]\)\s*/, ''));
   const bonneTxt = pureOpts[q.bonne_reponse];
   const rMelangee = shuffleArr([...pureOpts]);
-  const nIdx = rMelangee.indexOf(bonneTxt);
-  return { ...q, options: rMelangee.map((o, idx) => `${['A','B','C','D'][idx]}) ${o}`), bonne_reponse: nIdx >= 0 ? nIdx : 0 };
+  let nIdx = rMelangee.indexOf(bonneTxt);
+  if (nIdx === -1) { rMelangee[0] = bonneTxt; nIdx = 0; }
+  return { ...q, options: rMelangee.map((o, i) => `${['A','B','C','D'][i]}) ${o}`), bonne_reponse: nIdx };
 }
 
 function afficherQuestion() {
@@ -560,13 +539,13 @@ function afficherQuestion() {
     qContainer.innerHTML = '';
 
     const nv = parseInt(q.niveau) || 1;
-    let badgeCouleur = "#10B981", texteNiveau = "Niveau : Facile";
-    if (nv === 2) { badgeCouleur = "#F59E0B"; texteNiveau = "Niveau : Intermédiaire"; }
-    else if (nv === 3) { badgeCouleur = "#EF4444"; texteNiveau = "Niveau : Difficile"; }
+    let badgeCouleur = "#10B981", texteNiveau = "Facile";
+    if (nv === 2) { badgeCouleur = "#F59E0B"; texteNiveau = "Intermédiaire"; }
+    else if (nv === 3) { badgeCouleur = "#EF4444"; texteNiveau = "Difficile"; }
 
     const badgeDiff = document.createElement('span');
     badgeDiff.style.cssText = `background:${badgeCouleur};color:white;padding:3px 10px;font-size:.7rem;border-radius:12px;font-weight:700;display:inline-block;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;`;
-    badgeDiff.textContent = texteNiveau;
+    badgeDiff.textContent = `Niveau : ${texteNiveau}`;
     qContainer.appendChild(badgeDiff);
 
     if (q.theme_auto) {
@@ -576,11 +555,20 @@ function afficherQuestion() {
       qContainer.appendChild(bAuto);
     }
 
+    // Badge "Automatisme MEN" pour les questions officielles
+    if (q.annale) {
+      const bMEN = document.createElement('span');
+      bMEN.style.cssText = "background:#EEF2FF;color:#3D5A99;border:1px solid #C7D2FE;padding:3px 10px;font-size:.65rem;border-radius:12px;font-weight:700;display:inline-block;margin-left:6px;margin-bottom:10px;";
+      bMEN.textContent = `📋 Automatisme MEN`;
+      qContainer.appendChild(bMEN);
+    }
+
     const pEnonce = document.createElement('p');
     pEnonce.style.cssText = "font-size:1.05rem;font-weight:600;margin:6px 0 12px 0;line-height:1.45;color:var(--text-primary);";
     pEnonce.textContent = q.enonce;
     qContainer.appendChild(pEnonce);
 
+    // Bouton indice : niveaux 2 ET 3, si un indice est fourni
     if (nv >= 2 && q.indice) {
       const btnInd = document.createElement('button');
       btnInd.style.cssText = "background:none;border:1px dashed var(--color-warning);color:var(--color-warning);padding:4px 10px;border-radius:6px;font-size:.72rem;cursor:pointer;margin-top:4px;display:block;font-weight:600;";
@@ -593,7 +581,8 @@ function afficherQuestion() {
         boxInd.classList.toggle('hidden');
         btnInd.textContent = boxInd.classList.contains('hidden') ? "💡 Débloquer l'indice de cours" : "🙈 Masquer l'indice";
       });
-      qContainer.appendChild(btnInd); qContainer.appendChild(boxInd);
+      qContainer.appendChild(btnInd);
+      qContainer.appendChild(boxInd);
     }
   }
 
@@ -631,27 +620,17 @@ function verifierReponse(btn, idx, q, optsEl) {
   document.getElementById('quiz-next-btn')?.classList.remove('hidden');
 }
 
-document.getElementById('quiz-next-btn')?.addEventListener('click', () => {
-  AppState.quiz.index++;
-  if (AppState.quiz.index < AppState.quiz.questions.length) afficherQuestion();
-  else terminerSessionQuiz();
-});
-
 // ─────────────────────────────────────────────────────────────
-// FIN DE SESSION — Écran de résultats avec bouton "Nouvelle série"
-// Le bouton n'existe QUE ici → impossible de l'activer avant la fin
+// FIN DE SESSION
+// Le bouton "Nouvelle série" n'existe QUE ici → contrainte structurelle
 // ─────────────────────────────────────────────────────────────
 function terminerSessionQuiz() {
   const quiz = AppState.quiz;
   quiz.serieTerminee = true;
 
-  // Mémoriser la session pour le bandeau du dashboard
   AppState.derniereSession = {
-    matId: quiz.matId,
-    chapId: quiz.chapitreId,
-    matLabel: quiz.matLabel,
-    score: quiz.score,
-    total: quiz.questions.length
+    matId: quiz.matId, chapId: quiz.chapitreId,
+    matLabel: quiz.matLabel, score: quiz.score, total: quiz.questions.length
   };
 
   fermerModaleQuiz();
@@ -665,9 +644,9 @@ function terminerSessionQuiz() {
   if (!container) return;
 
   const emoji = pct >= 80 ? '🏆' : pct >= 50 ? '💪' : '📖';
-  const message = pct >= 80 ? 'Excellent travail !' : pct >= 50 ? 'Continue comme ça !' : 'Ne lâche rien !';
+  const message = pct >= 80 ? 'Excellent travail !' : pct >= 50 ? 'Continue comme ça !' : 'Ne lâche rien, révise le cours !';
+  const barColor = pct >= 80 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444';
 
-  // ⚠️ BOUTON NOUVELLE SÉRIE : apparaît UNIQUEMENT ici, après la fin complète
   container.innerHTML = `
     <div style="max-width:500px;margin:20px auto;text-align:center;background:var(--bg-card);padding:28px 24px;border-radius:14px;box-shadow:var(--shadow-card);">
       <span style="font-size:3.5rem;">${emoji}</span>
@@ -676,7 +655,7 @@ function terminerSessionQuiz() {
       <div style="font-size:2.8rem;font-weight:800;color:var(--color-primary);margin:14px 0;">${quiz.score} / ${quiz.questions.length}</div>
       <div style="background:var(--bg-card-hover);border-radius:8px;padding:10px 14px;margin-bottom:20px;">
         <div style="height:8px;background:#E5E7EB;border-radius:4px;overflow:hidden;">
-          <div style="height:100%;width:${pct}%;background:${pct>=80?'#10B981':pct>=50?'#F59E0B':'#EF4444'};border-radius:4px;transition:width .5s;"></div>
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .6s;"></div>
         </div>
         <p style="font-size:.78rem;color:var(--text-secondary);margin:6px 0 0;">${pct}% de réussite</p>
       </div>
@@ -690,9 +669,8 @@ function terminerSessionQuiz() {
     </div>
   `;
 
-  // Câbler le bouton NOUVELLE SÉRIE (génère un quiz entièrement nouveau)
   document.getElementById('btn-generer-nouveau')?.addEventListener('click', () => {
-    AppState.derniereSession = null; // reset bandeau
+    AppState.derniereSession = null;
     if (quiz.chapitreId === 'carnet_erreurs') startQuizRattrapage();
     else if (quiz.chapitreId === 'examen_blanc') startExamenBlanc();
     else lancerQuizDepuisChapitre(quiz.matId, quiz.chapitreId);
@@ -713,12 +691,12 @@ async function loadData() {
   try {
     const res = await fetch('troisieme.json');
     if (res.ok) { AppState.data = await res.json(); return true; }
-  } catch(e) { console.warn("Fichier troisieme.json non trouvé. Repli autonome."); }
+  } catch(e) { console.warn("troisieme.json non trouvé. Mode autonome."); }
   AppState.data = {
-    matieres: [
-      { id: 'maths', label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99',
-        chapitres: [{ id: 'maths_01', titre: '⚡ Exercices variés DNB 2026', fiche: 'Maths, Physique, Français.', quiz: [] }] }
-    ]
+    matieres: [{
+      id:'maths', label:'Mathématiques', emoji:'📐', couleur:'#3D5A99',
+      chapitres:[{id:'maths_01', titre:'⚡ Exercices variés DNB 2026', fiche:'Maths, Physique, Français.', quiz:[]}]
+    }]
   };
   return true;
 }
@@ -735,7 +713,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const closeBtn = document.getElementById('quiz-close-btn');
   if (closeBtn) {
-    const execFermeture = (e) => { e.preventDefault(); fermerModaleQuiz(); };
+    const execFermeture = e => { e.preventDefault(); fermerModaleQuiz(); };
     closeBtn.addEventListener('click', execFermeture);
     closeBtn.addEventListener('touchstart', execFermeture, { passive: false });
   }
@@ -746,9 +724,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     else terminerSessionQuiz();
   });
 
-  document.getElementById('btn-settings')?.addEventListener('click', () => {
-    document.getElementById('modal-api')?.classList.remove('hidden');
-  });
+  document.getElementById('btn-settings')?.addEventListener('click', () => document.getElementById('modal-api')?.classList.remove('hidden'));
   document.getElementById('close-modal-api')?.addEventListener('click', () => document.getElementById('modal-api').classList.add('hidden'));
   document.getElementById('btn-skip-api')?.addEventListener('click', () => document.getElementById('modal-api').classList.add('hidden'));
 
@@ -762,7 +738,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ─────────────────────────────────────────────────────────────
 function shuffleArr(arr) {
   const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  for (let i = a.length - 1; i > 0; i--) { const j = ~~(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
 function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
