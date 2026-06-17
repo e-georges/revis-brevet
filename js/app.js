@@ -9,6 +9,15 @@ import {
     getMessageMotivation
 } from './adaptive-engine.js';
 
+import {
+    selectionnerQuestionsVariees,
+    genererEtCacherQuestions,
+    getQuestionsCache,
+    getCacheStats,
+    viderCache,
+    shuffleAllOptions
+} from './question-engine.js';
+
 // ── ÉTAT GLOBAL ──────────────────────────────────────────────
 const AppState = {
     data: null,
@@ -264,6 +273,20 @@ function renderAutomatismes() {
             <strong>⚠️ Format 2026 :</strong> 20 questions en 20 minutes, SANS calculatrice. 1 minute maximum par question. Si tu bloques → PASSE et reviens !
         </div>
 
+        <div id="cache-ia-section" style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:10px;padding:14px;margin-bottom:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div>
+                    <strong style="color:#166534;font-size:0.9rem;">🤖 Questions IA illimitées</strong>
+                    <p style="font-size:0.8rem;color:#166534;margin-top:2px;" id="cache-status">Chargement du cache...</p>
+                </div>
+                <button id="btn-generer-ia-auto" style="background:#166534;color:white;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600;">✨ Générer 15 questions IA</button>
+            </div>
+            <div id="ia-key-zone" hidden style="margin-top:10px;">
+                <input type="password" id="ia-api-key-auto" placeholder="Clé API Claude (sk-ant-...)" style="width:100%;padding:8px;border:1px solid #86EFAC;border-radius:6px;font-size:0.85rem;background:white;">
+                <button id="btn-confirmer-ia-auto" style="margin-top:8px;background:#166534;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:0.85rem;">Générer →</button>
+            </div>
+        </div>
+
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;">
             <button id="btn-lancer-auto-5" style="background:#3D5A99;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;">🎯 Entraînement 5 questions</button>
             <button id="btn-lancer-auto-10" style="background:#2EC4B6;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:600;">🚀 Session 10 questions</button>
@@ -292,13 +315,60 @@ function renderAutomatismes() {
     document.getElementById("btn-lancer-auto-5").addEventListener("click", () => startQuizAutomatismes(5));
     document.getElementById("btn-lancer-auto-10").addEventListener("click", () => startQuizAutomatismes(10));
     document.getElementById("btn-lancer-auto-20").addEventListener("click", () => startQuizAutomatismes(20));
+
+    // Afficher les stats du cache IA
+    const stats = getCacheStats();
+    const statusEl = document.getElementById("cache-status");
+    if (statusEl) {
+        const cacheAuto = getQuestionsCache('maths_auto');
+        statusEl.textContent = cacheAuto.length > 0
+            ? `✅ ${cacheAuto.length} questions IA en cache — variété maximale garantie`
+            : `Aucune question IA en cache. Génère-en pour des questions illimitées !`;
+    }
+
+    document.getElementById("btn-generer-ia-auto").addEventListener("click", () => {
+        const apiKey = localStorage.getItem("rb_claude_key") || "";
+        if (apiKey) {
+            lancerGenerationIA(apiKey);
+        } else {
+            document.getElementById("ia-key-zone").hidden = false;
+        }
+    });
+
+    document.getElementById("btn-confirmer-ia-auto")?.addEventListener("click", () => {
+        const key = document.getElementById("ia-api-key-auto").value.trim();
+        if (!key) return alert("Entre ta clé API Claude.");
+        localStorage.setItem("rb_claude_key", key);
+        document.getElementById("ia-key-zone").hidden = true;
+        lancerGenerationIA(key);
+    });
+
+    async function lancerGenerationIA(apiKey) {
+        const btn = document.getElementById("btn-generer-ia-auto");
+        const statusEl = document.getElementById("cache-status");
+        btn.disabled = true;
+        btn.textContent = "⏳ Génération en cours...";
+        try {
+            const qs = await genererEtCacherQuestions('maths_auto', 'Automatismes mathématiques DNB 2026', 'Mathématiques', 2, apiKey, 15);
+            statusEl.textContent = `✅ ${qs.length} questions générées et mises en cache !`;
+            btn.textContent = "✅ Questions générées !";
+        } catch(e) {
+            statusEl.textContent = `❌ Erreur : ${e.message}`;
+            btn.textContent = "✨ Réessayer";
+            btn.disabled = false;
+        }
+    }
 }
 
 function startQuizAutomatismes(nb) {
     const maths = AppState.data.matieres.find(m => m.id === 'maths');
     const chapAuto = maths?.chapitres.find(c => c.id === 'maths_auto');
     if (!chapAuto) return;
-    const questions = selectionnerQuestionsAdaptatives(chapAuto.quiz, 'maths_auto', nb);
+    const niveau = getNiveauActuel('maths_auto');
+
+    // Pour les automatismes : PRIORITÉ aux questions mutées (illimitées)
+    const questions = selectionnerQuestionsVariees('maths_auto', chapAuto.quiz, niveau, nb);
+
     AppState.currentQuiz = {
         chapitreId: 'maths_auto', questions, currentIndex: 0,
         score: 0, modeInfini: false, modeAuto: true, historique: []
@@ -363,7 +433,8 @@ function renderMatiereView(matId) {
                 <button class="btn-quiz" style="background:#3D5A99;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem;">
                     🎯 ${estAuto ? 'Entraînement automatismes' : 'Lancer le quiz adaptatif'}
                 </button>
-                ${stat !== "acquis" ? `<button class="btn-acquis" style="background:none;border:1px solid #2EC4B6;color:#2EC4B6;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:0.8rem;">✓ Marquer acquis</button>` : ''}
+                <button class="btn-enrichir" data-chap="${chap.id}" data-titre="${chap.titre.replace(/"/g,'')}" data-mat="${mat.label}" title="Générer 15 nouvelles questions avec Claude IA" style="background:none;border:1px solid #7C3AED;color:#7C3AED;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:0.8rem;">🤖 +IA</button>
+                ${stat !== "acquis" ? `<button class="btn-acquis" style="background:none;border:1px solid #2EC4B6;color:#2EC4B6;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:0.8rem;">✓ Acquis</button>` : ''}
             </div>
         `;
 
@@ -377,6 +448,28 @@ function renderMatiereView(matId) {
             updateGlobalProgressRing();
         });
 
+        const btnEnrichir = card.querySelector(".btn-enrichir");
+        if (btnEnrichir) btnEnrichir.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const apiKey = localStorage.getItem("rb_claude_key") || prompt("Clé API Claude (sk-ant-...) :");
+            if (!apiKey) return;
+            localStorage.setItem("rb_claude_key", apiKey);
+            btnEnrichir.textContent = "⏳...";
+            btnEnrichir.disabled = true;
+            try {
+                const niveau = getNiveauActuel(chap.id);
+                const qs = await genererEtCacherQuestions(
+                    chap.id, chap.titre, mat.label, niveau, apiKey, 15
+                );
+                showToast(`✅ ${qs.length} nouvelles questions IA ajoutées pour "${chap.titre.substring(0,25)}..." !`);
+                btnEnrichir.textContent = `🤖 +${qs.length} IA`;
+            } catch(err) {
+                showToast(`❌ ${err.message}`);
+                btnEnrichir.textContent = "🤖 +IA";
+                btnEnrichir.disabled = false;
+            }
+        });
+
         list.appendChild(card);
     });
 }
@@ -384,7 +477,14 @@ function renderMatiereView(matId) {
 // ── MOTEUR QUIZ ───────────────────────────────────────────────
 function startQuizAdaptatif(chap) {
     if (!chap.quiz?.length) return alert("Aucune question disponible.");
-    const questions = selectionnerQuestionsAdaptatives(chap.quiz, chap.id, 5);
+    const niveau = getNiveauActuel(chap.id);
+
+    // Moteur de diversification :
+    // 1. Questions JSON de base avec rotation des options
+    // 2. Questions mutées (nombres aléatoires pour les maths)
+    // 3. Questions en cache Claude API (si disponibles)
+    const questions = selectionnerQuestionsVariees(chap.id, chap.quiz, niveau, 5);
+
     AppState.currentQuiz = {
         chapitreId: chap.id, questions,
         currentIndex: 0, score: 0, modeInfini: false, historique: []
