@@ -1736,126 +1736,159 @@ const FICHES = {
     {icon:"💡",label:"Identités remarquables",formule:"(a+b)² = a²+2ab+b²   |   (a-b)² = a²-2ab+b²   |   (a+b)(a-b) = a²-b²"},
     {icon:"⚠️",label:"Piège classique",contenu:"√(a+b) ≠ √a+√b. La racine ne se distribue PAS sur une addition.",piege:true}
   ]},
-  maths_eq:{titre:"Équations",sections:[
+  maths_03:{titre:"Équations",sections:[
     {icon:"📐",label:"Résoudre ax+b=c",contenu:"1) ax = c−b. 2) x = (c−b)/a."},
     {icon:"💡",label:"Formule",formule:"ax + b = c  →  x = (c−b) / a"},
     {icon:"📝",label:"Exemple",contenu:"3x + 5 = 17 → 3x = 12 → x = 4. Vérif : 3×4+5=17 ✓"},
     {icon:"⚠️",label:"Piège inéquation",contenu:"Division par un nombre négatif → le sens de l'inégalité s'inverse.",piege:true}
   ]},
-  maths_pythagore:{titre:"Théorème de Pythagore",sections:[
+  maths_04:{titre:"Théorème de Pythagore",sections:[
     {icon:"📐",label:"Énoncé",contenu:"Dans un triangle rectangle, hyp² = côté1² + côté2²."},
     {icon:"💡",label:"Formule",formule:"hyp² = a² + b²   →   hyp = √(a² + b²)"},
     {icon:"📝",label:"Triplets classiques",contenu:"(3,4,5) — (5,12,13) — (6,8,10) — (8,15,17)"},
     {icon:"⚠️",label:"Piège",contenu:"L'hypoténuse est TOUJOURS opposée à l'angle droit — le plus long côté.",piege:true}
   ]},
-  maths_thales:{titre:"Théorème de Thalès",sections:[
-    {icon:"📐",label:"Énoncé",contenu:"Si deux droites sécantes sont coupées par deux parallèles, les rapports des longueurs correspondantes sont égaux."},
-    {icon:"💡",label:"Formule",formule:"AM/AB = AN/AC = MN/BC"},
-    {icon:"📝",label:"Méthode",contenu:"1) Identifier les parallèles. 2) Écrire les rapports. 3) Produit en croix."},
-    {icon:"⚠️",label:"Piège",contenu:"Vérifier que les points sont dans le bon ordre sur chaque droite.",piege:true}
-  ]},
-  maths_fonctions:{titre:"Fonctions linéaires et affines",sections:[
+  maths_05:{titre:"Fonctions linéaires et affines",sections:[
     {icon:"📐",label:"Définitions",contenu:"Linéaire : f(x)=ax (passe par l'origine). Affine : f(x)=ax+b. a = coefficient directeur, b = ordonnée à l'origine."},
     {icon:"💡",label:"Formule",formule:"f(x) = ax + b   |   a = (y2−y1)/(x2−x1)"},
     {icon:"⚠️",label:"Piège",contenu:"Fonction linéaire passe OBLIGATOIREMENT par (0,0). Si b≠0 → affine.",piege:true}
   ]},
-  maths_stats:{titre:"Statistiques",sections:[
+  maths_06:{titre:"Statistiques",sections:[
     {icon:"📐",label:"Indicateurs",contenu:"Moyenne = somme ÷ n. Médiane = valeur centrale (série ordonnée). Étendue = max − min."},
     {icon:"💡",label:"Formule moyenne",formule:"Moyenne = (Σ xi × ni) / N"},
     {icon:"⚠️",label:"Piège",contenu:"Médiane ≠ Moyenne. La médiane est insensible aux valeurs extrêmes.",piege:true}
   ]},
-  francais_lecture:{titre:"Compréhension & Lecture",sections:[
+  fr_01:{titre:"Compréhension & Lecture",sections:[
     {icon:"📖",label:"Types de textes",contenu:"Narratif, Descriptif, Argumentatif, Explicatif, Injonctif."},
     {icon:"💡",label:"Analyser un texte",contenu:"1) Qui parle ? 2) De quoi ? 3) Comment ? (procédés). 4) Pour quoi faire ? (visée)."},
     {icon:"⚠️",label:"Piège",contenu:"Auteur (réel) ≠ Narrateur (voix fictive dans le texte).",piege:true}
   ]},
-  francais_grammaire:{titre:"Grammaire & Orthographe",sections:[
+  fr_02:{titre:"Grammaire & Orthographe",sections:[
     {icon:"📐",label:"Nature vs Fonction",contenu:"Nature = ce qu'est le mot (nom, verbe...). Fonction = ce qu'il fait (sujet, COD...)."},
     {icon:"💡",label:"Accord participe passé",formule:"Avec Être → accord sujet | Avec Avoir → accord COD si avant"},
     {icon:"⚠️",label:"Piège",contenu:"'Elle s'est lavé les mains' (COD après → pas d'accord). 'Les mains qu'elle s'est lavées' (COD avant → accord).",piege:true}
   ]},
-  francais_figures:{titre:"Figures de style",sections:[
-    {icon:"📖",label:"Les 6 essentielles",contenu:"Métaphore (sans outil), Comparaison (avec 'comme'), Hyperbole (exagération), Personnification, Litote (dire moins), Antithèse (opposition)."},
-    {icon:"💡",label:"Méthode",formule:"Identifier → Nommer → Interpréter l'effet"},
-    {icon:"⚠️",label:"Piège",contenu:"'Rapide comme l'éclair' = comparaison ('comme'). 'C'est un éclair' = métaphore.",piege:true}
-  ]},
-  francais_redaction:{titre:"Rédaction",sections:[
+  fr_04:{titre:"Rédaction",sections:[
     {icon:"📝",label:"Paragraphe",contenu:"1) Idée directrice. 2) Développement. 3) Exemple. 4) Conclusion partielle."},
     {icon:"💡",label:"Connecteurs logiques",contenu:"Cause: car, parce que. Conséquence: donc, c'est pourquoi. Opposition: mais, cependant. Addition: de plus."},
     {icon:"⚠️",label:"Piège",contenu:"Éviter 'je pense que'. Préférer 'Il apparaît que', 'On peut affirmer que'.",piege:true}
   ]},
-  hg_ww1:{titre:"1ère Guerre Mondiale",sections:[
+  hg_01:{titre:"1ère Guerre Mondiale",sections:[
     {icon:"🌍",label:"Dates clés",contenu:"1914 : attentat Sarajevo (28 juin), déclaration guerre. 1916 : Verdun. 1917 : USA + révolution russe. 1918 : armistice (11 nov)."},
     {icon:"💡",label:"Chiffres",formule:"~18 millions de morts | 4 ans de conflit | Génocide arménien 1915"},
     {icon:"⚠️",label:"Piège",contenu:"1918 = armistice (cessez-le-feu) ≠ 1919 = Traité de Versailles (paix officielle).",piege:true}
   ]},
-  hg_ww2:{titre:"2ème Guerre Mondiale",sections:[
+  hg_02:{titre:"2ème Guerre Mondiale",sections:[
     {icon:"🌍",label:"Dates clés",contenu:"1939 : invasion Pologne. 1940 : chute France, appel 18 juin. 1941 : Pearl Harbor. 1944 : Débarquement. 1945 : capitulations."},
     {icon:"💡",label:"La Shoah",formule:"~6 millions de victimes | Solution finale 1942 | Auschwitz, Treblinka..."},
     {icon:"⚠️",label:"Piège",contenu:"Camp de concentration (travail forcé) ≠ camp d'extermination (mort immédiate).",piege:true}
   ]},
-  hg_geo:{titre:"Géographie — Mondialisation",sections:[
+  hg_05:{titre:"Géographie — Mondialisation",sections:[
     {icon:"🌍",label:"Définition",contenu:"Intensification des échanges à l'échelle mondiale depuis les années 1980."},
     {icon:"💡",label:"Acteurs",contenu:"FMN, États, ONG, ONU, OMC, FMI. Métropoles mondiales : New York, Londres, Tokyo."},
     {icon:"⚠️",label:"Piège",contenu:"La mondialisation creuse les inégalités. BRICS = émergents (Brésil, Russie, Inde, Chine, Afrique du Sud).",piege:true}
   ]},
-  hg_republique:{titre:"La République française",sections:[
+  hg_03:{titre:"La République française",sections:[
     {icon:"🏙️",label:"Les Républiques",contenu:"Ire (1792), IIe (1848), IIIe (1870), IVe (1946), Ve (1958-aujourd'hui). Constitution 1958 : De Gaulle."},
     {icon:"💡",label:"Valeurs",formule:"Liberté — Égalité — Fraternité | Laïcité | Démocratie représentative"},
     {icon:"⚠️",label:"Piège",contenu:"Laïcité (loi 1905) ≠ athéisme. Séparation État/Églises, pas interdiction de religion.",piege:true}
   ]},
-  pc_electricite:{titre:"Électricité — Loi d'Ohm",sections:[
+  pc_01:{titre:"Électricité — Loi d'Ohm",sections:[
     {icon:"⚡",label:"Loi d'Ohm",contenu:"U = tension (V), R = résistance (Ω), I = intensité (A)."},
     {icon:"💡",label:"Formule",formule:"U = R × I   |   R = U/I   |   I = U/R"},
     {icon:"📝",label:"Triangle URi",contenu:"U en haut, R et I en bas. Couvrir la grandeur cherchée pour trouver la formule."},
     {icon:"⚠️",label:"Piège circuit",contenu:"Série : même intensité, tensions s'additionnent. Parallèle : même tension, intensités s'additionnent.",piege:true}
   ]},
-  pc_energie:{titre:"Énergie et puissance",sections:[
+  pc_04:{titre:"Énergie et puissance",sections:[
     {icon:"⚡",label:"Définitions",contenu:"Puissance P (Watts) = énergie/seconde. Énergie E (Joules ou kWh) = puissance × durée."},
     {icon:"💡",label:"Formules",formule:"P = U × I (W)   |   E = P × t (J)   |   1 kWh = 3 600 000 J"},
     {icon:"⚠️",label:"Piège",contenu:"Puissance (W) ≠ Énergie (J ou kWh). La puissance est un débit, l'énergie une quantité.",piege:true}
   ]},
-  pc_chimie:{titre:"Chimie — Atomes",sections:[
+  pc_02:{titre:"Chimie — Atomes",sections:[
     {icon:"⚗️",label:"Structure",contenu:"Noyau (protons+, neutrons) + électrons (−). Z = nb protons = nb électrons (neutre)."},
     {icon:"💡",label:"Molécules courantes",formule:"H₂O | CO₂ | O₂ | NaCl | H₂SO₄"},
     {icon:"⚠️",label:"Piège",contenu:"Atome O ≠ molécule O₂. Ne pas confondre indices dans les formules.",piege:true}
   ]},
-  pc_optique:{titre:"Optique — Lumière",sections:[
+  pc_03:{titre:"Optique — Lumière",sections:[
     {icon:"🔭",label:"Propagation",contenu:"Lumière en ligne droite. Vitesse dans le vide : c = 3×10⁸ m/s."},
     {icon:"💡",label:"Réfraction (Snell-Descartes)",formule:"n₁ × sin(i₁) = n₂ × sin(i₂)"},
     {icon:"⚠️",label:"Piège",contenu:"Réflexion (rebond) ≠ réfraction (changement direction). Angle réflexion = angle incidence.",piege:true}
   ]},
-  svt_genetique:{titre:"Génétique",sections:[
+  svt_01:{titre:"Génétique",sections:[
     {icon:"🧬",label:"Vocabulaire",contenu:"Gène = portion ADN. Allèle = version d'un gène. Génotype = constitution génétique. Phénotype = caractère observable."},
     {icon:"💡",label:"Dominance",formule:"AA ou Aa → phénotype dominant | aa → phénotype récessif"},
     {icon:"📝",label:"Tableau de Punnett",contenu:"Aa × Aa : AA(25%), Aa(50%), aa(25%). 75% dominant, 25% récessif."},
     {icon:"⚠️",label:"Piège",contenu:"Hétérozygote (Aa) a le phénotype dominant MAIS porte l'allèle récessif.",piege:true}
   ]},
-  svt_cellule:{titre:"La cellule",sections:[
-    {icon:"🧬",label:"Structure",contenu:"Membrane, cytoplasme, noyau (ADN). Cellule végétale : + paroi + chloroplastes + vacuole."},
-    {icon:"💡",label:"ADN → Protéine",formule:"ADN → ARN (transcription) → Protéine (traduction) | A-T et G-C"},
-    {icon:"⚠️",label:"Piège",contenu:"Méiose (gamètes, 23 chr) ≠ Mitose (cellules somatiques, 46 chr).",piege:true}
-  ]},
-  svt_ecosysteme:{titre:"Écosystèmes",sections:[
+  svt_04:{titre:"Écosystèmes",sections:[
     {icon:"🌿",label:"Chaîne alimentaire",contenu:"Producteur → Consommateur 1er ordre → Consommateur 2e ordre → Décomposeur."},
     {icon:"💡",label:"Photosynthèse",formule:"6CO₂ + 6H₂O + lumière → C₆H₁₂O₆ + 6O₂"},
     {icon:"⚠️",label:"Piège",contenu:"La photosynthèse a lieu dans les chloroplastes. Les plantes respirent AUSSI.",piege:true}
   ]},
-  svt_corps:{titre:"Corps humain & Santé",sections:[
+  svt_02:{titre:"Corps humain & Santé",sections:[
     {icon:"�ꮀ",label:"Systèmes",contenu:"Circulatoire, Respiratoire, Digestif, Nerveux, Immunitaire."},
     {icon:"💡",label:"Immunité",formule:"1ère ligne: peau | 2ème: phagocytose | 3ème: anticorps spécifiques"},
     {icon:"⚠️",label:"Piège",contenu:"Anticorps ≠ antidote. Anticorps produits par l'organisme, spécifiques à UN antigène.",piege:true}
   ]},
-  svt_evolution:{titre:"Évolution",sections:[
-    {icon:"🦴",label:"Darwin",contenu:"Sélection naturelle (1859) : individus les mieux adaptés survivent et se reproduisent."},
-    {icon:"💡",label:"Preuves",contenu:"Fossiles, homologie structures, similitudes ADN, embryologie comparée."},
-    {icon:"⚠️",label:"Piège",contenu:"L'évolution n'a pas de 'but'. Pas d'organismes 'parfaits', juste suffisamment adaptés.",piege:true}
-  ]},
-  svt_reproduction:{titre:"Reproduction",sections:[
+  svt_05:{titre:"Reproduction",sections:[
     {icon:"🧬",label:"Méiose",contenu:"46 chromosomes → 4 gamètes à 23. Fécondation : 23+23 = 46 (zygote)."},
     {icon:"💡",label:"Cycle menstruel",formule:"~28 jours | Ovulation J14 | Endomètre préparé | Menstruations si pas grossesse"},
     {icon:"⚠️",label:"Piège",contenu:"Méiose (23 chr, reproduction) ≠ Mitose (46 chr, croissance).",piege:true}
   ]}
+  // ── FICHES SUPPLÉMENTAIRES ────────────────────────────────
+  maths_02:{titre:"Nombres et calculs",sections:[
+    {icon:"📐",label:"Puissances",contenu:"aⁿ = a×a×...×a (n fois). Règles : aᵐ×aⁿ = aᵐ⁺ⁿ, aᵐ÷aⁿ = aᵐ⁻ⁿ, (aᵐ)ⁿ = aᵐⁿ. a⁰=1, a⁻ⁿ=1/aⁿ."},
+    {icon:"💡",label:"Notation scientifique",formule:"a × 10ⁿ avec 1 ≤ a < 10"},
+    {icon:"📝",label:"Fractions",contenu:"a/b ÷ c/d = a/b × d/c. Comparer : même dénominateur ou produit en croix."},
+    {icon:"⚠️",label:"Piège",contenu:"√(a+b) ≠ √a+√b. Priorités : ( ) → puissances → ×÷ → +−.",piege:true}
+  ]},
+  maths_07:{titre:"Géométrie dans l'espace",sections:[
+    {icon:"📐",label:"Formules de volumes",contenu:"Cube : a³. Pavé : L×l×h. Cylindre : π×r²×h. Pyramide : (B×h)/3. Cône : (π×r²×h)/3. Sphère : (4/3)×π×r³."},
+    {icon:"💡",label:"Conversions volumes",formule:"1 m³ = 1000 L = 1 000 000 cm³   |   1 L = 1 dm³"},
+    {icon:"⚠️",label:"Piège",contenu:"Ces formules ne sont PAS données au brevet — les apprendre par cœur !",piege:true}
+  ]},
+  maths_08:{titre:"Algorithmique Python",sections:[
+    {icon:"💻",label:"Instructions de base",contenu:"print() = afficher. input() = saisie. if/elif/else = condition. for i in range(n) = boucle n fois. while = boucle tant que. def = définir une fonction."},
+    {icon:"💡",label:"Exemple de boucle",formule:"for i in range(5): print(i)  → affiche 0,1,2,3,4"},
+    {icon:"📝",label:"Méthode",contenu:"Tracer le programme étape par étape, noter la valeur de chaque variable à chaque ligne."},
+    {icon:"⚠️",label:"Piège",contenu:"range(n) va de 0 à n-1 (pas de 1 à n). L'indentation est OBLIGATOIRE en Python.",piege:true}
+  ]},
+  fr_03:{titre:"Orthographe et dictée",sections:[
+    {icon:"📝",label:"Accord participe passé",contenu:"Avec ÊTRE → accord sujet. Avec AVOIR → accord COD si placé AVANT. Sans COD avant → invariable."},
+    {icon:"💡",label:"Homophones piégeux",formule:"a/à — est/et/es — son/sont — ces/ses — ou/où — mais/mes — on/ont"},
+    {icon:"⚠️",label:"Piège classique",contenu:"'Elle a mangé les pommes' (COD après = pas d'accord). 'Les pommes qu'elle a mangées' (COD avant = accord).",piege:true}
+  ]},
+  hg_04:{titre:"Géographie — France et territoires",sections:[
+    {icon:"🌍",label:"Organisation",contenu:"13 régions métropolitaines + 5 régions ultramarines (DOM) depuis 2016. 3 grandes métropoles : Paris, Lyon, Marseille."},
+    {icon:"💡",label:"Métropolisation",formule:"Concentration des populations et activités dans les grandes villes"},
+    {icon:"📝",label:"DOM-ROM",contenu:"Guadeloupe, Martinique, Guyane, La Réunion, Mayotte. Même lois que la métropole."},
+    {icon:"⚠️",label:"Piège",contenu:"18 régions au total (13 métro + 5 ultra-marine) ≠ 22 (avant 2016).",piege:true}
+  ]},
+  hg_05:{titre:"Géographie mondiale",sections:[
+    {icon:"🌍",label:"IDH",contenu:"Indice de Développement Humain : niveau de vie + éducation + espérance de vie. Varie de 0 à 1."},
+    {icon:"💡",label:"BRICS",formule:"Brésil — Russie — Inde — Chine — Afrique du Sud (pays émergents)"},
+    {icon:"📝",label:"Développement durable",contenu:"Répondre aux besoins présents sans compromettre les générations futures (Brundtland 1987). 3 piliers : économique, social, environnemental."},
+    {icon:"⚠️",label:"Piège",contenu:"PIB ≠ IDH. Un pays peut avoir un PIB élevé mais un IDH faible (inégalités internes).",piege:true}
+  ]},
+  hg_06:{titre:"EMC — Citoyenneté et démocratie",sections:[
+    {icon:"🏛️",label:"Valeurs républicaines",formule:"Liberté — Égalité — Fraternité | Laïcité | Démocratie"},
+    {icon:"💡",label:"Textes fondateurs",contenu:"DDHC 1789 (France), DUDH 1948 (ONU). Droit de vote à 18 ans en France (depuis 1974)."},
+    {icon:"📝",label:"Institutions",contenu:"Président (5 ans), Premier ministre, Assemblée nationale (577 députés), Sénat (348 sénateurs)."},
+    {icon:"⚠️",label:"Piège",contenu:"DDHC (1789, France) ≠ DUDH (1948, ONU). Laïcité ≠ athéisme — c'est la neutralité de l'État.",piege:true}
+  ]},
+  svt_03:{titre:"Nutrition et digestion",sections:[
+    {icon:"🫀",label:"Nutriments",contenu:"Glucides (énergie rapide), Lipides (réserves), Protéines (construction). + Vitamines, Minéraux, Eau."},
+    {icon:"💡",label:"Trajet digestif",formule:"Bouche → Œsophage → Estomac → Intestin grêle (absorption) → Gros intestin → Rectum"},
+    {icon:"📝",label:"Enzymes clés",contenu:"Amylase salivaire (bouche, amidon), Pepsine (estomac, protéines), Lipase (intestin, graisses)."},
+    {icon:"⚠️",label:"Piège",contenu:"L'absorption se fait dans l'INTESTIN GRÊLE (pas l'estomac). L'estomac dégrade principalement les protéines.",piege:true}
+  ]},
+  svt_06:{titre:"Géologie — Tectonique des plaques",sections:[
+    {icon:"🌍",label:"Structure Terre",contenu:"Croûte (0-30 km) → Manteau (30-2900 km) → Noyau externe liquide → Noyau interne solide."},
+    {icon:"💡",label:"Mouvements des plaques",formule:"Divergence (écartement, dorsales) | Convergence (subduction, montagnes) | Coulissage"},
+    {icon:"📝",label:"Séisme",contenu:"Foyer = point de rupture en profondeur. Épicentre = projection à la surface. Magnitude = Richter."},
+    {icon:"⚠️",label:"Piège",contenu:"Foyer (en profondeur) ≠ Épicentre (en surface). C'est l'épicentre qui est le plus secoué.",piege:true}
+  ]},
+
 };
 
 // ── FONCTIONS FICHE ──────────────────────────────────────────
