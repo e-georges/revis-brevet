@@ -1,53 +1,15 @@
-/* --- Bouton d'indice et Carnet d'erreurs --- */
-.btn-indice {
-  background: #FEF3C7;
-  color: #92400E;
-  border: 1px solid #FCD34D;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s;
-}
-.btn-indice:hover {
-  background: #FDE68A;
-}
-
-/* Badge spécial pour le carnet d'erreurs */
-.nav-item-danger {
-  background: rgba(232, 72, 85, 0.1) !important;
-  color: #E84855 !important;
-  border-radius: 6px;
-  margin-top: 4px;
-}
-.nav-item-danger.active, .nav-item-danger:hover {
-  background: #E84855 !important;
-  color: white !important;
-}
-
-/* Animation en cas d'erreur */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  75% { transform: translateX(6px); }
-}
-.shake {
-  animation: shake 0.3s ease-in-out;
-}
-
-/* Zone d'indice discrète */
-.indice-box {
-  background: #FFFBEB;
-  border-left: 4px solid #F59E0B;
-  padding: 10px;
-  border-radius: 4px;
-  margin: 10px 0;
-  font-size: 0.82rem;
-  color: #78350F;
-  animation: fadeIn 0.3s ease;
-}
+<div id="modal-api" class="modal-overlay hidden">
+  <div class="modal-content" style="max-width:450px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">⚡ Moteur Autonome Actif</h3>
+      <button id="close-modal-api" class="btn-icon">×</button>
+    </div>
+    <p style="font-size:.88rem;color:var(--text-secondary);line-height:1.5;margin-bottom:12px;">
+      Cette application n'utilise aucune clé API payante. Les questions sont générées en temps réel et de manière illimitée par un algorithme d'automatismes locaux.
+    </p>
+    <div style="background:#EEF2FF;border-left:4px solid var(--color-primary);border-radius:4px;padding:12px;font-size:.82rem;color:#1E3A8A;margin-bottom:16px;line-height:1.5;">
+      🧠 <b>Comment ça marche ?</b> À chaque nouvelle série, l'application modifie les variables, les formules et les phrases pour que le quiz soit toujours inédit !
+    </div>
+    <button id="btn-skip-api" class="btn-primary" style="width:100%;">Génial, j'ai compris !</button>
+  </div>
+</div>
