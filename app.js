@@ -43,7 +43,7 @@ const Mutations = {
     const triplets = [[3,4,5], [5,12,13], [6,8,10], [9,12,15]];
     const [a, b, c] = triplets[Math.floor(Math.random() * triplets.length)];
     const opts = [`A) ${c} cm`, `B) ${a + b} cm`, `C) ${c + 2} cm`, `D) ${c * c} cm`];
-    return { enonce: `Un triangle rectangle possède des côtés de ${a} cm et ${b} cm. Combien mesure son hypoténuse ?`, options: opts, bonne_reponse: 0, explication: `D'après Pythagore : c² = ${a}² + ${b}² = ${a*a} + ${b*b} = ${c*c}. Donc c = √${c*c} = ${c} cm.`, niveau: 3, indice: "L'hypoténuse est le côté le plus long opposé à l'angle droit. Applique la formule de la somme des carrés.", theme_auto: "Maths : Pythagore" };
+    return { enonce: `Un triangle rectangle possède des côtés de ${a} cm and ${b} cm. Combien mesure son hypoténuse ?`, options: opts, bonne_reponse: 0, explication: `D'après Pythagore : c² = ${a}² + ${b}² = ${a*a} + ${b*b} = ${c*c}. Donc c = √${c*c} = ${c} cm.`, niveau: 3, indice: "L'hypoténuse est le côté le plus long opposé à l'angle droit. Applique la formule de la somme des carrés.", theme_auto: "Maths : Pythagore" };
   },
   loi_ohm() {
     const r = [10, 20, 50, 100][Math.floor(Math.random() * 4)];
@@ -63,7 +63,7 @@ const Mutations = {
 };
 
 function genererSerieAleatoire(chapId, baseQuiz = [], taille = 5) {
-  let depar = [...baseQuiz];
+  let depar = Array.isArray(baseQuiz) ? [...baseQuiz] : [];
   const clesMutations = Object.keys(Mutations);
   while (depar.length < taille) {
     const clé = clesMutations[Math.floor(Math.random() * clesMutations.length)];
@@ -170,8 +170,15 @@ function renderMatiere(matId) {
     card.innerHTML = `
       <h4>${chap.titre}</h4>
       <p style="font-size:.8rem;color:var(--text-secondary);margin:4px 0 10px 0;">${chap.fiche}</p>
-      <button class="btn-primary" onclick="lancerQuizDepuisChapitre('${mat.id}', '${chap.id}')">🎯 Commencer la série</button>
+      <button class="btn-primary id-trigger-btn">🎯 Commencer la série</button>
     `;
+    
+    // CORRECTION : Écouteur d'événement robuste en JS pur plutôt que l'attribut onclick HTML
+    // pour éviter les plantages dus aux caractères spéciaux ou guillemets complexes
+    card.querySelector('.id-trigger-btn').addEventListener('click', () => {
+      lancerQuizDepuisChapitre(mat.id, chap.id);
+    });
+    
     document.getElementById('chapitres-list').appendChild(card);
   });
 }
@@ -203,15 +210,17 @@ function renderProgramme() {
   document.getElementById('app-view-container').innerHTML = `<h2>📅 Programme d'études</h2><p style="color:var(--text-secondary);">Le planning d'entraînement automatisé s'adapte à ton rythme.</p>`;
 }
 
-// ── CONTRÔLEUR DE QUIZ ET VERROUILLAGE PÉDAGOGIQUE ──────────────
+// ── CONTRÔLEUR DE QUIZ CORRIGÉ (SÉCURISÉ ET TOLÉRANT) ──────────────
 function lancerQuizDepuisChapitre(matId, chapId) {
-  const mat = AppState.data.matieres.find(m => m.id === matId);
-  const chap = mat?.chapitres.find(c => c.id === chapId);
+  const mat = AppState.data?.matieres?.find(m => m.id === matId);
+  const chap = mat?.chapitres?.find(c => c.id === chapId);
+  
   const baseQuiz = chap?.quiz || [];
+  const nomMatiere = mat ? mat.label : "Révision";
 
   AppState.quiz = {
     chapitreId: chapId,
-    matLabel: mat?.label || '',
+    matLabel: nomMatiere,
     questions: genererSerieAleatoire(chapId, baseQuiz, 5),
     index: 0,
     score: 0,
@@ -219,8 +228,20 @@ function lancerQuizDepuisChapitre(matId, chapId) {
     estRattrapage: false
   };
 
+  if (!AppState.quiz.questions || AppState.quiz.questions.length === 0) {
+    AppState.quiz.questions = genererSerieAleatoire(chapId, SECOURS, 5);
+  }
+
+  // Mélanger les options de chaque question pour avoir de la nouveauté
+  AppState.quiz.questions = AppState.quiz.questions.map(q => melangerOptions(q));
+
   afficherQuestion();
-  document.getElementById('quiz-modal').classList.add('active');
+  
+  const modalQuiz = document.getElementById('quiz-modal');
+  if (modalQuiz) {
+    modalQuiz.classList.add('active');
+    modalQuiz.classList.remove('hidden');
+  }
 }
 
 function startQuizRattrapage() {
