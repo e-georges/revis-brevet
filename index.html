@@ -1,15 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RévisBrevet 2026</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="app-container">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span>🎓 RévisBrevet</span>
+      <button id="theme-toggle" class="btn-icon" title="Mode sombre">🌙</button>
+    </div>
+
+    <div class="user-profile-widget">
+      <div class="profile-avatar-wrapper">
+        <span id="display-avatar">🦊</span>
+      </div>
+      <div class="profile-info">
+        <h3 id="display-username">Élève de 3e</h3>
+        <div class="profile-meta">Brevet des Collèges 2026</div>
+        <div class="streak-badge">🔥 <span id="display-streak">0</span> jours</div>
+      </div>
+    </div>
+
+    <ul class="nav-links" id="sidebar-menu"></ul>
+
+    <div style="margin-top: auto; padding: 10px 0 0 0; border-top: 1px solid var(--border-color); text-align: center;">
+      <button id="btn-settings" style="background: none; border: none; color: var(--text-secondary); font-size: .82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; margin: 0 auto;">
+        ⚙️ Paramètres
+      </button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    
+    <header class="dashboard-header">
+      <div class="header-welcome">
+        <h1>Objectif Mention !</h1>
+        <p>Entraînement quotidien personnalisé pour le Brevet 2026</p>
+      </div>
+      
+      <div class="progress-widget-box">
+        <div class="progress-ring-container">
+          <svg class="progress-ring" width="120" height="120">
+            <circle class="progress-ring-bg" cx="60" cy="60" r="52"></circle>
+            <circle class="progress-ring-circle" id="global-progress-circle" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="progress-ring-text">
+            <span id="global-progress-percent">0</span>%
+          </div>
+        </div>
+        <div class="progress-widget-meta">
+          <h4>Progression globale</h4>
+          <p>Chapitres maîtrisés</p>
+        </div>
+      </div>
+    </header>
+
+    <div id="app-view-container" class="view-container"></div>
+
+  </main>
+</div>
+
 <div id="modal-api" class="modal-overlay hidden">
   <div class="modal-content" style="max-width:450px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <h3 style="color:var(--text-primary);margin:0;display:flex;align-items:center;gap:8px;">⚡ Moteur Autonome Actif</h3>
       <button id="close-modal-api" class="btn-icon">×</button>
     </div>
+    
     <p style="font-size:.88rem;color:var(--text-secondary);line-height:1.5;margin-bottom:12px;">
-      Cette application n'utilise aucune clé API payante. Les questions sont générées en temps réel et de manière illimitée par un algorithme d'automatismes locaux.
+      Cette application n'utilise aucune clé API payante ni connexion distante. Les sessions d'entraînement sont générées à la demande de façon infinie par le moteur local.
     </p>
+    
     <div style="background:#EEF2FF;border-left:4px solid var(--color-primary);border-radius:4px;padding:12px;font-size:.82rem;color:#1E3A8A;margin-bottom:16px;line-height:1.5;">
-      🧠 <b>Comment ça marche ?</b> À chaque nouvelle série, l'application modifie les variables, les formules et les phrases pour que le quiz soit toujours inédit !
+      🧠 <b>Rappel pédagogique :</b> À chaque renouvellement, les variables numériques, les formules et les phrases pièges se modifient pour lutter contre le par cœur !
     </div>
+    
     <button id="btn-skip-api" class="btn-primary" style="width:100%;">Génial, j'ai compris !</button>
   </div>
 </div>
+
+<div id="quiz-modal" class="modal-overlay hidden">
+  <div class="quiz-modal-container">
+    
+    <header class="quiz-modal-header">
+      <span id="quiz-progress" style="font-size: .85rem; font-weight: 600; color: var(--text-secondary);">Question 1/5</span>
+      <button id="quiz-close-btn" class="btn-icon" title="Quitter le quiz">×</button>
+    </header>
+    
+    <div class="quiz-progress-bar-total">
+      <div id="quiz-progress-fill" class="quiz-progress-bar-fill" style="width: 0%;"></div>
+    </div>
+
+    <div class="quiz-body-content">
+      <div id="quiz-question-text" class="quiz-question-text"></div>
+      
+      <div id="quiz-options-container" class="quiz-options-grid"></div>
+      
+      <div id="quiz-explanation" class="quiz-explanation-box hidden">
+        <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+          <span style="font-size: 1.2rem;">💡</span>
+          <h5 style="margin: 0; color: #1E3A8A; font-size: .9rem;">Explication du professeur :</h5>
+        </div>
+        <p id="explanation-text" style="margin: 0; font-size: .85rem; color: #1E40AF; line-height: 1.4;"></p>
+      </div>
+    </div>
+
+    <footer class="quiz-modal-footer">
+      <button id="quiz-next-btn" class="btn-primary hidden" style="margin-left: auto;">
+        Continuer →
+      </button>
+    </footer>
+
+  </div>
+</div>
+
+<div class="mobile-nav-bar">
+  <button onclick="renderDashboard();" class="mobile-nav-btn">🏠<span style="font-size:10px; display:block;">Accueil</span></button>
+  <button onclick="renderProgramme();" class="mobile-nav-btn">📅<span style="font-size:10px; display:block;">Planning</span></button>
+  <button onclick="renderCarnetVue();" class="mobile-nav-btn">📕<span style="font-size:10px; display:block;">Erreurs</span></button>
+  <button id="theme-toggle-mobile" class="mobile-nav-btn">🌙<span style="font-size:10px; display:block;">Thème</span></button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
