@@ -530,6 +530,72 @@ html, body {
   100%{ transform: scale(1); }
 }
 .pop { animation: pop .3s ease; }
+
+/* ── SÉLECTEUR DE NIVEAU ─────────────────────────────────── */
+.niveau-screen {
+  padding: 24px 16px calc(var(--safe-bot) + 100px);
+}
+.niveau-chap-title {
+  font-family: var(--font-h); font-weight: 900; font-size: 1.1rem;
+  color: var(--text); margin-bottom: 6px;
+}
+.niveau-chap-sub {
+  font-size: .82rem; color: var(--muted); margin-bottom: 24px; line-height: 1.4;
+}
+.niveau-grid {
+  display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;
+}
+.btn-niveau {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--card-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 20px;
+  padding: 18px 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow-clay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), border-color .15s, box-shadow .15s;
+  width: 100%;
+  -webkit-appearance: none;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+.btn-niveau:active { transform: scale(0.96); }
+.btn-niveau .niv-icon {
+  width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+.btn-niveau .niv-info { flex: 1; min-width: 0; }
+.btn-niveau .niv-label {
+  font-family: var(--font-h); font-weight: 900; font-size: 1rem;
+  display: block; margin-bottom: 3px;
+}
+.btn-niveau .niv-desc { font-size: .78rem; color: var(--muted); line-height: 1.3; }
+.btn-niveau .niv-status {
+  font-size: .7rem; font-weight: 800; padding: 3px 10px;
+  border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+}
+.btn-niveau.niv-easy   { border-color: rgba(16,185,129,.3); }
+.btn-niveau.niv-easy:hover   { border-color: #10B981; box-shadow: 0 8px 24px rgba(16,185,129,.25); transform: translateY(-2px) scale(1.01); }
+.btn-niveau.niv-med    { border-color: rgba(245,158,11,.3); }
+.btn-niveau.niv-med:hover    { border-color: #F59E0B; box-shadow: 0 8px 24px rgba(245,158,11,.25); transform: translateY(-2px) scale(1.01); }
+.btn-niveau.niv-hard   { border-color: rgba(239,68,68,.3); }
+.btn-niveau.niv-hard:hover   { border-color: #EF4444; box-shadow: 0 8px 24px rgba(239,68,68,.25); transform: translateY(-2px) scale(1.01); }
+.btn-niveau.niv-acquired::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(16,185,129,.06), transparent);
+  border-radius: 18px; pointer-events: none;
+}
+/* Compteur de questions disponibles */
+.niv-qcount {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(124,58,237,0.08); color: var(--accent);
+  padding: 2px 8px; border-radius: 20px; font-size: .68rem; font-weight: 700;
+  margin-top: 5px;
+}
 </style>
 </head>
 <body>
@@ -800,19 +866,59 @@ const G = {
 
 const FACTORIES = Object.keys(G);
 
+// ── MAPPING FACTORIES PAR NIVEAU ────────────────────────────
+const FACTORIES_BY_LEVEL = {
+  1: ['pourcentage','fraction'],
+  2: ['equation','pythagore','proportionnalite','notation_sci','aire_volume','vitesse','ohm','accord_pp','conjugaison'],
+  3: ['probabilite','figure_style']
+};
+// Toutes les factories (fallback si niveau sans assez de factories dédiées)
+
+
 // ── GÉNÉRATION DE SÉRIE ──────────────────────────────────────
-function genSerie(baseQuiz=[], taille=5){
+function genSerie(baseQuiz=[], taille=5, niveau=0){
+  // niveau=0 → pas de filtre (examen blanc, rattrapage)
   const pool=Array.isArray(baseQuiz)?[...baseQuiz]:[];
-  // Chapitre riche → 100% JSON (ex: 42 automatismes MEN)
-  if(pool.length>=taille) return shuffle(pool).slice(0,taille);
-  // Chapitre pauvre → JSON + procédural
-  const serie=[...pool];
-  const facs=shuffle([...FACTORIES]);
+  // Filtrer par niveau si spécifié
+  const filtered = niveau>0 ? pool.filter(q=>(q.niveau||1)===niveau) : pool;
+  // Factories adaptées au niveau
+  const facsByLvl = niveau>0 ? (FACTORIES_BY_LEVEL[niveau]||FACTORIES) : FACTORIES;
+
+  // Chapitre riche en questions du bon niveau → 100% JSON filtré
+  if(filtered.length>=taille) return shuffle(filtered).slice(0,taille);
+
+  // Sinon : toutes les questions JSON du niveau + génération procédurale
+  const serie=[...filtered];
+  const facs=shuffle([...facsByLvl]);
   let fi=0;
-  while(serie.length<taille&&fi<facs.length){ serie.push(G[facs[fi]]());fi++; }
+  while(serie.length<taille&&fi<facs.length){
+    const q=G[facs[fi]]();
+    // Marquer les questions générées avec le bon niveau
+    if(niveau>0) q.niveau=niveau;
+    serie.push(q);
+    fi++;
+  }
+  // Si pas assez de factories dédiées, compléter avec les autres
+  if(serie.length<taille){
+    const fallback=shuffle(FACTORIES.filter(f=>!facsByLvl.includes(f)));
+    let fi2=0;
+    while(serie.length<taille&&fi2<fallback.length){
+      serie.push(G[fallback[fi2]]());fi2++;
+    }
+  }
   return serie.slice(0,taille);
 }
 
+
+// ── CLÉ DE PROGRESSION PAR NIVEAU ───────────────────────────
+function progKey(chapId, niveau){ return niveau>0 ? chapId+'__'+niveau : chapId; }
+
+// Nombre de niveaux acquis sur un chapitre (0-3)
+function niveauxAcquis(chapId){
+  return [1,2,3].filter(n=>S.progress[progKey(chapId,n)]==='acquis').length;
+}
+// Est-ce que tous les niveaux sont acquis ?
+function chapMaitrise(chapId){ return niveauxAcquis(chapId)===3; }
 // ── PERSISTANCE ──────────────────────────────────────────────
 function loadLS(){
   try{ S.progress=JSON.parse(localStorage.getItem('rb_prog')||'{}'); }catch{}
@@ -836,8 +942,22 @@ function refreshBadge(){
   else b.style.display='none';
 }
 function refreshRing(){
-  const vals=Object.values(S.progress),total=vals.length,acquis=vals.filter(v=>v==='acquis').length;
-  const pct=total>0?Math.round(acquis/total*100):0;
+  // Compter les niveaux acquis sur tous les chapitres de toutes les matières
+  let totalNiveaux=0, acquisNiveaux=0;
+  S.data?.matieres?.forEach(mat=>{
+    mat.chapitres?.forEach(chap=>{
+      [1,2,3].forEach(n=>{
+        totalNiveaux++;
+        if(S.progress[progKey(chap.id,n)]==='acquis') acquisNiveaux++;
+      });
+    });
+  });
+  // Fallback : ancienne clé sans niveau
+  if(totalNiveaux===0){
+    const vals=Object.values(S.progress);
+    totalNiveaux=vals.length; acquisNiveaux=vals.filter(v=>v==='acquis').length;
+  }
+  const pct=totalNiveaux>0?Math.round(acquisNiveaux/totalNiveaux*100):0;
   const circ=2*Math.PI*30;
   const fill=$('ring-fill');
   if(fill){ fill.style.strokeDasharray=circ; fill.style.strokeDashoffset=circ-(pct/100)*circ; }
@@ -880,7 +1000,7 @@ function renderDashboard(){
   const grid=$('matieres-grid');
   S.data.matieres.forEach(mat=>{
     const nChaps=mat.chapitres?.length||0;
-    const acquis=mat.chapitres?.filter(c=>S.progress[c.id]==='acquis').length||0;
+    const acquis=mat.chapitres?.filter(c=>chapMaitrise(c.id)).length||0;
     const div=document.createElement('div');
     div.className='mat-card';
     const pctMat = nChaps>0 ? Math.round(acquis/nChaps*100) : 0;
@@ -929,23 +1049,43 @@ function renderMatiere(matId){
       return `<span class="badge ${cls}">${lbl} ×${c}</span>`;
     }).join('');
 
-    let okBadge=ok?`<span class="badge badge-ok">✅ Acquis</span>`:'';
+    const na=niveauxAcquis(chap.id);
+    const okBadge=na===3
+      ?'<span class="badge badge-ok">🏆 Maîtrisé</span>'
+      :na>0
+        ?'<span class="badge" style="background:#EEF2FF;color:#3730A3;border:1px solid #C7D2FE;">'+na+'/3 niveaux ✅</span>'
+        :'';
 
     html+=`<div class="chap-card">
       <div class="chap-title">${esc(chap.titre)}</div>
-      <div class="badges-row">${srcBadge}${nivBadges}${okBadge}</div>
+      <div class="badges-row">${srcBadge}${okBadge}</div>
       <div class="chap-fiche">${esc((chap.fiche||'').slice(0,120))}</div>
-      <button class="btn-primary" data-mat="${mat.id}" data-chap="${chap.id}">🎯 Commencer la série (5 questions)</button>
+      <div class="niveau-buttons-inline" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+        ${[{n:1,emoji:'🟢',label:'Facile',cls:'niv-easy',color:'#10B981'},{n:2,emoji:'🟡',label:'Intermédiaire',cls:'niv-med',color:'#F59E0B'},{n:3,emoji:'🔴',label:'Difficile',cls:'niv-hard',color:'#EF4444'}].map(nv=>{
+          const acq=S.progress[progKey(chap.id,nv.n)]==='acquis';
+          const qCount=(chap.quiz||[]).filter(q=>(q.niveau||1)===nv.n).length;
+          const srcTxt=qCount>0?qCount+'q MEN + génération':'génération auto';
+          return `<button class="btn-niveau ${nv.cls}${acq?' niv-acquired':''}"
+            data-mat="${mat.id}" data-chap="${chap.id}" data-niveau="${nv.n}"
+            style="padding:12px 14px;border-radius:14px;gap:10px;">
+            <span style="font-size:1.2rem;">${nv.emoji}</span>
+            <span class="niv-info">
+              <span class="niv-label" style="font-size:.88rem;">${nv.label}${acq?' ✅':''}</span>
+              <span class="niv-desc" style="font-size:.7rem;">${srcTxt}</span>
+            </span>
+          </button>`;
+        }).join('')}
+      </div>
     </div>`;
   });
 
   html+='</div>';
   v.innerHTML=html;
 
-  v.querySelectorAll('button[data-chap]').forEach(btn=>{
+  v.querySelectorAll('button[data-niveau]').forEach(btn=>{
     btn.addEventListener('click',()=>{
       vibrate(8);
-      lancerQuiz(btn.dataset.mat, btn.dataset.chap);
+      lancerQuizNiveau(btn.dataset.mat, btn.dataset.chap, parseInt(btn.dataset.niveau));
     });
   });
 }
@@ -1006,11 +1146,18 @@ function renderPlanning(){
 }
 
 // ── LANCEMENT QUIZ ───────────────────────────────────────────
-function lancerQuiz(matId, chapId){
+function lancerQuiz(matId, chapId, niveau=0){
+  lancerQuizNiveau(matId, chapId, niveau);
+}
+
+function lancerQuizNiveau(matId, chapId, niveau=0){
   const mat=S.data?.matieres?.find(m=>m.id===matId);
   const chap=mat?.chapitres?.find(c=>c.id===chapId);
-  const qs=genSerie(chap?.quiz||[],5).map(q=>remixOpts(norm(q)));
-  S.quiz={ matId, chapId, label:mat?.label?.split(' — ')[0]||'Révision', qs, idx:0, score:0, rattrapage:false };
+  const qs=genSerie(chap?.quiz||[],5,niveau).map(q=>remixOpts(norm(q)));
+  const nivLabel=niveau===1?'🟢 Facile':niveau===2?'🟡 Intermédiaire':niveau===3?'🔴 Difficile':'';
+  const matLabel=(mat?.label?.split(' — ')[0]||'Révision');
+  const label=nivLabel?matLabel+' — '+nivLabel:matLabel;
+  S.quiz={ matId, chapId, label, qs, idx:0, score:0, rattrapage:false, niveau };
   ouvrirQuiz();
 }
 function lancerRattrapage(){
@@ -1030,9 +1177,10 @@ function lancerExamen(){
 function relancer(){
   const d=S.derniere; if(!d) return;
   S.derniere=null;
+  const niveau=S.quiz.niveau||0;
   if(d.chapId==='carnet') lancerRattrapage();
   else if(d.chapId==='examen') lancerExamen();
-  else lancerQuiz(d.matId,d.chapId);
+  else lancerQuizNiveau(d.matId,d.chapId,niveau);
 }
 
 // ── OUVERTURE / FERMETURE QUIZ ───────────────────────────────
@@ -1058,6 +1206,12 @@ function afficherQuestion(){
 
   $('quiz-bar').style.width=pct+'%';
   $('quiz-subject').textContent=label;
+  // Colorier le badge niveau dans le header
+  const qsEl=$('quiz-subject');
+  if(qsEl && S.quiz.niveau>0){
+    const c=S.quiz.niveau===1?'#10B981':S.quiz.niveau===2?'#F59E0B':'#EF4444';
+    qsEl.style.color=c;
+  } else if(qsEl) qsEl.style.color='';
   $('quiz-counter').textContent=`${idx+1}/${qs.length}`;
   $('quiz-footer').classList.remove('open');
 
@@ -1129,7 +1283,12 @@ function finSession(){
   S.streakToday++;
   const pct=Math.round(score/qs.length*100);
   if(pct>=80&&chapId!=='examen'&&chapId!=='carnet'){
-    S.progress[chapId]='acquis';
+    const niveau=S.quiz.niveau||0;
+    if(niveau>0){
+      S.progress[progKey(chapId,niveau)]='acquis';
+    } else {
+      S.progress[chapId]='acquis';
+    }
   }
   saveLS();
   refreshRing();
@@ -1150,8 +1309,19 @@ function finSession(){
     <div class="result-bar-wrap">
       <div class="result-bar-fill" style="width:${pct}%;background:${barColor};"></div>
     </div>
+    ${(()=>{
+      const niveau=S.quiz.niveau||0;
+      const chapId=S.quiz.chapId;
+      if(niveau>0&&chapId&&chapId!=='examen'&&chapId!=='carnet'){
+        const na=niveauxAcquis(chapId);
+        if(na===3) return '<div style="background:#D1FAE5;border-radius:14px;padding:12px 16px;margin-bottom:12px;font-family:var(--font-h);font-weight:800;color:#065F46;text-align:center;">🏆 Chapitre entièrement maîtrisé !</div>';
+        const restants=['Facile','Intermédiaire','Difficile'].filter((_,i)=>S.progress[progKey(chapId,i+1)]!=='acquis');
+        return '<div style="background:rgba(124,58,237,0.08);border-radius:14px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--muted);text-align:center;">Niveaux restants : '+restants.join(' · ')+'</div>';
+      }
+      return '';
+    })()}
     <div class="result-btns">
-      <button class="btn-primary" onclick="relancer()">🔄 Générer une nouvelle série inédite</button>
+      <button class="btn-primary" onclick="relancer()">🔄 Nouvelle série inédite (même niveau)</button>
       ${btnRattrapage}
       <button class="btn-ghost" onclick="goHome()">🏠 Tableau de bord</button>
     </div>
