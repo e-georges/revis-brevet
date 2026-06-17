@@ -64,7 +64,6 @@ const Mutations = {
 
 function genererSerieAleatoire(chapId, baseQuiz = [], taille = 5) {
   let depar = [...baseQuiz];
-  // Si le chapitre manque de questions ou est un automatisme pur, on injecte des mutations dynamiques
   const clesMutations = Object.keys(Mutations);
   while (depar.length < taille) {
     const clé = clesMutations[Math.floor(Math.random() * clesMutations.length)];
@@ -273,7 +272,6 @@ function afficherQuestion() {
   const qContainer = document.getElementById('quiz-question-text');
   qContainer.innerHTML = (q.theme_auto ? `<span style="background:#FEF3C7;color:#92400E;padding:2px 6px;font-size:.7rem;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:6px;">⚡ ${q.theme_auto}</span><br>` : '') + escHtml(q.enonce);
 
-  // LOGIQUE DE L'INDICE INCLUS POUR LE NIVEAU 3
   if (parseInt(q.niveau) === 3) {
     const btnInd = document.createElement('button');
     btnInd.className = 'btn-indice';
@@ -318,12 +316,11 @@ function verifierReponse(btn, idx, q, optsEl) {
     AppState.quiz.score++;
     if (AppState.quiz.estRattrapage) retirerDuCarnet(q.enonce);
   } else {
-    optsEl.classList.add('shake'); // Feedback visuel dynamique
+    optsEl.classList.add('shake');
     btn.style.cssText += 'background:#FEE2E2;border-color:#EF4444;color:#7F1D1D;';
     const bonne = optsEl.children[q.bonne_reponse];
     if (bonne) bonne.style.cssText += 'background:#D1FAE5;border-color:#10B981;color:#064E3B;font-weight:700;';
     
-    // Le bouton rouge stocke l'erreur
     if (!AppState.quiz.estRattrapage) ajouterAuCarnet(q);
   }
 
@@ -341,7 +338,6 @@ document.getElementById('quiz-next-btn').addEventListener('click', () => {
   }
 });
 
-// ── LE COEUR DE TA DEMANDE : ÉCRAN DE FIN AVEC BOUTON VERROUILLÉ ──
 function terminerSessionQuiz() {
   const quiz = AppState.quiz;
   document.getElementById('quiz-modal').classList.remove('active');
@@ -352,7 +348,6 @@ function terminerSessionQuiz() {
     saveProgress();
   }
 
-  // Injecter la vue de résultat directement dans l'application
   const container = document.getElementById('app-view-container');
   container.innerHTML = `
     <div style="max-width:500px;margin:20px auto;text-align:center;background:var(--bg-card);padding:24px;border-radius:12px;box-shadow:var(--shadow-card);">
@@ -372,14 +367,12 @@ function terminerSessionQuiz() {
     </div>
   `;
 
-  // Écouteur pour relancer immédiatement le moteur autonome local
   document.getElementById('btn-generer-nouveau').addEventListener('click', () => {
     if (quiz.chapitreId === 'carnet_erreurs') {
       startQuizRattrapage();
     } else if (quiz.chapitreId === 'examen_blanc') {
       startExamenBlanc();
     } else {
-      // Retrouver le chapitre d'origine pour en extraire la base statique si elle existe
       let baseQuiz = [];
       for (const m of AppState.data.matieres) {
         const c = m.chapitres.find(ch => ch.id === quiz.chapitreId);
@@ -408,7 +401,6 @@ async function loadData() {
     const res = await fetch('troisieme.json');
     if (res.ok) { AppState.data = await res.json(); return true; }
   } catch {}
-  // Configuration de repli si le fichier local troisieme.json est inaccessible
   AppState.data = {
     matieres: [
       { id: 'maths', label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99', chapitres: [{ id: 'maths_01', titre: 'Automatismes numériques', fiche: 'Entraînement aux calculs de brevets.', quiz: SECOURS }] },
@@ -426,7 +418,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderDashboard();
   updateProgressRing();
   
-  // Paramétrage des boutons de fermeture de secours
+  // ── FIX DES BOUTONS DE COMPORTEMENT (MODALES & THEME) ──
+  
+  // Forcer le masquage initial de la modale explicative
+  const modalApi = document.getElementById('modal-api');
+  if (modalApi) {
+    modalApi.classList.add('hidden');
+    modalApi.classList.remove('active');
+  }
+
+  // Lier le bouton "Paramètres" (engrenage) à l'affichage des infos du moteur local
+  document.getElementById('btn-settings')?.addEventListener('click', () => {
+    document.getElementById('modal-api')?.classList.remove('hidden');
+  });
+
+  // Gestion du Mode Sombre global
+  const toggleTheme = () => document.body.classList.toggle('dark-mode');
+  document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
+  document.getElementById('theme-toggle-mobile')?.addEventListener('click', toggleTheme);
+
+  // Écouteurs de fermeture des boîtes de dialogue
   document.getElementById('quiz-close-btn')?.addEventListener('click', () => {
     document.getElementById('quiz-modal').classList.remove('active');
   });
