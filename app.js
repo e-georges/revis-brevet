@@ -9,7 +9,7 @@ const AppState = {
   progress: {},
   adaptive: {},
   carnetErreurs: [],
-  quiz: { chapitreId: null, matLabel: '', questions: [], index: 0, score: 0, infini: false, estRattrapage: false }
+  quiz: { matId: null, chapitreId: null, matLabel: '', questions: [], index: 0, score: 0, infini: false, estRattrapage: false }
 };
 
 // Banque de secours si le JSON principal ne charge pas
@@ -20,7 +20,7 @@ const SECOURS = [
   { enonce: "f(x) = 3x − 5. Image de 4 ?", options: ["A) 7", "B) 12", "C) 2", "D) -1"], bonne_reponse: 0, explication: "f(4) = 3×4 − 5 = 12 − 5 = 7.", niveau: 3, indice: "Remplace la variable x par la valeur 4 dans la fonction." }
 ];
 
-// ── MOTEUR DE MUTATIONS EXTENSIBLE (Génération Infinie Locale) ──
+// ── MOTEUR DE MUTATIONS EXTENSIBLE (Génération Infinie complète MEN) ──
 const Mutations = {
   pourcentage() {
     const pcts = [10, 20, 25, 50, 75];
@@ -43,7 +43,27 @@ const Mutations = {
     const triplets = [[3,4,5], [5,12,13], [6,8,10], [9,12,15]];
     const [a, b, c] = triplets[Math.floor(Math.random() * triplets.length)];
     const opts = [`A) ${c} cm`, `B) ${a + b} cm`, `C) ${c + 2} cm`, `D) ${c * c} cm`];
-    return { enonce: `Un triangle rectangle possède des côtés de ${a} cm and ${b} cm. Combien mesure son hypoténuse ?`, options: opts, bonne_reponse: 0, explication: `D'après Pythagore : c² = ${a}² + ${b}² = ${a*a} + ${b*b} = ${c*c}. Donc c = √${c*c} = ${c} cm.`, niveau: 3, indice: "L'hypoténuse est le côté le plus long opposé à l'angle droit. Applique la formule de la somme des carrés.", theme_auto: "Maths : Pythagore" };
+    return { enonce: `Un triangle rectangle possède des côtés de ${a} cm et ${b} cm. Combien mesure son hypoténuse ?`, options: opts, bonne_reponse: 0, explication: `D'après Pythagore : c² = ${a}² + ${b}² = ${a*a} + ${b*b} = ${c*c}. Donc c = √${c*c} = ${c} cm.`, niveau: 3, indice: "L'hypoténuse est le côté le plus long opposé à l'angle droit. Applique la formule de la somme des carrés.", theme_auto: "Maths : Pythagore" };
+  },
+  puissances() {
+    const n = Math.floor(Math.random() * 5) + 2; // exposant 1
+    const m = Math.floor(Math.random() * 4) + 2; // exposant 2
+    const opts = [`A) 10^${n+m}`, `B) 10^${n*m}`, `C) 10^${n-m}`, `D) 100^${n+m}`];
+    return { enonce: `Écrire sous la forme d'une puissance de 10 le produit suivant : 10^${n} × 10^${m}`, options: opts, bonne_reponse: 0, explication: `Propriété des puissances : 10^a × 10^b = 10^(a+b). Ici, 10^${n} × 10^${m} = 10^(${n}+${m}) = 10^${n+m}.`, niveau: 2, theme_auto: "Maths : Puissances" };
+  },
+  fractions() {
+    const num = [1, 3, 5, 7][Math.floor(Math.random() * 4)];
+    const den = [2, 4, 3][Math.floor(Math.random() * 3)];
+    const prod = num * 2;
+    const opts = [`A) ${prod}/${den}`, `B) ${num}/${den*2}`, `C) ${num+2}/${den}`, `D) ${num}/${den}`];
+    return { enonce: `Calculer et donner le résultat de : 2 × (${num}/${den})`, options: opts, bonne_reponse: 0, explication: `Pour multiplier un nombre par une fraction, on multiplie le numérateur par ce nombre : 2 × ${num}/${den} = (2×${num})/${den} = ${prod}/${den}.`, niveau: 2, theme_auto: "Maths : Fractions" };
+  },
+  calcul_litteral() {
+    const k = Math.floor(Math.random() * 4) + 2;
+    const a = Math.floor(Math.random() * 3) + 2;
+    const b = Math.floor(Math.random() * 5) + 1;
+    const opts = [`A) ${k*a}x + ${k*b}`, `B) ${k+a}x + ${k+b}`, `C) ${k*a}x + ${b}`, `D) ${k*a*b}x`];
+    return { enonce: `Développer l'expression suivante : ${k}(${a}x + ${b})`, options: opts, bonne_reponse: 0, explication: `On applique la distributivité simple : k(a + b) = ka + kb. Donc, ${k}×${a}x + ${k}×${b} = ${k*a}x + ${k*b}.`, niveau: 3, indice: `Distribue le nombre multiplicateur ${k} sur chacun des termes à l'intérieur de la parenthèse.`, theme_auto: "Maths : Calcul Littéral" };
   },
   loi_ohm() {
     const r = [10, 20, 50, 100][Math.floor(Math.random() * 4)];
@@ -173,8 +193,7 @@ function renderMatiere(matId) {
       <button class="btn-primary id-trigger-btn">🎯 Commencer la série</button>
     `;
     
-    // CORRECTION : Écouteur d'événement robuste en JS pur plutôt que l'attribut onclick HTML
-    // pour éviter les plantages dus aux caractères spéciaux ou guillemets complexes
+    // Écouteur d'événement pur js hautement sécurisé pour les ID complexes
     card.querySelector('.id-trigger-btn').addEventListener('click', () => {
       lancerQuizDepuisChapitre(mat.id, chap.id);
     });
@@ -210,7 +229,7 @@ function renderProgramme() {
   document.getElementById('app-view-container').innerHTML = `<h2>📅 Programme d'études</h2><p style="color:var(--text-secondary);">Le planning d'entraînement automatisé s'adapte à ton rythme.</p>`;
 }
 
-// ── CONTRÔLEUR DE QUIZ CORRIGÉ (SÉCURISÉ ET TOLÉRANT) ──────────────
+// ── CONTRÔLEUR DE QUIZ (SÉCURISÉ ET MUTABLE) ──────────────────────
 function lancerQuizDepuisChapitre(matId, chapId) {
   const mat = AppState.data?.matieres?.find(m => m.id === matId);
   const chap = mat?.chapitres?.find(c => c.id === chapId);
@@ -218,7 +237,9 @@ function lancerQuizDepuisChapitre(matId, chapId) {
   const baseQuiz = chap?.quiz || [];
   const nomMatiere = mat ? mat.label : "Révision";
 
+  // Sauvegarde absolue du matId et chapitreId pour le bouton Re-générer de fin
   AppState.quiz = {
+    matId: matId,
     chapitreId: chapId,
     matLabel: nomMatiere,
     questions: genererSerieAleatoire(chapId, baseQuiz, 5),
@@ -232,7 +253,7 @@ function lancerQuizDepuisChapitre(matId, chapId) {
     AppState.quiz.questions = genererSerieAleatoire(chapId, SECOURS, 5);
   }
 
-  // Mélanger les options de chaque question pour avoir de la nouveauté
+  // Mélanger dynamiquement les réponses de chaque question
   AppState.quiz.questions = AppState.quiz.questions.map(q => melangerOptions(q));
 
   afficherQuestion();
@@ -246,6 +267,7 @@ function lancerQuizDepuisChapitre(matId, chapId) {
 
 function startQuizRattrapage() {
   AppState.quiz = {
+    matId: null,
     chapitreId: 'carnet_erreurs',
     matLabel: 'Rattrapage',
     questions: shuffleArr([...AppState.carnetErreurs]).slice(0, 5).map(q => melangerOptions(q)),
@@ -262,6 +284,7 @@ function startExamenBlanc() {
   let toutes = [];
   AppState.data.matieres.forEach(m => m.chapitres.forEach(c => { toutes = toutes.concat(c.quiz || []); }));
   AppState.quiz = {
+    matId: null,
     chapitreId: 'examen_blanc',
     matLabel: 'Examen Blanc',
     questions: genererSerieAleatoire('blanc', toutes, 10).map(q => melangerOptions(q)),
@@ -302,7 +325,7 @@ function afficherQuestion() {
     const boxInd = document.createElement('div');
     boxInd.className = 'hidden';
     boxInd.style.cssText = "background:#FFFBEB;border-left:3px solid #F59E0B;padding:8px;font-size:.8rem;color:#78350F;margin-top:6px;border-radius:4px;";
-    boxInd.textContent = q.indice || "Observe bien la syntaxe ou isole les valeurs connues pour avancer.";
+    boxInd.textContent = q.indice || "Observe bien les valeurs numériques ou la structure syntaxique pour déduire la réponse.";
 
     btnInd.addEventListener('click', () => {
       boxInd.classList.toggle('hidden');
@@ -388,28 +411,15 @@ function terminerSessionQuiz() {
     </div>
   `;
 
+  // Le bouton de régénération n'est accessible QU'ICI, validant la contrainte pédagogique
   document.getElementById('btn-generer-nouveau').addEventListener('click', () => {
     if (quiz.chapitreId === 'carnet_erreurs') {
       startQuizRattrapage();
     } else if (quiz.chapitreId === 'examen_blanc') {
       startExamenBlanc();
     } else {
-      let baseQuiz = [];
-      for (const m of AppState.data.matieres) {
-        const c = m.chapitres.find(ch => ch.id === quiz.chapitreId);
-        if (c) { baseQuiz = c.quiz || []; break; }
-      }
-      AppState.quiz = {
-        chapitreId: quiz.chapitreId,
-        matLabel: quiz.matLabel,
-        questions: genererSerieAleatoire(quiz.chapitreId, baseQuiz, 5),
-        index: 0,
-        score: 0,
-        infini: false,
-        estRattrapage: false
-      };
-      afficherQuestion();
-      document.getElementById('quiz-modal').classList.add('active');
+      // Routage sécurisé par les variables d'état du quiz d'origine
+      lancerQuizDepuisChapitre(quiz.matId, quiz.chapitreId);
     }
   });
 
@@ -439,26 +449,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderDashboard();
   updateProgressRing();
   
-  // ── FIX DES BOUTONS DE COMPORTEMENT (MODALES & THEME) ──
-  
-  // Forcer le masquage initial de la modale explicative
+  // Forcer le masquage de l'ancienne boîte modale API inutile
   const modalApi = document.getElementById('modal-api');
   if (modalApi) {
     modalApi.classList.add('hidden');
     modalApi.classList.remove('active');
   }
 
-  // Lier le bouton "Paramètres" (engrenage) à l'affichage des infos du moteur local
   document.getElementById('btn-settings')?.addEventListener('click', () => {
     document.getElementById('modal-api')?.classList.remove('hidden');
   });
 
-  // Gestion du Mode Sombre global
   const toggleTheme = () => document.body.classList.toggle('dark-mode');
   document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
   document.getElementById('theme-toggle-mobile')?.addEventListener('click', toggleTheme);
 
-  // Écouteurs de fermeture des boîtes de dialogue
   document.getElementById('quiz-close-btn')?.addEventListener('click', () => {
     document.getElementById('quiz-modal').classList.remove('active');
   });
