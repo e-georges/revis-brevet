@@ -1,7 +1,9 @@
 // ============================================================
-// RévisBrevet 2026 — app.js (Restauration Pop-up Historique)
+// RévisBrevet 2026 — app.js (Version Pop-up & Niveaux Corrigés)
+// Autonome, illimité, sans clé API payante
 // ============================================================
 
+// ── ÉTAT GLOBAL DE L'APPLICATION ─────────────────────────────
 const AppState = {
   data: null,
   progress: {},
@@ -10,36 +12,41 @@ const AppState = {
   quiz: { matId: null, chapitreId: null, matLabel: '', questions: [], index: 0, score: 0, infini: false, estRattrapage: false }
 };
 
+// Banque de secours si le fichier JSON rencontre un problème
 const SECOURS = [
-  { enonce: "20% de 60 = ?", options: ["A) 10", "B) 12", "C) 15", "D) 8"], bonne_reponse: 1, explication: "10% de 60 = 6, donc 20% = 12.", niveau: 1 },
-  { enonce: "'Ses yeux étaient deux étoiles' — figure de style ?", options: ["A) Comparaison", "B) Métaphore", "C) Hyperbole", "D) Personnification"], bonne_reponse: 1, explication: "Métaphore : comparaison sans outil.", niveau: 3, indice: "Regarde s'il y a un mot comme 'comme'." },
-  { enonce: "L'ONU est fondée en ?", options: ["A) 1918", "B) 1939", "C) 1945", "D) 1962"], bonne_reponse: 2, explication: "L'ONU est créée en 1945.", niveau: 2 }
+  { enonce: "Calculer 20% de 60.", options: ["A) 10", "B) 12", "C) 15", "D) 8"], bonne_reponse: 1, explication: "10% de 60 = 6, donc 20% = 12.", niveau: 1 },
+  { enonce: "'Ses yeux étaient deux étoiles' — Quelle est la figure de style ?", options: ["A) Comparaison", "B) Métaphore", "C) Hyperbole", "D) Personnification"], bonne_reponse: 1, explication: "Métaphore : comparaison directe sans outil de comparaison.", niveau: 3, indice: "Regarde s'il y a un mot de liaison comparatif." },
+  { enonce: "En quelle année l'ONU a-t-elle été fondée ?", options: ["A) 1918", "B) 1939", "C) 1945", "D) 1962"], bonne_reponse: 2, explication: "L'ONU a été créée en 1945 juste après la Seconde Guerre Mondiale.", niveau: 2 }
 ];
 
+// ── MOTEUR DE MUTATIONS (Génération de questions locales) ──────
 const Mutations = {
   pourcentage() {
     const pcts = [10, 20, 25, 50], p = pcts[Math.floor(Math.random() * pcts.length)];
-    const bases = [40, 60, 80, 100], b = bases[Math.floor(Math.random() * bases.length)];
+    const bases = [40, 60, 80, 120], b = bases[Math.floor(Math.random() * bases.length)];
     const r = b * p / 100;
-    return { enonce: `Calculer ${p}% de ${b} (sans calculatrice).`, options: [`A) ${r}`, `B) ${r + p}`, `C) ${b - r}`, `D) ${r * 2}`], bonne_reponse: 0, explication: `${p}% de ${b} = ${r}.`, niveau: 1, theme_auto: "Maths" };
+    return { enonce: `Calculer ${p}% de ${b} (sans calculatrice).`, options: [`A) ${r}`, `B) ${r + p}`, `C) ${b - r}`, `D) ${r * 2}`], bonne_reponse: 0, explication: `${p}% de ${b} = ${r}.`, niveau: 1, theme_auto: "Maths : Pourcentages" };
   },
   equation() {
-    const a = 2, x = 4, b = 3, c = a * x + b;
-    return { enonce: `Résoudre : ${a}x + ${b} = ${c}`, options: [`A) x = ${x}`, `B) x = ${x + 1}`, `C) x = 0`, `D) x = -1`], bonne_reponse: 0, explication: `x = ${x}.`, niveau: 3, theme_auto: "Maths" };
+    const a = Math.floor(Math.random() * 3) + 2, x = Math.floor(Math.random() * 5) + 1, b = Math.floor(Math.random() * 5) + 1, c = a * x + b;
+    return { enonce: `Résoudre l'équation : ${a}x + ${b} = ${c}`, options: [`A) x = ${x}`, `B) x = ${x + 2}`, `C) x = ${c}`, `D) x = ${x - 1}`], bonne_reponse: 0, explication: `${a}x = ${c} - ${b} → x = ${x}.`, niveau: 2, theme_auto: "Maths : Équations" };
   }
 };
 
 function genererSerieAleatoire(chapId, baseQuiz = [], taille = 5) {
   let depar = Array.isArray(baseQuiz) && baseQuiz.length > 0 ? [...baseQuiz] : [];
+  // Si la série du JSON contient moins de questions que la taille demandée, on complète avec des mutations
   const clesMutations = Object.keys(Mutations);
-  while (depar.length < taille) {
+  while (depar.length < taille && clesMutations.length > 0) {
     const clé = clesMutations[Math.floor(Math.random() * clesMutations.length)];
     depar.push(Mutations[clé]());
   }
+  // Sécurité ultime au cas où tout est vide
+  if (depar.length === 0) depar = [...SECOURS];
   return shuffleArr(depar).slice(0, taille);
 }
 
-// ── LOCAL STORAGE & CARNET ───────────────────────────────────
+// ── STORAGE & PROGRESSION ────────────────────────────────────
 function chargerCarnetErreurs() {
   try { AppState.carnetErreurs = JSON.parse(localStorage.getItem('rb_carnet_erreurs') || '[]'); } catch { AppState.carnetErreurs = []; }
 }
@@ -60,7 +67,7 @@ function loadProgress() {
 }
 function saveProgress() { localStorage.setItem('rb_progress', JSON.stringify(AppState.progress)); }
 
-// ── NAVIGATION & INTERFACE ───────────────────────────────────
+// ── NAVIGATION ET VUES ───────────────────────────────────────
 function buildNav() {
   const menu = document.getElementById('sidebar-menu');
   if (!menu) return;
@@ -107,7 +114,7 @@ function renderDashboard() {
     card.className = 'card';
     card.style.borderLeft = `5px solid ${mat.couleur}`;
     card.style.cursor = 'pointer';
-    card.innerHTML = `<h3>${mat.emoji} ${mat.label.split(' — ')[0]}</h3><p style="font-size:.8rem;color:var(--text-secondary);">Accéder aux chapitres.</p>`;
+    card.innerHTML = `<h3>${mat.emoji} ${mat.label.split(' — ')[0]}</h3><p style="font-size:.8rem;color:var(--text-secondary);">Accéder aux chapitres et exercices.</p>`;
     card.addEventListener('click', () => renderMatiere(mat.id));
     document.getElementById('matieres-grid').appendChild(card);
   });
@@ -160,15 +167,15 @@ function renderCarnetVue() {
 }
 
 function renderProgramme() {
-  document.getElementById('app-view-container').innerHTML = `<h2>📅 Programme d'études</h2><p style="color:var(--text-secondary);">Moteur autonome synchrone.</p>`;
+  document.getElementById('app-view-container').innerHTML = `<h2>📅 Programme d'études</h2><p style="color:var(--text-secondary);">Moteur d'apprentissage autonome.</p>`;
 }
 
-// ── COMPORTEMENT POP-UP DE QUIZ RESTAURÉ ─────────────────────
+// ── GESTION STRICTE ET FORÇAGE DU POP-UP DE QUIZ ───────────────────
 function lancerQuizDepuisChapitre(matId, chapId) {
   const mat = AppState.data?.matieres?.find(m => m.id === matId);
   const chap = mat?.chapitres?.find(c => c.id === chapId);
   const baseQuiz = chap?.quiz || [];
-  const nomMatiere = mat ? mat.label : "Révision";
+  const nomMatiere = mat ? mat.label.split(' — ')[0] : "Révision";
 
   AppState.quiz = {
     matId: matId,
@@ -184,15 +191,23 @@ function lancerQuizDepuisChapitre(matId, chapId) {
   AppState.quiz.questions = AppState.quiz.questions.map(q => melangerOptions(q));
   afficherQuestion();
   
-  // ACTIVATION ET COMPORTEMENT DE LA MODALE
+  // COMMANDE DE FORÇAGE POUR STRUCTURER LE POP-UP HISTORIQUE AU CENTRE
   const modalQuiz = document.getElementById('quiz-modal');
   if (modalQuiz) {
     modalQuiz.classList.remove('hidden'); 
     modalQuiz.classList.add('active');
-    // Réinitialise les styles CSS en ligne pour forcer la fenêtre à être centrée au-dessus de tout
+    
+    // On applique les styles CSS de secours en ligne pour verrouiller la boîte au centre de l'écran
     modalQuiz.style.setProperty('display', 'flex', 'important');
     modalQuiz.style.setProperty('position', 'fixed', 'important');
+    modalQuiz.style.setProperty('top', '0', 'important');
+    modalQuiz.style.setProperty('left', '0', 'important');
+    modalQuiz.style.setProperty('width', '100vw', 'important');
+    modalQuiz.style.setProperty('height', '100vh', 'important');
     modalQuiz.style.setProperty('z-index', '99999', 'important');
+    modalQuiz.style.setProperty('background', 'rgba(15, 17, 23, 0.7)', 'important'); // Assombri l'arrière-plan
+    modalQuiz.style.setProperty('justify-content', 'center', 'important');
+    modalQuiz.style.setProperty('align-items', 'center', 'important');
   }
 }
 
@@ -200,12 +215,7 @@ function startQuizRattrapage() {
   if (AppState.carnetErreurs.length === 0) return;
   AppState.quiz = { matId: null, chapitreId: 'carnet_erreurs', matLabel: 'Rattrapage', questions: shuffleArr([...AppState.carnetErreurs]).slice(0, 5).map(q => melangerOptions(q)), index: 0, score: 0, infini: false, estRattrapage: true };
   afficherQuestion();
-  const mq = document.getElementById('quiz-modal');
-  if (mq) { 
-    mq.classList.remove('hidden'); mq.classList.add('active'); 
-    mq.style.setProperty('display', 'flex', 'important');
-    mq.style.setProperty('position', 'fixed', 'important');
-  }
+  ouvrirModaleVisuellement();
 }
 
 function startExamenBlanc() {
@@ -215,11 +225,23 @@ function startExamenBlanc() {
   }
   AppState.quiz = { matId: null, chapitreId: 'examen_blanc', matLabel: 'Examen Blanc', questions: genererSerieAleatoire('blanc', toutes, 10).map(q => melangerOptions(q)), index: 0, score: 0, infini: true, estRattrapage: false };
   afficherQuestion();
+  ouvrirModaleVisuellement();
+}
+
+function ouvrirModaleVisuellement() {
   const mq = document.getElementById('quiz-modal');
   if (mq) { 
     mq.classList.remove('hidden'); mq.classList.add('active'); 
     mq.style.setProperty('display', 'flex', 'important');
     mq.style.setProperty('position', 'fixed', 'important');
+    mq.style.setProperty('top', '0', 'important');
+    mq.style.setProperty('left', '0', 'important');
+    mq.style.setProperty('width', '100vw', 'important');
+    mq.style.setProperty('height', '100vh', 'important');
+    mq.style.setProperty('z-index', '99999', 'important');
+    mq.style.setProperty('background', 'rgba(15, 17, 23, 0.7)', 'important');
+    mq.style.setProperty('justify-content', 'center', 'important');
+    mq.style.setProperty('align-items', 'center', 'important');
   }
 }
 
@@ -232,6 +254,7 @@ function melangerOptions(q) {
   return { ...q, options: rMelangee.map((o, idx) => `${['A','B','C','D'][idx]}) ${o}`), bonne_reponse: nIdx >= 0 ? nIdx : 0 };
 }
 
+// ── AFFICHAGE DE LA QUESTION ET DES NIVEAUX DE DIFFICULTÉ ───────
 function afficherQuestion() {
   const quiz = AppState.quiz, q = quiz.questions[quiz.index];
   if (!q) return;
@@ -242,7 +265,48 @@ function afficherQuestion() {
 
   const qContainer = document.getElementById('quiz-question-text');
   if (qContainer) {
-    qContainer.innerHTML = (q.theme_auto ? `<span style="background:#FEF3C7;color:#92400E;padding:2px 6px;font-size:.7rem;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:6px;">⚡ ${q.theme_auto}</span><br>` : '') + escHtml(q.enonce);
+    qContainer.innerHTML = '';
+    
+    // GESTION DU NIVEAU DE DIFFICULTÉ POUR CHAQUE SÉRIE (Badge dynamique)
+    const nv = parseInt(q.niveau) || 1;
+    let badgeCouleur = "#10B981", badgeTexte = "Niveau : Facile";
+    if (nv === 2) { badgeCouleur = "#F59E0B"; badgeTexte = "Niveau : Intermédiaire"; }
+    else if (nv === 3) { badgeCouleur = "#EF4444"; badgeTexte = "Niveau : Difficile"; }
+
+    const badgeDiff = document.createElement('span');
+    badgeDiff.style.cssText = `background:${badgeCouleur};color:white;padding:2px 8px;font-size:.7rem;border-radius:12px;font-weight:700;display:inline-block;margin-bottom:10px;text-transform:uppercase;`;
+    badgeDiff.textContent = badgeTexte;
+    qContainer.appendChild(badgeDiff);
+
+    // Ajout facultatif du thème auto si généré localement
+    if (q.theme_auto) {
+      const bAuto = document.createElement('span');
+      bAuto.style.cssText = "background:#EEF2FF;color:#4F46E5;padding:2px 8px;font-size:.7rem;border-radius:12px;font-weight:700;display:inline-block;margin-left:6px;margin-bottom:10px;";
+      bAuto.textContent = `⚡ ${q.theme_auto}`;
+      qContainer.appendChild(bAuto);
+    }
+
+    // Énoncé principal de l'exercice
+    const pEnonce = document.createElement('p');
+    pEnonce.style.cssText = "font-size:1.1rem;font-weight:600;margin:4px 0 12px 0;line-height:1.4;color:var(--text-primary);";
+    pEnonce.textContent = q.enonce;
+    qContainer.appendChild(pEnonce);
+
+    // Optionnel : Gestion de l'indice pour le niveau difficile
+    if (nv === 3) {
+      const btnInd = document.createElement('button');
+      btnInd.style.cssText = "background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;padding:4px 10px;border-radius:8px;font-size:.75rem;cursor:pointer;margin-top:4px;display:block;font-weight:500;";
+      btnInd.textContent = "💡 Voir l'indice de cours";
+      const boxInd = document.createElement('div');
+      boxInd.className = 'hidden';
+      boxInd.style.cssText = "background:#FFFBEB;border-left:3px solid #F59E0B;padding:8px;font-size:.8rem;color:#78350F;margin-top:6px;border-radius:4px;line-height:1.4;";
+      boxInd.textContent = q.indice || "Relis bien la question et élimine les propositions absurdes.";
+      btnInd.addEventListener('click', () => {
+        boxInd.classList.toggle('hidden');
+        btnInd.textContent = boxInd.classList.contains('hidden') ? "💡 Voir l'indice de cours" : "🙈 Masquer l'indice";
+      });
+      qContainer.appendChild(btnInd); qContainer.appendChild(boxInd);
+    }
   }
 
   document.getElementById('quiz-explanation')?.classList.add('hidden');
@@ -302,10 +366,10 @@ function terminerSessionQuiz() {
       <span style="font-size:3.5rem;">${pct >= 70 ? '🏆' : '💪'}</span>
       <h2 style="color:var(--text-primary);margin-top:10px;">Série terminée !</h2>
       <div style="font-size:2.5rem;font-weight:800;color:var(--color-primary);margin:14px 0;">${quiz.score} / ${quiz.questions.length}</div>
-      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">Tu as validé ${pct}% des objectifs.</p>
+      <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">Tu as validé ${pct}% des objectifs du module.</p>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <button id="btn-generer-nouveau" class="btn-primary" style="background:linear-gradient(135deg,#2EC4B6,#3D5A99);border:none;padding:12px;font-size:0.95rem;">
-          🔄 Générer un nouveau quiz inédit
+          🔄 Relancer une série d'exercices
         </button>
         <button onclick="renderDashboard()" style="background:none;border:1px solid var(--border-color);padding:10px;border-radius:6px;cursor:pointer;font-size:0.85rem;color:var(--text-secondary);">
           🏠 Retour au tableau de bord
@@ -322,38 +386,44 @@ function terminerSessionQuiz() {
   updateProgressRing();
 }
 
+// FUNCTION POUR EFFACER LA FENÊTRE POP-UP SANS CONFLIT VISUEL
 function fermerModaleQuiz() {
   const mq = document.getElementById('quiz-modal');
   if (mq) { 
     mq.classList.remove('active'); 
     mq.classList.add('hidden');
-    mq.style.setProperty('display', 'none', 'important'); 
+    mq.style.setProperty('display', 'none', 'important'); // Neutralise le flux flexbox
   }
 }
 
-// ── CHARGEMENT ET REPLI ──────────────────────────────────────
+// ── CHARGEMENT DE DONNÉES ET REPLI SYNCHRONE ───────────────────
 async function loadData() {
   try {
     const res = await fetch('troisieme.json');
     if (res.ok) { AppState.data = await res.json(); return true; }
-  } catch(e) { console.warn("Fichier local JSON indisponible, bascule Secours."); }
+  } catch(e) { console.warn("Fichier troisieme.json distant ou local non lu. Chargement du mode autonome."); }
   
   AppState.data = {
     matieres: [
-      { id: 'maths', label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99', chapitres: [{ id: 'maths_01', titre: '⚡ Automatismes officiels DNB 2026', fiche: 'Calcul mental.', quiz: [] }] }
+      { id: 'maths', label: 'Mathématiques', emoji: '📐', couleur: '#3D5A99', chapitres: [{ id: 'maths_01', titre: '⚡ Automatismes officiels DNB 2026', fiche: 'Fiche complète de calcul mental, fractions et pourcentages.', quiz: [] }] }
     ]
   };
   return true;
 }
 
+// INITIALISATION DU CYCLE DE VIE AU DEMARRAGE (DOM)
 document.addEventListener('DOMContentLoaded', async () => {
   loadProgress(); chargerCarnetErreurs();
   await loadData(); buildNav(); renderDashboard(); updateProgressRing();
   
+  // Désactivation définitive de l'ancienne boîte payante API qui bloquait l'application
   const mApi = document.getElementById('modal-api'); if (mApi) { mApi.style.display = 'none'; mApi.classList.add('hidden'); }
 
-  // Liaison du bouton de fermeture (la croix rouge ou l'icône de fermeture)
-  document.getElementById('quiz-close-btn')?.addEventListener('click', fermerModaleQuiz);
+  // BRANCHEMENT HISTORIQUE DE LA CROIX DE FERMETURE DU QUIZ
+  document.getElementById('quiz-close-btn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    fermerModaleQuiz();
+  });
   
   const toggleTheme = () => document.body.classList.toggle('dark-mode');
   document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
