@@ -1,133 +1,53 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RévisBrevet 2026</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
+/* --- Bouton d'indice et Carnet d'erreurs --- */
+.btn-indice {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+.btn-indice:hover {
+  background: #FDE68A;
+}
 
-<div class="app-container">
+/* Badge spécial pour le carnet d'erreurs */
+.nav-item-danger {
+  background: rgba(232, 72, 85, 0.1) !important;
+  color: #E84855 !important;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+.nav-item-danger.active, .nav-item-danger:hover {
+  background: #E84855 !important;
+  color: white !important;
+}
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <span>🎓 RévisBrevet</span>
-      <button id="theme-toggle" class="btn-icon" title="Mode sombre">🌙</button>
-    </div>
+/* Animation en cas d'erreur */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.shake {
+  animation: shake 0.3s ease-in-out;
+}
 
-    <div class="user-profile-widget">
-      <div class="profile-avatar-wrapper">
-        <span id="display-avatar">🦊</span>
-      </div>
-      <div class="profile-info">
-        <h3 id="display-username">Élève de 3e</h3>
-        <div class="profile-meta">Brevet des Collèges 2026</div>
-        <div class="streak-badge">🔥 <span id="display-streak">0</span> jours</div>
-      </div>
-    </div>
-
-    <ul class="nav-links" id="sidebar-menu"></ul>
-
-    <div style="margin-top:auto; padding-top:12px; border-top:1px solid var(--border-color);">
-      <a class="nav-item" id="btn-settings" style="cursor:pointer;">
-        <span>⚙️</span><span>Paramètres IA</span>
-      </a>
-    </div>
-  </aside>
-
-  <!-- CONTENU PRINCIPAL -->
-  <main class="main-content">
-
-    <!-- TOPBAR MOBILE -->
-    <div class="topbar-mobile">
-      <span style="font-weight:700;color:var(--color-primary);">🎓 RévisBrevet</span>
-      <button id="theme-toggle-mobile" class="btn-icon">🌙</button>
-    </div>
-
-    <!-- BANNIÈRE -->
-    <div class="dashboard-welcome">
-      <div>
-        <h2>Révision Brevet des Collèges</h2>
-        <p style="opacity:.85;margin-top:4px;">DNB 2026 — Moteur adaptatif + Automatismes officiels MEN</p>
-        <span class="countdown-alert" id="countdown-badge">⏳ Calcul en cours...</span>
-      </div>
-      <div class="progress-ring-card">
-        <div class="svg-container">
-          <svg width="120" height="120">
-            <circle class="progress-ring__circle-bg" stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
-            <circle id="global-progress-circle" class="progress-ring__circle" stroke-width="8" fill="transparent" r="52" cx="60" cy="60" stroke="#fff"/>
-          </svg>
-          <div class="progress-text" style="color:white;"><span id="global-progress-percent">0</span>%</div>
-        </div>
-        <div class="progress-label" style="color:rgba(255,255,255,.85);">Progression globale</div>
-      </div>
-    </div>
-
-    <!-- ZONE PRINCIPALE -->
-    <div id="app-view-container">
-      <div style="text-align:center;padding:60px 20px;">
-        <div style="font-size:2.5rem;margin-bottom:12px;">📚</div>
-        <p style="color:var(--text-secondary);">Chargement du programme...</p>
-      </div>
-    </div>
-
-  </main>
-</div>
-
-<!-- MODAL QUIZ -->
-<div id="quiz-modal" class="modal">
-  <div class="modal-content" style="max-width:560px;width:90%;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <span id="quiz-progress" style="font-size:.85rem;font-weight:600;color:var(--text-secondary);"></span>
-      <button id="quiz-close-btn" style="background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--color-danger);line-height:1;">×</button>
-    </div>
-    <div id="quiz-progress-bar" style="height:4px;background:var(--border-color);border-radius:2px;margin-bottom:20px;overflow:hidden;">
-      <div id="quiz-progress-fill" style="height:4px;background:var(--color-primary);width:0%;transition:width .3s;border-radius:2px;"></div>
-    </div>
-    <p id="quiz-question-text" style="font-size:1.05rem;font-weight:600;line-height:1.5;margin-bottom:18px;"></p>
-    <div id="quiz-options-container"></div>
-    <div id="quiz-explanation" class="hidden" style="margin-top:14px;background:var(--bg-card-hover);border-left:4px solid var(--color-accent);padding:12px 14px;border-radius:0 8px 8px 0;font-size:.88rem;color:var(--text-secondary);line-height:1.6;">
-      <strong style="color:var(--text-primary);">💡 Explication :</strong> <span id="explanation-text"></span>
-    </div>
-    <div style="margin-top:16px;text-align:right;">
-      <button id="quiz-next-btn" class="hidden btn-primary">Suivant →</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL CLÉ API -->
-<div id="modal-api" class="modal hidden">
-  <div class="modal-content" style="max-width:460px;width:90%;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h3 style="color:var(--text-primary);">🤖 Activer les questions IA</h3>
-      <button id="close-modal-api" style="background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--text-secondary);">×</button>
-    </div>
-    <div style="background:#EEF2FF;border-radius:8px;padding:12px;margin-bottom:16px;font-size:.83rem;color:#3730A3;line-height:1.6;">
-      Claude génère des questions uniques et variées. La clé est <strong>stockée uniquement sur cet appareil</strong>.
-    </div>
-    <label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:6px;">Clé API Claude (Anthropic)</label>
-    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off"
-      style="width:100%;padding:10px;border:1.5px solid var(--border-color);border-radius:8px;font-size:.88rem;font-family:monospace;background:var(--bg-card);color:var(--text-primary);outline:none;box-sizing:border-box;">
-    <div style="margin:6px 0 14px;display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" id="show-key-toggle">
-      <label for="show-key-toggle" style="font-size:.78rem;color:var(--text-secondary);cursor:pointer;">Afficher</label>
-      <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener"
-         style="margin-left:auto;font-size:.78rem;color:var(--color-primary);">Obtenir une clé →</a>
-    </div>
-    <p id="api-key-error" style="color:var(--color-danger);font-size:.82rem;margin-bottom:10px;display:none;"></p>
-    <div style="background:#FEF9C3;border-radius:8px;padding:10px;font-size:.78rem;color:#713F12;margin-bottom:16px;line-height:1.5;">
-      💡 Sans clé, l'app fonctionne normalement avec les questions intégrées + mutations automatiques.
-    </div>
-    <div style="display:flex;gap:10px;">
-      <button id="btn-save-api-key" class="btn-primary" style="flex:1;">✅ Enregistrer</button>
-      <button id="btn-skip-api" style="background:none;border:1.5px solid var(--border-color);color:var(--text-secondary);padding:10px 16px;border-radius:8px;cursor:pointer;">Ignorer</button>
-    </div>
-  </div>
-</div>
-
-<script src="app.js"></script>
-</body>
-</html>
+/* Zone d'indice discrète */
+.indice-box {
+  background: #FFFBEB;
+  border-left: 4px solid #F59E0B;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+  font-size: 0.82rem;
+  color: #78350F;
+  animation: fadeIn 0.3s ease;
+}
