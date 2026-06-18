@@ -1,585 +1,47 @@
-<script>
-// ════════════════════════════════════════════════════════════
-// RévisBrevet 2026 — Moteur Procédural 100% Autonome (Zéro API)
-// Style: Claymorphism — nextlevelbuilder/ui-ux-pro-max-skill
-// ════════════════════════════════════════════════════════════
-
-// ── ÉTAT GLOBAL ─────────────────────────────────────────────
-const S = {
-  data: null,
-  progress: {},
-  carnet: [],
-  streakToday: 0,
-  derniere: null,
-  quiz: { matId:null, chapId:null, label:'', qs:[], idx:0, score:0, typeSaisie: null }
-};
-
-// ── PROGRAMME OFFICIEL & 15 DERNIERS BREVETS ─────────────────
-const PROGRAMME_OFFICIEL = {
-  matieres: {
-    maths: {
-      titre: "Mathématiques", icon: "📐", color: "var(--accent)",
-      chapitres: {
-        maths_auto: { titre: "Automatismes, Algèbre & Géométrie", desc: "Thalès, Pythagore, Fonctions, Équations, Probabilités et Scratch.", source: "mix" }
-      }
-    },
-    francais: {
-      titre: "Français", icon: "✍️", color: "var(--accent2)",
-      chapitres: {
-        francais_gram: { titre: "Grammaire & Outils de la langue", desc: "Classes, fonctions, propositions subordonnées et valeurs des temps.", source: "proc" },
-        francais_open: { titre: "Analyse Littéraire (Sujet Rédaction)", desc: "Autobiographie, satire, poésie engagée et figures de style.", source: "proc" }
-      }
-    },
-    sciences: {
-      titre: "Physique-Chimie & SVT", icon: "🔬", color: "#10B981",
-      chapitres: {
-        pc_mesures: { titre: "Physique : Lois & Calculs Clés", desc: "Loi d'Ohm, Poids/Masse, Vitesse et conversions d'énergies.", source: "mix" },
-        svt_open: { titre: "SVT : Immunité, Génétique & Climat", desc: "Système immunitaire, ADN/gènes, évolution et écosystèmes.", source: "proc" }
-      }
-    },
-    histoire_geo: {
-      titre: "Histoire-Géo & EMC", icon: "🌍", color: "#F59E0B",
-      chapitres: {
-        hist_dates: { titre: "Histoire : Chronologie du XXe Siècle", desc: "Guerres mondiales, totalitarismes, Guerre Froide et Décolonisation.", source: "mix" },
-        geo_open: { titre: "Géographie & Éducation Civique", desc: "Aires urbaines, espaces productifs, UE et Citoyenneté.", source: "proc" }
-      }
-    }
-  }
-};
-
-// Fiches de cours officielles embarquées
-const FICHES_COURS = {
-  maths_auto: `
-    <div class="fiche-section"><div class="fiche-section-title">🔺 Pythagore & Thalès</div><div class="fiche-section-body"><strong>Pythagore :</strong> Si un triangle est rectangle, alors le carré de l'hypoténuse est égal à la somme des carrés des deux autres côtés : <span class="fiche-formule">AC² = AB² + BC²</span>.<br><strong>Thalès :</strong> Permet de calculer des longueurs dans des configurations de droites parallèles : <span class="fiche-formule">AM/AB = AN/AC = MN/BC</span>.</div></div>
-    <div class="fiche-section"><div class="fiche-section-title">📈 Fonctions</div><div class="fiche-section-body"><strong>Linéaire :</strong> <span class="fiche-formule">f(x) = ax</span> (droite passant par l'origine).<br><strong>Affine :</strong> <span class="fiche-formule">f(x) = ax + b</span> (droite quelconque, où b est l'ordonnée à l'origine).</div></div>
-    <div class="fiche-section fiche-piege"><div class="fiche-section-title">⚠️ Piège Fréquent</div><div class="fiche-section-body">Ne confondez pas <strong>l'image</strong> d'un nombre (on calcule f(x)) et son <strong>antécédent</strong> (on résout l'équation f(x) = y).</div></div>
-  `,
-  francais_gram: `
-    <div class="fiche-section"><div class="fiche-section-title">⛓️ Propositions complexes</div><div class="fiche-section-body">Une proposition <strong>subordonnée relative</strong> est introduite par un pronom relatif (qui, que, dont, où...) et complète un nom (l'antécédent). Une proposition <strong>subordonnée conjonctive complétive</strong> est introduite par "que" et complète un verbe (fonction COD).</div></div>
-  `,
-  francais_open: `
-    <div class="fiche-section"><div class="fiche-section-title">🎭 Genres & Figures de Style</div><div class="fiche-section-body"><strong>Autobiographie :</strong> L'auteur, le narrateur et le personnage principal sont la même personne (Pacte autobiographique).<br><strong>Figures clés :</strong> Métaphore (comparaison sans outil), Oxymore (deux mots opposés côte à côte).</div></div>
-  `,
-  pc_mesures: `
-    <div class="fiche-section"><div class="fiche-section-title">⚡ Électricité & Gravitation</div><div class="fiche-section-body"><strong>Loi d'Ohm :</strong> <span class="fiche-formule">U = R × I</span> (U en Volts, R en Ohms, I en Ampères).<br><strong>Poids et Masse :</strong> <span class="fiche-formule">P = m × g</span> (Le poids P est une force en Newtons, la masse m est en kg, g vaut environ 9,8 N/kg sur Terre).</div></div>
-  `,
-  svt_open: `
-    <div class="fiche-section"><div class="fiche-section-title">🧬 Immunologie & Génétique</div><div class="fiche-section-body"><strong>Immunité :</strong> Phagocytose (réponse rapide et non spécifique via les leucocytes), suivie si besoin d'une réponse lente spécifique (lymphocytes B produisant des anticorps, lymphocytes T tueurs).<br><strong>Génétique :</strong> Le phénotype dépend des gènes et des allèles (dominants ou récessifs) portés par les chromosomes.</div></div>
-  `,
-  hist_dates: `
-    <div class="fiche-section"><div class="fiche-section-title">📅 Repères Chronologiques Obligatoires</div><div class="fiche-section-body"><strong>1914-1918 :</strong> Première Guerre mondiale (1915: Génocide Arménien).<br><strong>1939-1945 :</strong> Seconde Guerre mondiale (Régime d'anéantissement et Shoah).<br><strong>1947-1989 :</strong> Guerre Froide (Monde bipolaire).<br><strong>1958 :</strong> Naissance de la Ve République en France.</div></div>
-  `,
-  geo_open: `
-    <div class="fiche-section"><div class="fiche-section-title">🏙️ Aires Urbaines & Territoires</div><div class="fiche-section-body">Une aire urbaine se compose d'un <strong>pôle urbain</strong> (ville-centre + banlieues) et d'une <strong>couronne périurbaine</strong>. Ce phénomène engendre l'étalement urbain et augmente les migrations pendulaires quotidiennes.</div></div>
-  `
-};
-
-// ── LE MOTEUR PROCÉDURAL (FACTORIES ANTI-RÉPÉTITIONS) ───────
-const FACTORIES = {
-  maths_auto: (niv) => {
-    const r = Math.random();
-    if (r < 0.33) {
-      // Loi d'Ohm / Linéaire
-      const R = Math.floor(Math.random() * 80) + 10;
-      const I = Math.floor(Math.random() * 4) + 2;
-      const correct = R * I;
-      return {
-        type: "qcm", enonce: `Une résistance $R = ${R}\\ \\Omega$ est traversée par une intensité $I = ${I}\\ A$. Calculez la tension $U$ à ses bornes en appliquant la loi d'Ohm.`,
-        options: shuffle([`${correct} V`, `${R + I} V`, `${correct - 8} V`, `${R * 2} V`]), bon: `${correct} V`,
-        hint: "Appliquez la formule officielle apprise en physique et en mathématiques : U = R × I.", exp: `D'après la loi d'Ohm, U = R × I. On a donc : ${R} × ${I} = ${correct} Volts.`
-      };
-    } else if (r < 0.66) {
-      // Pythagore direct
-      const multi = Math.floor(Math.random() * 4) + 1;
-      const AB = 3 * multi; const BC = 4 * multi; const AC = 5 * multi;
-      return {
-        type: "qcm", enonce: `Soit un triangle ABC rectangle en B tel que AB = ${AB} cm et BC = ${BC} cm. Calculez la longueur exacte du segment [AC].`,
-        options: shuffle([`${AC} cm`, `${AB + BC} cm`, `${AC * AC} cm`, `${AC + 2} cm`]), bon: `${AC} cm`,
-        hint: "Le triangle est rectangle, le carré de l'hypoténuse AC² est égal à AB² + BC².", exp: `En appliquant le théorème de Pythagore : AC² = AB² + BC² = ${AB}² + ${BC}² = ${AB*AB} + ${BC*BC} = ${AC*AC}. Donc AC = √${AC*AC} = ${AC} cm.`
-      };
-    } else {
-      // Proba simple
-      const boulesVertes = Math.floor(Math.random() * 5) + 2;
-      const boulesRouges = Math.floor(Math.random() * 5) + 2;
-      const total = boulesVertes + boulesRouges;
-      return {
-        type: "qcm", enonce: `Une urne contient ${boulesVertes} boules vertes et ${boulesRouges} boules rouges indiscernables au toucher. On tire une boule au hasard. Quelle est la probabilité d'obtenir une boule verte ?`,
-        options: shuffle([`${boulesVertes}/${total}`, `${boulesRouges}/${total}`, `1/${boulesVertes}`, `1/${total}`]), bon: `${boulesVertes}/${total}`,
-        hint: "La probabilité est égale au nombre de cas favorables (vertes) divisé par le nombre total de cas.", exp: `Il y a ${boulesVertes} boules vertes sur un total de ${boulesVertes} + ${boulesRouges} = ${total} boules. La probabilité est donc de ${boulesVertes}/${total}.`
-      };
-    }
-  },
-  francais_gram: (niv) => {
-    const groupes = [
-      { s: "Le jeune candidat du brevet", v: "révise consciencieusement", c: "ses chapitres d'histoire", f: "COD" },
-      { s: "La professeure de français", v: "explique en détail", c: "la proposition subordonnée", f: "COD" },
-      { s: "Cet élève très attentif", v: "pense constamment à", c: "sa future mention au brevet", f: "COI" }
-    ];
-    const item = groupes[Math.floor(Math.random() * groupes.length)];
-    return {
-      type: "qcm", enonce: `Analysez la phrase suivante : "<em>${item.s} ${item.v} <strong>${item.c}</strong>.</em>"<br>Quelle est la fonction grammaticale exacte du groupe de mots en gras ?`,
-      options: shuffle(["COD (Complément d'objet direct)", "COI (Complément d'objet indirect)", "Sujet de la phrase", "Complément circonstanciel"]), bon: item.f === "COD" ? "COD (Complément d'objet direct)" : "COI (Complément d'objet indirect)",
-      hint: "Posez-vous la question : le verbe appelle-t-il un complément direct (Quoi ?) ou indirect (À quoi / De quoi ?) ?", exp: `Le groupe de mots complète directement le verbe sans préposition pour le COD, ou via une préposition ("à", "de") pour le COI.`
-    };
-  },
-  francais_open: (niv) => {
-    const themes = [
-      { t: "l'autobiographie", q: "Quel est l'objectif premier d'un écrivain lorsqu'il écrit une autobiographie ?", kw: ["soi", "raconter", "vie", "passé", "vérité", "mémoire"] },
-      { t: "la poésie engagée", q: "Qu'est-ce qui caractérise un poème dit 'engagé' dans la littérature du XXe siècle ?", kw: ["dénoncer", "guerre", "combat", "politique", "cause", "défendre"] }
-    ];
-    const item = themes[Math.floor(Math.random() * themes.length)];
-    return {
-      type: "open", enonce: `<strong>Sujet d'analyse littéraire :</strong><br>${item.q}`,
-      keywords: item.kw, hint: "Rédigez 2 à 3 phrases claires en utilisant un vocabulaire littéraire précis.", exp: `Pour valider cet exercice type Brevet, votre argumentation doit évoquer des termes clés comme : ${item.kw.join(', ')}.`
-    };
-  },
-  pc_mesures: (niv) => {
-    const m = Math.floor(Math.random() * 70) + 10;
-    const p = Math.round(m * 9.8);
-    return {
-      type: "qcm", enonce: `Un objet possède une masse mécanique $m = ${m}\\ kg$ sur la surface de la Terre. Sachant que l'intensité de la pesanteur terrestre vaut $g = 9,8\\ N/kg$, déterminez son poids $P$.`,
-      options: shuffle([`${p} N`, `${m} N`, `${Math.round(m/9.8)} N`, `${p} kg`]), bon: `${p} N`,
-      hint: "Utilisez la formule reliant le Poids et la Masse : P = m × g.", exp: `Le calcul est : P = m × g = ${m} kg × 9,8 N/kg = ${p} Newtons (N). Ne confondez pas l'unité de masse (kg) et de poids (N).`
-    };
-  },
-  svt_open: (niv) => {
-    const systemes = [
-      { s: "l'immunité", q: "Expliquez brièvement le rôle des lymphocytes B lors d'une infection bactérienne dans l'organisme.", kw: ["anticorps", "spécifique", "bactérie", "antigène", "reconnaître"] },
-      { s: "la génétique", q: "Quelle est la différence fondamentale en génétique entre un allèle dominant et un allèle récessif ?", kw: ["s'exprimer", "dominant", "récessif", "chromosomes", "paire"] }
-    ];
-    const item = systemes[Math.floor(Math.random() * systemes.length)];
-    return {
-      type: "open", enonce: `<strong>Question de cours (SVT) :</strong><br>${item.q}`,
-      keywords: item.kw, hint: "Pensez aux mécanismes de défense ou de transmission cellulaire vus dans le programme officiel.", exp: `Votre synthèse de SVT doit obligatoirement inclure les notions biologiques suivantes : ${item.kw.join(', ')}.`
-    };
-  },
-  hist_dates: (niv) => {
-    const dates = [
-      { d: "1914-1918", e: "la Première Guerre mondiale" },
-      { d: "1939-1945", e: "la Seconde Guerre mondiale" },
-      { d: "1947-1989", e: "la Guerre Froide" },
-      { d: "1958", e: "la fondation de la Ve République par Charles de Gaulle" }
-    ];
-    const item = dates[Math.floor(Math.random() * dates.length)];
-    return {
-      type: "qcm", enonce: `Dans l'histoire du XXe siècle, quelles sont les dates officielles correspondantes à l'événement suivant : <strong>${item.e}</strong> ?`,
-      options: shuffle([item.d, "1789", "1848", "1917-1922"]), bon: item.d,
-      hint: "Ce repère fait partie des incontournables demandés à chaque session du diplôme national du brevet.", exp: `D'après les repères officiels du Ministère de l'Éducation Nationale, ${item.e} s'est déroulé en ${item.d}.`
-    };
-  },
-  geo_open: (niv) => {
-    const sujets = [
-      { g: "les aires urbaines", q: "Décrivez brièvement le phénomène de la périurbanisation et ses conséquences sur les transports quotidiens.", kw: ["étalement", "ville", "migrations", "couronne", "voiture", "transports"] },
-      { g: "la citoyenneté", q: "Quels sont les trois principes fondamentaux de la laïcité au sein de la République Française et de l'école ?", kw: ["liberté", "neutralité", "religion", "valeurs", "égalité", "loi"] }
-    ];
-    const item = sujets[Math.floor(Math.random() * sujets.length)];
-    return {
-      type: "open", enonce: `<strong>Développement construit ou EMC :</strong><br>${item.q}`,
-      keywords: item.kw, hint: "Pensez à l'aménagement du territoire, aux flux de population ou à la Constitution de la Ve République.", exp: `Pour structurer votre réponse géo/EMC comme attendu par les correcteurs, ciblez : ${item.kw.join(', ')}.`
-    };
-  }
-};
-
-// ── FONCTIONS LOGIQUES ET ROUTAGE ───────────────────────────
-function shuffle(arr) {
-  const a = [...arr];
-  for(let i=a.length-1; i>0; i--) {
-    const j = Math.floor(Math.random() * (i+1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function $(id) { return document.getElementById(id); }
-
-// Sauvegarde et chargement LocalStorage
-function saveLS() {
-  localStorage.setItem('revis_progress', JSON.stringify(S.progress));
-  localStorage.setItem('revis_carnet', JSON.stringify(S.carnet));
-  localStorage.setItem('revis_streak', S.streakToday);
-}
-function loadLS() {
-  try {
-    S.progress = JSON.parse(localStorage.getItem('revis_progress')) || {};
-    S.carnet = JSON.parse(localStorage.getItem('revis_carnet')) || [];
-    S.streakToday = parseInt(localStorage.getItem('revis_streak')) || 0;
-  } catch(e) {
-    S.progress = {}; S.carnet = []; S.streakToday = 0;
+// ── CHARGEMENT DE LA BASE DE DONNÉES LOCALEMENT ──────────────
+async function loadData() {
+  // Les données sont déjà présentes localement dans PROGRAMME_OFFICIEL
+  if (!S.data) {
+    S.data = PROGRAMME_OFFICIEL;
   }
 }
 
-// Rafraîchir les éléments visuels de l'interface
-function refreshRing() {
-  const chapsTotal = 7; // Total de chapitres définis dans le programme
-  const masterise = Object.values(S.progress).filter(v => v >= 3).length; // Maîtrisé si niveau 3 acquis
-  const pct = Math.round((masterise / chapsTotal) * 100) || 0;
-  
-  $('ring-pct').textContent = pct;
-  const offset = 188 - (188 * pct / 100);
-  $('ring-fill').style.strokeDashoffset = offset;
-  $('streak-val').textContent = S.streakToday;
-}
+// ── INITIALISATION COMPLÈTE DE L'APPLICATION ─────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  loadLS();       // Charge la progression de l'étudiant
+  await loadData(); // Initialise proprement les données sans faire de fetch()
+  refreshBadge();  // Actualise le carnet d'erreurs
+  refreshRing();   // Actualise le cercle Claymorphic de progression
+  goHome();        // Lance immédiatement l'affichage de l'accueil
 
-function refreshBadge() {
-  const badge = $('carnet-badge');
-  if(S.carnet.length > 0) {
-    badge.textContent = S.carnet.length;
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
-// Navigation applicative
-function clearActiveNav() {
-  ['nav-home', 'nav-carnet', 'nav-planning'].forEach(id => $(id).classList.remove('active'));
-}
-
-function goHome() {
-  clearActiveNav();
-  $('nav-home').classList.add('active');
-  
-  let html = `<h2 class="section-title">📚 Matières du Brevet <span class="badge-count">4 épreuves</span></h2><div class="matieres-grid">`;
-  
-  for(const [id, m] of Object.entries(PROGRAMME_OFFICIEL.matieres)) {
-    html += `
-      <div class="mat-card" onclick="goMatiere('${id}')">
-        <div class="mat-icon" style="background:${m.color}20; color:${m.color}">${m.icon}</div>
-        <div class="mat-info">
-          <h3>${m.titre}</h3>
-          <p>Progression thématique active</p>
-        </div>
-        <div class="mat-arrow" style="color:${m.color}">➔</div>
-      </div>
-    `;
-  }
-  html += `</div>`;
-  $('view').innerHTML = html;
-  refreshRing();
-}
-
-function goMatiere(matId) {
-  const mat = PROGRAMME_OFFICIEL.matieres[matId];
-  let html = `
-    <button class="back-btn" onclick="goHome()">🔙 Retour à l'accueil</button>
-    <h2 class="section-title" style="color:${mat.color}">${mat.icon} ${mat.titre}</h2>
-    <div class="chapitres-list">
-  `;
-  
-  for(const [chapId, c] of Object.entries(mat.chapitres)) {
-    const currentNiv = S.progress[chapId] || 0;
-    html += `
-      <div class="chap-card">
-        <div class="chap-title">${c.titre}</div>
-        <p class="chap-fiche">${c.desc}</p>
-        <div class="badges-row">
-          <span class="badge badge-mix">Procédural & Anti-Répétition</span>
-          <span class="badge badge-ok">Niveau actuel : ${currentNiv}/3</span>
-        </div>
-        <button class="btn-fiche" onclick="ouvrirFiche('${chapId}')">📖 Lire la fiche de cours</button>
-        <button class="btn-primary" style="background:${mat.color}" onclick="lancerQuiz('${matId}', '${chapId}')">S'entraîner (5 questions) 🔥</button>
-      </div>
-    `;
-  }
-  html += `</div>`;
-  $('view').innerHTML = html;
-}
-
-function goCarnet() {
-  clearActiveNav();
-  $('nav-carnet').classList.add('active');
-  
-  let html = `
-    <div class="carnet-header">
-      <h3>📕 Carnet de révision ciblé</h3>
-      <p>Les concepts et questions où vous avez commis des erreurs lors de vos 15 dernières sessions.</p>
-    </div>
-  `;
-  
-  if(S.carnet.length === 0) {
-    html += `
-      <div class="empty-state">
-        <span class="empty-icon">🎉</span>
-        <h3>Zéro faute en cours !</h3>
-        <p>Votre carnet d'erreurs est totalement vide pour le moment.</p>
-      </div>
-    `;
-  } else {
-    S.carnet.forEach((item, idx) => {
-      html += `
-        <div class="error-card">
-          <div class="error-q">${item.enonce}</div>
-          <div class="error-exp" style="margin-top:6px; color:var(--accent);"><strong>Correction attendue :</strong> ${item.bon || 'Mots-clés requis.'}</div>
-          <div class="error-exp" style="margin-top:4px;">💡 ${item.exp}</div>
-        </div>
-      `;
-    });
-  }
-  $('view').innerHTML = html;
-}
-
-function goPlanning() {
-  clearActiveNav();
-  $('nav-planning').classList.add('active');
-  $('view').innerHTML = `
-    <h2 class="section-title">📅 Votre planning d'examen 2026</h2>
-    <div class="chap-card" style="margin-bottom:12px;">
-      <div class="chap-title" style="color:var(--accent)">Jour 1 : Épreuves Écrites</div>
-      <p class="chap-fiche"><strong>Matin :</strong> Français (Grammaire, Dictée, Compréhension & Rédaction) — 100 points.<br><strong>Après-midi :</strong> Mathématiques (Calculs, Géométrie, Scratch) — 100 points.</p>
-    </div>
-    <div class="chap-card">
-      <div class="chap-title" style="color:var(--accent2)">Jour 2 : Épreuves Écrites</div>
-      <p class="chap-fiche"><strong>Matin :</strong> Histoire-Géographie & EMC — 50 points.<br><strong>Après-midi :</strong> Sciences (2 matières tirées au sort sur 3) — 50 points.</p>
-    </div>
-  `;
-}
-
-// Bottom sheet Fiches de cours
-function ouvrirFiche(chapId) {
-  const content = FICHES_COURS[chapId] || "<p>Fiche en cours d'actualisation par l'Éducation Nationale.</p>";
-  $('sheet-body').innerHTML = content;
-  $('sheet-title').textContent = "📖 " + (chapId.includes('maths') ? "Mathématiques" : "Fiche de révision");
-  $('sheet-overlay').classList.add('open');
-  $('bottom-sheet').classList.add('open');
-}
-
-function fermerFiche() {
-  $('sheet-overlay').classList.remove('open');
-  $('bottom-sheet').classList.remove('remove');
-  // fallback immédiat classe css
-  $('sheet-overlay').className = "sheet-overlay";
-  $('bottom-sheet').className = "bottom-sheet";
-}
-
-function ouvrirFicheQuiz() {
-  if (S.quiz.chapId) ouvrirFiche(S.quiz.chapId);
-}
-
-// ── GESTIONNAIRE ET MOTEUR DU QUIZ (SESSIONS DE 5 QUESTIONS) ──
-function lancerQuiz(matId, chapId) {
-  const mat = PROGRAMME_OFFICIEL.matieres[matId];
-  const factory = FACTORIES[chapId];
-  
-  S.quiz.matId = matId;
-  S.quiz.chapId = chapId;
-  S.quiz.label = mat.titre;
-  S.quiz.idx = 0;
-  S.quiz.score = 0;
-  S.quiz.qs = [];
-  
-  // Génération de 5 questions uniques sans doublons via l'algorithme procédural
-  while(S.quiz.qs.length < 5) {
-    const q = factory(S.progress[chapId] || 1);
-    if(!S.quiz.qs.some(exist => exist.enonce === q.enonce)) {
-      S.quiz.qs.push(q);
-    }
-  }
-  
-  $('quiz-subject').textContent = S.quiz.label;
-  $('btn-fiche-quiz').style.display = 'block';
-  $('quiz-screen').classList.add('open');
-  afficherQuestion();
-}
-
-function lancerExamen() {
-  // Mode Examen Blanc : compilation transverse de toutes les usines
-  S.quiz.matId = "examen";
-  S.quiz.chapId = null;
-  S.quiz.label = "Examen Blanc Global";
-  S.quiz.idx = 0;
-  S.quiz.score = 0;
-  S.quiz.qs = [];
-  
-  const toutesFactories = Object.values(FACTORIES);
-  while(S.quiz.qs.length < 5) {
-    const fact = toutesFactories[Math.floor(Math.random() * toutesFactories.length)];
-    const q = fact(2);
-    if(!S.quiz.qs.some(exist => exist.enonce === q.enonce)) {
-      S.quiz.qs.push(q);
-    }
-  }
-  
-  $('quiz-subject').textContent = S.quiz.label;
-  $('btn-fiche-quiz').style.display = 'none';
-  $('quiz-screen').classList.add('open');
-  afficherQuestion();
-}
-
-function fermerQuiz() {
-  $('quiz-screen').classList.remove('open');
-  $('quiz-footer').classList.remove('open');
-  goHome();
-}
-
-function afficherQuestion() {
-  const q = S.quiz.qs[S.quiz.idx];
-  $('quiz-counter').textContent = `${S.quiz.idx + 1} / 5`;
-  $('quiz-bar').style.width = `${((S.quiz.idx) / 5) * 100}%`;
-  $('quiz-footer').classList.remove('open');
-  
-  let html = `
-    <div class="q-badges">
-      <span class="badge-level" style="background:var(--accent)">Brevet Officiel 2026</span>
-      <span class="badge-theme">${S.quiz.label}</span>
-    </div>
-    <div class="q-enonce">${q.enonce}</div>
-    <button class="btn-hint" id="hint-trigger" onclick="$('hint-box-el').classList.toggle('open')">💡 Besoin d'un indice pour résoudre ?</button>
-    <div class="hint-box" id="hint-box-el">${q.hint}</div>
-  `;
-  
-  if(q.type === "qcm") {
-    S.quiz.typeSaisie = "qcm";
-    html += `<div class="options-grid">`;
-    q.options.forEach((opt) => {
-      html += `<button class="btn-option" onclick="verifierQCM(this, '${opt.replace(/'/g, "\\'")}')">${opt}</button>`;
-    });
-    html += `</div>`;
-  } else {
-    S.quiz.typeSaisie = "open";
-    html += `
-      <div class="open-answer-wrap">
-        <textarea class="textarea-answer" id="open-text" placeholder="Rédigez votre réponse structurée ici..."></textarea>
-        <button class="btn-valider" onclick="verifierOpen()">Soumettre ma réponse pour analyse</button>
-      </div>
-    `;
-  }
-  
-  html += `
-    <div class="explanation-box" id="exp-box">
-      <div class="exp-head">🎓 Correction & Analyse Métier</div>
-      <div class="exp-text">${q.exp}</div>
-    </div>
-  `;
-  
-  $('quiz-body').innerHTML = html;
-}
-
-function verifierQCM(btnSelected, optText) {
-  const q = S.quiz.qs[S.quiz.idx];
-  const allBtns = document.querySelectorAll('.btn-option');
-  allBtns.forEach(b => b.disabled = true);
-  
-  if(optText === q.bon) {
-    btnSelected.classList.add('correct');
-    vibrate(30);
-    S.quiz.score++;
-  } else {
-    btnSelected.classList.add('wrong');
-    vibrate([50, 50]);
-    // Recherche et affichage de la bonne option pour transparence
-    allBtns.forEach(b => {
-      if(b.textContent === q.bon) b.classList.add('correct');
-    });
-    // Inscription au carnet d'erreurs
-    if(!S.carnet.some(e => e.enonce === q.enonce)) {
-      S.carnet.push(q);
-      refreshBadge();
-    }
-  }
-  
-  $('exp-box').classList.add('open');
-  $('quiz-bar').style.width = `${((S.quiz.idx + 1) / 5) * 100}%`;
-  $('quiz-footer').classList.add('open');
-}
-
-function verifierOpen() {
-  const q = S.quiz.qs[S.quiz.idx];
-  const text = $('open-text').value.toLowerCase();
-  
-  if(!text.trim()) {
-    alert("Veuillez saisir une réponse avant de valider.");
-    return;
-  }
-  
-  $('open-text').disabled = true;
-  document.querySelector('.btn-valider').disabled = true;
-  
-  // Validation intelligente par recherche de mots-clés (MEN)
-  const trouves = q.keywords.filter(kw => text.includes(kw));
-  const scorePct = trouves.length / q.keywords.length;
-  
-  let feedbackHtml = `<div class="keywords-feedback">`;
-  q.keywords.forEach(kw => {
-    if(text.includes(kw)) {
-      feedbackHtml += `<span class="kw-found">✓ ${kw}</span>`;
-    } else {
-      feedbackHtml += `<span class="kw-missing">✗ ${kw}</span>`;
-    }
-  });
-  feedbackHtml += `</div>`;
-  
-  $('quiz-body').insertAdjacentHTML('beforeend', feedbackHtml);
-  
-  if(scorePct >= 0.5) {
-    S.quiz.score++;
-    vibrate(30);
-  } else {
-    vibrate([50, 50]);
-    if(!S.carnet.some(e => e.enonce === q.enonce)) {
-      S.carnet.push(q);
-      refreshBadge();
-    }
-  }
-  
-  $('exp-box').classList.add('open');
-  $('quiz-bar').style.width = `${((S.quiz.idx + 1) / 5) * 100}%`;
-  $('quiz-footer').classList.add('open');
-}
-
-function finSession() {
-  $('quiz-bar').style.width = '100%';
-  let emoji = "🎖️"; let msg = "Excellent travail ! Vous ciblez la mention Très Bien.";
-  if(S.quiz.score < 3) { emoji = "🫵"; msg = "Il faut relire attentivement la fiche de cours et recommencer."; }
-  
-  let html = `
-    <div class="result-screen">
-      <span class="result-emoji">${emoji}</span>
-      <h2>Session terminée !</h2>
-      <div class="result-score">${S.quiz.score} / 5</div>
-      <p class="result-msg">${msg}</p>
-      <div class="result-bar-wrap">
-        <div class="result-bar-fill" style="width:${(S.quiz.score/5)*100}%; background:var(--accent-grad)"></div>
-      </div>
-      <div class="result-btns">
-        <button class="btn-primary" onclick="fermerQuiz()">Fermer et voir ma progression</button>
-      </div>
-    </div>
-  `;
-  
-  // Enregistrement de l'expérience et montée en niveau
-  if(S.quiz.score >= 4 && S.quiz.chapId) {
-    const actuel = S.progress[S.quiz.chapId] || 0;
-    if(actuel < 3) S.progress[S.quiz.chapId] = actuel + 1;
-  }
-  
-  S.streakToday++;
-  saveLS();
-  $('quiz-body').innerHTML = html;
-}
-
-// ── INITIALISATION NATIVE DE L'APPLICATION ───────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  loadLS();
-  refreshBadge();
-  goHome();
-  
-  // Fermeture forcée de la modale
+  // Gestion de la fermeture du quiz
   $('quiz-close').addEventListener('click', fermerQuiz);
-  
-  // Gestionnaire d'incrémentation du bouton continuer
+  $('quiz-close').addEventListener('touchstart', e => { 
+    e.preventDefault(); 
+    fermerQuiz(); 
+  }, { passive: false });
+
+  // Gestion du bouton Continuer dans le quiz
   $('quiz-next').addEventListener('click', () => {
     S.quiz.idx++;
-    if(S.quiz.idx < S.quiz.qs.length) {
+    if (S.quiz.idx < S.quiz.qs.length) {
       afficherQuestion();
     } else {
       finSession();
     }
   });
-  
-  // Gestion alternative Thème
+
+  // Activation du bouton FAB Examen Blanc permanent
+  $('fab-examen').addEventListener('click', lancerExamen);
+  $('fab-examen').addEventListener('touchstart', e => { 
+    e.preventDefault(); 
+    lancerExamen(); 
+  }, { passive: false });
+
+  // Gestion du basculement de thème (Clair / Sombre)
   $('btn-theme').addEventListener('click', () => {
     document.body.classList.toggle('dark-bg');
-    if(document.body.classList.contains('dark-bg')) {
+    if (document.body.classList.contains('dark-bg')) {
       document.body.style.setProperty('--bg', '#1E1B24');
       document.body.style.setProperty('--text', '#F4F1FA');
       $('btn-theme').textContent = '☀️';
@@ -589,8 +51,17 @@ document.addEventListener('DOMContentLoaded', () => {
       $('btn-theme').textContent = '🌙';
     }
   });
+
+  // Swipe bas pour fermer naturellement le quiz sur mobile
+  let touchStartY = 0;
+  $('quiz-screen').addEventListener('touchstart', e => { 
+    touchStartY = e.touches[0].clientY; 
+  }, { passive: true });
   
-  // Trigger bouton FAB Examen Blanc
-  $('fab-examen').addEventListener('click', lancerExamen);
+  $('quiz-screen').addEventListener('touchmove', e => {
+    const touchY = e.touches[0].clientY;
+    if (touchY - touchStartY > 150 && $('quiz-screen').scrollTop <= 0) {
+      fermerQuiz();
+    }
+  }, { passive: true });
 });
-</script>
