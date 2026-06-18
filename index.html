@@ -1,10 +1,1941 @@
-// ── CHARGEMENT DE LA BASE DE DONNÉES EN LOCAL (ORIGINE) ──────
-async function loadData() {
-  // Restauration stricte sur les données locales du fichier sans fetch
-  S.data = PROGRAMME_OFFICIEL;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>RévisBrevet 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── CLAYMORPHISM MOBILE — RévisBrevet 2026 ─────────────────
+   Design system: nextlevelbuilder/ui-ux-pro-max-skill
+   Style: Claymorphism (Mobile) — Best for: Children/teen education apps
+   ──────────────────────────────────────────────────────────── */
+:root {
+  --bg:          #F4F1FA;
+  --card-bg:     rgba(255,255,255,0.82);
+  --text:        #332F3A;
+  --muted:       #7C7585;
+  --accent:      #7C3AED;
+  --accent2:     #DB2777;
+  --accent-grad: linear-gradient(135deg, #A78BFA, #7C3AED);
+  --success:     #10B981;
+  --warning:     #F59E0B;
+  --danger:      #EF4444;
+  --border:      rgba(124,58,237,0.12);
+  --shadow-clay: 0 8px 24px rgba(124,58,237,0.18), 0 2px 6px rgba(124,58,237,0.10);
+  --shadow-btn:  0 6px 20px rgba(124,58,237,0.35);
+  --r-outer:     28px;
+  --r-card:      22px;
+  --r-btn:       16px;
+  --font-h:      'Nunito', sans-serif;
+  --font-b:      'DM Sans', sans-serif;
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bot:    env(safe-area-inset-bottom, 0px);
 }
 
-// ── INIT ET ÉCOUTEURS D'ÉVÉNEMENTS D'ORIGINE ──────────────────
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── BLOBS DÉCORATIFS ─────────────────────────────────────── */
+.blob-container { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.22;
+  animation: drift 8s ease-in-out infinite alternate;
+}
+.blob-1 { width: 280px; height: 280px; background: #A78BFA; top: -80px; right: -60px; animation-delay: 0s; }
+.blob-2 { width: 220px; height: 220px; background: #F9A8D4; bottom: 20%; left: -60px; animation-delay: -3s; }
+.blob-3 { width: 180px; height: 180px; background: #6EE7B7; bottom: -40px; right: 20%; animation-delay: -5s; }
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(20px, -20px) scale(1.05); }
+}
+
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+#app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bot) + 80px);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.app-logo { font-family: var(--font-h); font-weight: 900; font-size: 1.3rem; color: var(--accent); }
+.app-logo span { color: var(--accent2); }
+.btn-icon {
+  width: 42px; height: 42px;
+  background: var(--card-bg);
+  border: none;
+  border-radius: 14px;
+  box-shadow: var(--shadow-clay);
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform .15s, box-shadow .15s;
+  -webkit-appearance: none;
+}
+.btn-icon:active { transform: scale(0.92); box-shadow: 0 3px 10px rgba(124,58,237,0.18); }
+
+/* ── PROGRESSION RING ───────────────────────────────────────── */
+.progress-card {
+  background: var(--card-bg);
+  border-radius: var(--r-outer);
+  padding: 20px;
+  box-shadow: var(--shadow-clay);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+}
+.ring-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+.ring-wrap svg { transform: rotate(-90deg); }
+.ring-bg  { fill: none; stroke: rgba(124,58,237,0.12); stroke-width: 7; }
+.ring-fill{ fill: none; stroke: url(#grad); stroke-width: 7; stroke-linecap: round;
+            stroke-dasharray: 188 188; stroke-dashoffset: 188; transition: stroke-dashoffset .7s ease; }
+.ring-text {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-h); font-weight: 900; font-size: 1.1rem; color: var(--accent);
+}
+.progress-meta h2 { font-family: var(--font-h); font-weight: 900; font-size: 1.05rem; color: var(--text); }
+.progress-meta p  { font-size: .82rem; color: var(--muted); margin-top: 3px; }
+.streak { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px;
+          background: #FEF3C7; color: #92400E; padding: 3px 10px; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+
+/* ── SECTION TITRE ──────────────────────────────────────────── */
+.section-title {
+  font-family: var(--font-h); font-weight: 900; font-size: 1rem;
+  color: var(--text); margin-bottom: 12px; padding-left: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title .badge-count {
+  background: var(--accent-grad); color: white; font-size: .65rem;
+  padding: 2px 8px; border-radius: 20px; font-weight: 700;
+}
+
+/* ── CARDS MATIÈRES ─────────────────────────────────────────── */
+.matieres-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.mat-card {
+  background: var(--card-bg);
+  border-radius: var(--r-card);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-clay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s;
+  display: flex; align-items: center; gap: 14px;
+  -webkit-appearance: none;
+}
+.mat-card:active { transform: scale(0.96); box-shadow: 0 3px 10px rgba(124,58,237,0.12); }
+.mat-icon {
+  width: 48px; height: 48px; border-radius: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+}
+.mat-info { flex: 1; min-width: 0; }
+.mat-info h3 { font-family: var(--font-h); font-weight: 800; font-size: .95rem; color: var(--text); }
+.mat-info p  { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+.mat-arrow   { font-size: 1.2rem; color: var(--accent); flex-shrink: 0; }
+
+/* ── CHAPITRES ──────────────────────────────────────────────── */
+.chapitres-list { display: flex; flex-direction: column; gap: 10px; }
+.chap-card {
+  background: var(--card-bg);
+  border-radius: var(--r-card);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-clay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+}
+.chap-title { font-family: var(--font-h); font-weight: 800; font-size: .9rem; color: var(--text); margin-bottom: 6px; }
+.badges-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.badge {
+  padding: 2px 8px; border-radius: 20px; font-size: .65rem; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.badge-men   { background: #EEF2FF; color: #3D5A99; border: 1px solid #C7D2FE; }
+.badge-proc  { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
+.badge-mix   { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.badge-easy  { background: #D1FAE5; color: #065F46; }
+.badge-med   { background: #FEF3C7; color: #78350F; }
+.badge-hard  { background: #FEE2E2; color: #7F1D1D; }
+.badge-ok    { background: #D1FAE5; color: #065F46; }
+.chap-fiche  { font-size: .75rem; color: var(--muted); line-height: 1.4; margin-bottom: 10px; }
+
+/* ── BOUTON PRINCIPAL ───────────────────────────────────────── */
+.btn-primary {
+  background: var(--accent-grad);
+  color: white;
+  border: none;
+  border-radius: var(--r-btn);
+  padding: 13px 22px;
+  font-family: var(--font-h);
+  font-weight: 800;
+  font-size: .92rem;
+  cursor: pointer;
+  width: 100%;
+  box-shadow: var(--shadow-btn);
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s;
+  -webkit-appearance: none;
+  letter-spacing: 0.2px;
+}
+.btn-primary:active { transform: scale(0.94); box-shadow: 0 3px 10px rgba(124,58,237,0.2); }
+.btn-secondary {
+  background: var(--card-bg);
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  border-radius: var(--r-btn);
+  padding: 11px 22px;
+  font-family: var(--font-h);
+  font-weight: 800;
+  font-size: .88rem;
+  cursor: pointer;
+  width: 100%;
+  transition: transform .15s, box-shadow .15s;
+  -webkit-appearance: none;
+  backdrop-filter: blur(6px);
+}
+.btn-secondary:active { transform: scale(0.95); }
+.btn-ghost {
+  background: none;
+  color: var(--muted);
+  border: none;
+  border-radius: var(--r-btn);
+  padding: 10px 22px;
+  font-family: var(--font-b);
+  font-size: .85rem;
+  cursor: pointer;
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+/* ── BOTTOM NAV ─────────────────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: calc(64px + var(--safe-bot));
+  background: rgba(255,255,255,0.90);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  padding-top: 8px;
+  z-index: 200;
+  box-shadow: 0 -4px 20px rgba(124,58,237,0.08);
+}
+.nav-btn {
+  flex: 1; background: none; border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 2px 4px;
+  -webkit-appearance: none;
+}
+.nav-btn .nav-icon { font-size: 1.3rem; transition: transform .2s cubic-bezier(.34,1.56,.64,1); }
+.nav-btn .nav-label { font-family: var(--font-b); font-size: .6rem; color: var(--muted); font-weight: 500; }
+.nav-btn.active .nav-icon { transform: scale(1.2); }
+.nav-btn.active .nav-label { color: var(--accent); font-weight: 700; }
+.nav-badge {
+  position: absolute; top: -2px; right: -4px;
+  background: var(--danger); color: white;
+  width: 16px; height: 16px; border-radius: 50%;
+  font-size: .55rem; font-weight: 900; display: flex; align-items: center; justify-content: center;
+}
+.nav-icon-wrap { position: relative; display: inline-block; }
+
+/* ── ÉCRAN QUIZ MODAL (overlay plein écran) ─────────────────── */
+#quiz-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 500;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: none;
+  flex-direction: column;
+}
+#quiz-screen.open { display: flex; }
+
+.quiz-header {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(244,241,250,0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: calc(var(--safe-top) + 12px) 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.quiz-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.quiz-subject { font-family: var(--font-h); font-weight: 800; font-size: .9rem; color: var(--accent); }
+.quiz-counter { font-family: var(--font-h); font-weight: 700; font-size: .82rem; color: var(--muted); }
+.progress-bar-wrap { height: 8px; background: rgba(124,58,237,0.12); border-radius: 4px; overflow: hidden; }
+.progress-bar-fill {
+  height: 100%; background: var(--accent-grad); border-radius: 4px;
+  transition: width .4s ease; width: 0%;
+}
+
+.quiz-body {
+  flex: 1;
+  padding: 20px 16px calc(var(--safe-bot) + 100px);
+}
+
+/* Badges de question */
+.q-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.badge-level {
+  padding: 4px 12px; border-radius: 20px; font-size: .68rem;
+  font-family: var(--font-h); font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
+  color: white;
+}
+.badge-theme {
+  background: var(--card-bg); color: var(--accent);
+  border: 1px solid var(--border); padding: 4px 10px;
+  border-radius: 20px; font-size: .68rem; font-weight: 700;
+  font-family: var(--font-b);
+  backdrop-filter: blur(6px);
+}
+.badge-men-q {
+  background: #EEF2FF; color: #3D5A99;
+  border: 1px solid #C7D2FE; padding: 4px 10px;
+  border-radius: 20px; font-size: .65rem; font-weight: 700;
+}
+
+/* Énoncé */
+.q-enonce {
+  font-family: var(--font-h); font-weight: 700; font-size: 1.05rem;
+  color: var(--text); line-height: 1.5; margin-bottom: 20px;
+  background: var(--card-bg);
+  border-radius: var(--r-card);
+  padding: 18px;
+  box-shadow: var(--shadow-clay);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Indice */
+.btn-hint {
+  background: none; border: 2px dashed var(--warning);
+  color: var(--warning); border-radius: 12px; padding: 8px 14px;
+  font-family: var(--font-b); font-size: .78rem; font-weight: 600;
+  cursor: pointer; margin-bottom: 14px; display: block; width: 100%;
+  -webkit-appearance: none;
+}
+.hint-box {
+  background: #FFFBEB; border-left: 3px solid var(--warning);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+  font-size: .82rem; color: #78350F; line-height: 1.5;
+  display: none;
+}
+.hint-box.open { display: block; }
+
+/* Options */
+.options-grid { display: flex; flex-direction: column; gap: 10px; }
+.btn-option {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  padding: 15px 18px;
+  font-family: var(--font-b);
+  font-size: .92rem;
+  font-weight: 500;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(124,58,237,0.08);
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), border-color .15s, background .15s, box-shadow .15s;
+  min-height: 52px;
+  width: 100%;
+  -webkit-appearance: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  line-height: 1.3;
+}
+.btn-option:active:not(:disabled) { transform: scale(0.96); }
+.btn-option:not(:disabled):not(.correct):not(.wrong):hover {
+  border-color: var(--accent);
+  background: rgba(124,58,237,0.06);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(124,58,237,0.15);
+}
+.btn-option.correct {
+  background: #D1FAE5; border-color: var(--success);
+  color: #064E3B; font-weight: 700;
+  box-shadow: 0 4px 12px rgba(16,185,129,0.25);
+}
+.btn-option.wrong {
+  background: #FEE2E2; border-color: var(--danger);
+  color: #7F1D1D;
+  box-shadow: 0 4px 12px rgba(239,68,68,0.2);
+}
+
+/* Explication */
+.explanation-box {
+  background: linear-gradient(135deg, #EFF6FF, #EEF2FF);
+  border: 1px solid #BFDBFE;
+  border-radius: 18px; padding: 16px 18px; margin-top: 14px;
+  display: none;
+}
+.explanation-box.open { display: block; }
+.explanation-box .exp-head { font-family: var(--font-h); font-weight: 800; font-size: .85rem; color: #1E3A8A; margin-bottom: 6px; }
+.explanation-box .exp-text { font-size: .85rem; color: #1E40AF; line-height: 1.5; }
+
+/* Footer quiz sticky */
+.quiz-footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 12px 16px calc(var(--safe-bot) + 12px);
+  background: rgba(244,241,250,0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  display: none;
+  z-index: 600;
+}
+.quiz-footer.open { display: block; }
+
+/* ── ÉCRAN RÉSULTATS ─────────────────────────────────────────── */
+.result-screen {
+  text-align: center; padding: 30px 16px calc(var(--safe-bot) + 100px);
+}
+.result-emoji { font-size: 4rem; display: block; margin-bottom: 10px; }
+.result-score {
+  font-family: var(--font-h); font-weight: 900; font-size: 3rem;
+  background: var(--accent-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin: 10px 0;
+}
+.result-msg { font-size: .9rem; color: var(--muted); margin-bottom: 20px; }
+.result-bar-wrap {
+  background: rgba(124,58,237,0.1); border-radius: 8px; height: 10px;
+  overflow: hidden; margin-bottom: 24px;
+}
+.result-bar-fill { height: 100%; border-radius: 8px; transition: width .8s ease; }
+.result-btns { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── CARNET ERREURS ─────────────────────────────────────────── */
+.carnet-header {
+  background: linear-gradient(135deg, #FEE2E2, #FECACA);
+  border-radius: var(--r-card); padding: 16px; margin-bottom: 16px;
+  border: 1px solid #FCA5A5;
+}
+.carnet-header h3 { font-family: var(--font-h); font-weight: 900; font-size: 1rem; color: #7F1D1D; margin-bottom: 4px; }
+.carnet-header p  { font-size: .8rem; color: #991B1B; margin-bottom: 10px; }
+.error-card {
+  background: var(--card-bg); border-radius: var(--r-card);
+  padding: 14px 16px; margin-bottom: 10px;
+  box-shadow: var(--shadow-clay); border: 1px solid var(--border);
+  backdrop-filter: blur(6px);
+}
+.error-q { font-weight: 700; font-size: .88rem; margin-bottom: 4px; color: var(--text); }
+.error-exp { font-size: .78rem; color: var(--muted); line-height: 1.4; }
+
+/* ── EMPTY STATE ─────────────────────────────────────────────── */
+.empty-state {
+  text-align: center; padding: 48px 16px;
+}
+.empty-state .empty-icon { font-size: 3.5rem; display: block; margin-bottom: 14px; }
+.empty-state h3 { font-family: var(--font-h); font-weight: 900; font-size: 1.1rem; color: var(--text); margin-bottom: 6px; }
+.empty-state p  { font-size: .85rem; color: var(--muted); }
+
+/* ── BACK BTN ───────────────────────────────────────────────── */
+.back-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card-bg); border: none; border-radius: 14px;
+  padding: 10px 16px; margin-bottom: 18px;
+  font-family: var(--font-h); font-weight: 700; font-size: .88rem; color: var(--accent);
+  cursor: pointer; box-shadow: var(--shadow-clay);
+  -webkit-appearance: none;
+  backdrop-filter: blur(6px);
+}
+.back-btn:active { transform: scale(0.96); }
+
+/* ── EXAMEN BLANC FAB ───────────────────────────────────────── */
+.fab {
+  position: fixed; bottom: calc(72px + var(--safe-bot)); right: 16px;
+  width: 56px; height: 56px;
+  background: linear-gradient(135deg, #DB2777, #7C3AED);
+  border: none; border-radius: 50%; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(219,39,119,0.4);
+  font-size: 1.4rem;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+  -webkit-appearance: none;
+}
+.fab:active { transform: scale(0.88); }
+
+/* ── BANDEAU SESSION TERMINÉE ───────────────────────────────── */
+.session-banner {
+  background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+  border: 1px solid #C7D2FE; border-radius: var(--r-card);
+  padding: 14px 16px; margin-bottom: 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.session-banner-info strong { display: block; font-family: var(--font-h); font-weight: 800; font-size: .9rem; color: #3730A3; }
+.session-banner-info span  { font-size: .78rem; color: #4338CA; }
+.session-banner .btn-sm {
+  background: var(--accent-grad); color: white; border: none;
+  border-radius: 12px; padding: 8px 14px;
+  font-family: var(--font-h); font-weight: 800; font-size: .78rem;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  box-shadow: var(--shadow-btn);
+  -webkit-appearance: none;
+}
+.session-banner .btn-sm:active { transform: scale(0.94); }
+
+/* Animation de shake pour mauvaise réponse */
+@keyframes shake {
+  0%,100%{ transform:translateX(0); }
+  20%    { transform:translateX(-6px); }
+  40%    { transform:translateX(6px); }
+  60%    { transform:translateX(-4px); }
+  80%    { transform:translateX(4px); }
+}
+.shake { animation: shake .35s ease; }
+
+/* Animation de pop pour bonne réponse */
+@keyframes pop {
+  0%  { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100%{ transform: scale(1); }
+}
+.pop { animation: pop .3s ease; }
+
+/* ── SÉLECTEUR DE NIVEAU ─────────────────────────────────── */
+.niveau-screen {
+  padding: 24px 16px calc(var(--safe-bot) + 100px);
+}
+.niveau-chap-title {
+  font-family: var(--font-h); font-weight: 900; font-size: 1.1rem;
+  color: var(--text); margin-bottom: 6px;
+}
+.niveau-chap-sub {
+  font-size: .82rem; color: var(--muted); margin-bottom: 24px; line-height: 1.4;
+}
+.niveau-grid {
+  display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;
+}
+.btn-niveau {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--card-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 20px;
+  padding: 18px 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow-clay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), border-color .15s, box-shadow .15s;
+  width: 100%;
+  -webkit-appearance: none;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+.btn-niveau:active { transform: scale(0.96); }
+.btn-niveau .niv-icon {
+  width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+.btn-niveau .niv-info { flex: 1; min-width: 0; }
+.btn-niveau .niv-label {
+  font-family: var(--font-h); font-weight: 900; font-size: 1rem;
+  display: block; margin-bottom: 3px;
+}
+.btn-niveau .niv-desc { font-size: .78rem; color: var(--muted); line-height: 1.3; }
+.btn-niveau .niv-status {
+  font-size: .7rem; font-weight: 800; padding: 3px 10px;
+  border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+}
+.btn-niveau.niv-easy   { border-color: rgba(16,185,129,.3); }
+.btn-niveau.niv-easy:hover   { border-color: #10B981; box-shadow: 0 8px 24px rgba(16,185,129,.25); transform: translateY(-2px) scale(1.01); }
+.btn-niveau.niv-med    { border-color: rgba(245,158,11,.3); }
+.btn-niveau.niv-med:hover    { border-color: #F59E0B; box-shadow: 0 8px 24px rgba(245,158,11,.25); transform: translateY(-2px) scale(1.01); }
+.btn-niveau.niv-hard   { border-color: rgba(239,68,68,.3); }
+.btn-niveau.niv-hard:hover   { border-color: #EF4444; box-shadow: 0 8px 24px rgba(239,68,68,.25); transform: translateY(-2px) scale(1.01); }
+.btn-niveau.niv-acquired::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(16,185,129,.06), transparent);
+  border-radius: 18px; pointer-events: none;
+}
+/* Compteur de questions disponibles */
+.niv-qcount {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(124,58,237,0.08); color: var(--accent);
+  padding: 2px 8px; border-radius: 20px; font-size: .68rem; font-weight: 700;
+  margin-top: 5px;
+}
+
+/* ── BOTTOM SHEET — FICHE DE COURS ──────────────────────── */
+.sheet-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 800;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s ease;
+}
+.sheet-overlay.open { opacity: 1; pointer-events: all; }
+
+.bottom-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  max-height: 82vh;
+  background: var(--card-bg);
+  border-radius: 28px 28px 0 0;
+  z-index: 801;
+  transform: translateY(100%);
+  transition: transform .32s cubic-bezier(.32,1,.4,1);
+  display: flex; flex-direction: column;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 -8px 40px rgba(124,58,237,0.18);
+}
+.bottom-sheet.open { transform: translateY(0); }
+
+.sheet-handle {
+  width: 40px; height: 4px;
+  background: var(--border); border-radius: 2px;
+  margin: 12px auto 0;
+  flex-shrink: 0;
+}
+.sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sheet-title {
+  font-family: var(--font-h); font-weight: 900; font-size: 1rem;
+  color: var(--text);
+}
+.sheet-body {
+  overflow-y: auto; padding: 18px 20px 32px;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+}
+.fiche-section {
+  margin-bottom: 16px;
+}
+.fiche-section-title {
+  font-family: var(--font-h); font-weight: 800; font-size: .82rem;
+  color: var(--accent); text-transform: uppercase; letter-spacing: .5px;
+  margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+}
+.fiche-section-body {
+  font-size: .88rem; color: var(--text); line-height: 1.6;
+  background: var(--bg-card-hover, rgba(124,58,237,0.04));
+  border-radius: 12px; padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+}
+.fiche-formule {
+  font-family: monospace; font-size: .95rem; font-weight: 700;
+  color: var(--accent); background: rgba(124,58,237,0.08);
+  border-radius: 8px; padding: 10px 14px; margin: 4px 0;
+  display: block; letter-spacing: .3px;
+}
+.fiche-piege {
+  border-left-color: #EF4444;
+  background: rgba(239,68,68,0.05);
+  color: var(--text);
+}
+.fiche-piege .fiche-section-title { color: #EF4444; }
+
+/* Bouton fiche dans la carte chapitre */
+.btn-fiche {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(124,58,237,0.08);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 12px; padding: 8px 14px;
+  font-family: var(--font-h); font-weight: 700; font-size: .8rem;
+  color: var(--accent); cursor: pointer; margin-bottom: 8px;
+  width: 100%; justify-content: center;
+  transition: background .15s, transform .15s;
+  -webkit-appearance: none;
+}
+.btn-fiche:active { transform: scale(0.97); background: rgba(124,58,237,0.14); }
+
+/* Bouton fiche dans le header quiz */
+.btn-fiche-quiz {
+  width: 38px; height: 38px;
+  background: rgba(124,58,237,0.1);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 12px; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  -webkit-appearance: none;
+}
+
+/* ── CSS RÉPONSE OUVERTE ─────────────────────────────────── */
+.open-answer-wrap { display: flex; flex-direction: column; gap: 10px; }
+.textarea-answer {
+  width: 100%; min-height: 90px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 16px; padding: 14px 16px;
+  font-family: var(--font-b); font-size: .95rem; color: var(--text);
+  resize: none; outline: none;
+  transition: border-color .2s;
+  -webkit-appearance: none;
+  line-height: 1.5;
+}
+.textarea-answer:focus { border-color: var(--accent); }
+.btn-valider {
+  background: var(--accent-grad); color: white; border: none;
+  border-radius: 14px; padding: 13px; font-family: var(--font-h);
+  font-weight: 800; font-size: .92rem; cursor: pointer; width: 100%;
+  box-shadow: var(--shadow-btn);
+  -webkit-appearance: none;
+  transition: transform .15s;
+}
+.btn-valider:active { transform: scale(0.96); }
+.keywords-feedback {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.kw-found   { background:#D1FAE5; color:#065F46; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:700; }
+.kw-missing { background:#FEE2E2; color:#7F1D1D; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:700; }
+</style>
+</head>
+<body>
+
+<!-- Blobs décoratifs Claymorphism -->
+<div class="blob-container">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <!-- Gradient SVG pour le ring de progression -->
+  <svg width="0" height="0" style="position:absolute;">
+    <defs>
+      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#A78BFA"/>
+        <stop offset="100%" style="stop-color:#7C3AED"/>
+      </linearGradient>
+    </defs>
+  </svg>
+</div>
+
+<!-- ── VUE PRINCIPALE ──────────────────────────────────────── -->
+<div id="app">
+
+  <header class="app-header">
+    <div class="app-logo">🎓 Révis<span>Brevet</span></div>
+    <button class="btn-icon" id="btn-theme" aria-label="Thème">🌙</button>
+  </header>
+
+  <!-- Carte de progression -->
+  <div class="progress-card">
+    <div class="ring-wrap">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle class="ring-bg"   cx="40" cy="40" r="30"/>
+        <circle class="ring-fill" cx="40" cy="40" r="30" id="ring-fill"/>
+      </svg>
+      <div class="ring-text"><span id="ring-pct">0</span>%</div>
+    </div>
+    <div class="progress-meta">
+      <h2>Progression globale</h2>
+      <p>Chapitres maîtrisés</p>
+      <div class="streak">🔥 <span id="streak-val">0</span> séries aujourd'hui</div>
+    </div>
+  </div>
+
+  <!-- Contenu dynamique (dashboard / matière / carnet / planning) -->
+  <div id="view"></div>
+
+</div>
+
+<!-- FAB Examen Blanc -->
+<button class="fab" id="fab-examen" title="Examen blanc 🔥">🔥</button>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-home" onclick="goHome()">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Accueil</span>
+  </button>
+  <button class="nav-btn" id="nav-carnet" onclick="goCarnet()">
+    <span class="nav-icon-wrap">
+      <span class="nav-icon">📕</span>
+      <span class="nav-badge" id="carnet-badge" style="display:none">0</span>
+    </span>
+    <span class="nav-label">Erreurs</span>
+  </button>
+  <button class="nav-btn" id="nav-planning" onclick="goPlanning()">
+    <span class="nav-icon">📅</span>
+    <span class="nav-label">Planning</span>
+  </button>
+</nav>
+
+
+<!-- ── BOTTOM SHEET FICHE DE COURS ───────────────────────── -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="fermerFiche()"></div>
+<div class="bottom-sheet" id="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <span class="sheet-title" id="sheet-title">📖 Fiche de cours</span>
+    <button class="btn-icon" onclick="fermerFiche()">✕</button>
+  </div>
+  <div class="sheet-body" id="sheet-body"></div>
+</div>
+
+<!-- ── ÉCRAN QUIZ (plein écran natif) ─────────────────────── -->
+<div id="quiz-screen" role="dialog" aria-modal="true">
+
+  <div class="quiz-header">
+    <div class="quiz-header-top">
+      <button class="btn-icon" id="quiz-close" aria-label="Fermer">✕</button>
+      <span class="quiz-subject" id="quiz-subject">Révision</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button class="btn-fiche-quiz" id="btn-fiche-quiz" title="Fiche de cours" onclick="ouvrirFicheQuiz()" style="display:none;">📖</button>
+        <span class="quiz-counter" id="quiz-counter">1/5</span>
+      </div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="quiz-bar"></div>
+    </div>
+  </div>
+
+  <div class="quiz-body" id="quiz-body">
+    <!-- Injecté dynamiquement -->
+  </div>
+
+  <!-- Footer avec bouton Continuer -->
+  <div class="quiz-footer" id="quiz-footer">
+    <button class="btn-primary" id="quiz-next">Continuer →</button>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// RévisBrevet 2026 — Moteur 100% autonome
+// Style: Claymorphism — nextlevelbuilder/ui-ux-pro-max-skill
+// ════════════════════════════════════════════════════════════
+
+// ── ÉTAT GLOBAL ─────────────────────────────────────────────
+const S = {
+  data: null,
+  progress: {},
+  carnet: [],
+  streakToday: 0,
+  derniere: null,
+  quiz: { matId:null, chapId:null, label:'', qs:[], idx:0, score:0, rattrapage:false }
+};
+
+// ── UTILITAIRES ──────────────────────────────────────────────
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=~~(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function $(id){ return document.getElementById(id); }
+function vibrate(ms){ try{ navigator.vibrate?.(ms); }catch(e){} }
+
+function makeOpts(vals){
+  const strs=vals.map(String), unique=[...new Set(strs)];
+  while(unique.length<4) unique.push(String(unique.length*17+3));
+  const s=shuffle(unique.slice(0,4)), bon=strs[0], idx=s.indexOf(bon);
+  if(idx===-1){s[0]=bon;}
+  const fi=s.indexOf(bon);
+  return{ options:s.map((v,i)=>`${['A','B','C','D'][i]}) ${v}`), bonne_reponse:fi<0?0:fi };
+}
+
+function norm(q){
+  if(q.options&&!Array.isArray(q.options)&&q.options.options){
+    return{...q,options:q.options.options,bonne_reponse:q.options.bonne_reponse};
+  }
+  return q;
+}
+
+function remixOpts(q){
+  if(!q.options||!q.options.length) return q;
+  const pure=q.options.map(o=>String(o).replace(/^[A-D]\)\s*/,''));
+  const bon=pure[q.bonne_reponse];
+  const mix=shuffle([...pure]);
+  let idx=mix.indexOf(bon);
+  if(idx===-1){mix[0]=bon;idx=0;}
+  return{...q,options:mix.map((o,i)=>`${['A','B','C','D'][i]}) ${o}`),bonne_reponse:idx};
+}
+
+// ── GÉNÉRATEUR PROCÉDURAL — 13 factories ────────────────────
+const G = {
+  pourcentage(){
+    const pcts=[10,20,25,50,30,75],p=pcts[~~(Math.random()*pcts.length)];
+    const bases=[40,60,80,120,200,150,48,90],b=bases[~~(Math.random()*bases.length)];
+    const r=b*p/100;
+    return{enonce:`Calculer ${p}% de ${b} (sans calculatrice).`,
+      ...makeOpts([r,r+p,b-r,r*2]),explication:`${p}% de ${b} : diviser par 100 puis ×${p} → ${r}.`,
+      niveau:1,theme_auto:"Pourcentages"};
+  },
+  equation(){
+    const a=~~(Math.random()*4)+2,x=~~(Math.random()*8)+1,b=~~(Math.random()*10)+1,c=a*x+b;
+    return{enonce:`Résoudre : ${a}x + ${b} = ${c}`,
+      ...makeOpts([x,x+2,Math.round(c/a*10)/10,-x]),
+      explication:`${a}x = ${c}−${b} = ${c-b}. Donc x = ${c-b}÷${a} = ${x}.`,
+      niveau:2,theme_auto:"Équations du 1er degré"};
+  },
+  pythagore(){
+    const t=[[3,4,5],[5,12,13],[6,8,10],[8,15,17]];
+    const [a,b,c]=t[~~(Math.random()*t.length)],k=~~(Math.random()*3)+1;
+    const [A,B,C]=[a*k,b*k,c*k];
+    return{enonce:`Triangle rectangle. Côtés de l'angle droit : ${A} cm et ${B} cm. Hypoténuse ?`,
+      ...makeOpts([C,A+B,Math.round(Math.sqrt(A*A-B*B)*10)/10||C-1,C+k]),
+      explication:`Pythagore : hyp² = ${A}²+${B}² = ${C*C} → hyp = ${C} cm.`,
+      niveau:2,theme_auto:"Théorème de Pythagore",
+      indice:"L'hypoténuse est le côté OPPOSÉ à l'angle droit (le plus long)."};
+  },
+  fraction(){
+    const dens=[2,3,4,5,6,8,10],d=dens[~~(Math.random()*dens.length)];
+    const n=~~(Math.random()*(d-1))+1;
+    const bs=[12,18,20,24,30,36,40,48,60],base=bs[~~(Math.random()*bs.length)];
+    const r=(base*n)/d;
+    if(!Number.isInteger(r)) return G.fraction();
+    return{enonce:`Calculer ${n}/${d} de ${base}.`,
+      ...makeOpts([r,base*d,r+d,r*2]),
+      explication:`${n}/${d} de ${base} = (${base}÷${d})×${n} = ${r}.`,
+      niveau:1,theme_auto:"Fractions d'un nombre"};
+  },
+  proportionnalite(){
+    const pu=[3,4,5,6,8,9,12][~~(Math.random()*7)];
+    const q1=[6,7,8,9,10,11,12,15][~~(Math.random()*8)];
+    const t1=pu*q1,q2=q1+~~(Math.random()*5)+1,t2=pu*q2;
+    return{enonce:`${q1} cahiers coûtent ${t1} €. Prix de ${q2} cahiers ?`,
+      ...makeOpts([t2,t1+q2,t2+pu,t2+2*pu]),
+      explication:`Prix unitaire : ${t1}÷${q1}=${pu} €. Donc ${q2}×${pu}=${t2} €.`,
+      niveau:2,theme_auto:"Proportionnalité"};
+  },
+  probabilite(){
+    function pgcd(a,b){return b===0?a:pgcd(b,a%b);}
+    const cfg=[{t:'rouge',n:3,tot:10},{t:'bleu',n:2,tot:8},{t:'vert',n:4,tot:12},{t:'jaune',n:1,tot:5}];
+    const {t,n,tot}=cfg[~~(Math.random()*cfg.length)],g=pgcd(n,tot),ns=n/g,ds=tot/g;
+    return{enonce:`Sac : ${tot} boules, ${n} ${t}s. Probabilité de tirer une boule ${t} ?`,
+      ...makeOpts([`${ns}/${ds}`,`${n+1}/${tot}`,`${tot-n}/${tot}`,`${n}/${n+1}`]),
+      explication:`P(${t}) = ${n}/${tot}${g>1?' = '+ns+'/'+ds:''}.`,
+      niveau:3,theme_auto:"Probabilités",
+      indice:"P = cas favorables ÷ total des cas possibles."};
+  },
+  notation_sci(){
+    const ms=[1.5,2.3,3.0,4.7,6.2,9.1,1.8],m=ms[~~(Math.random()*ms.length)];
+    const es=[3,4,5,6,-2,-3],e=es[~~(Math.random()*es.length)];
+    const val=(m*Math.pow(10,e)).toLocaleString('fr-FR');
+    return{enonce:`Écrire ${val} en notation scientifique.`,
+      ...makeOpts([`${m}×10^${e}`,`${m+1}×10^${e}`,`${m}×10^${e+1}`,`${m}×10^${e-1}`]),
+      explication:`${val} = ${m}×10^${e}. Mantisse entre 1 et 10.`,
+      niveau:2,theme_auto:"Notation scientifique"};
+  },
+  aire_volume(){
+    const f=['rect','tri','cube','cyl','disque'][~~(Math.random()*5)];
+    if(f==='rect'){const L=~~(Math.random()*8)+3,l=~~(Math.random()*5)+2,A=L*l;return{enonce:`Aire rectangle ${L}×${l} cm ?`,...makeOpts([A,L+l,2*(L+l),A+L]),explication:`A=L×l=${L}×${l}=${A} cm².`,niveau:2,theme_auto:"Aires & Volumes"};}
+    if(f==='tri'){const b=(~~(Math.random()*6)+2)*2,h=~~(Math.random()*8)+3,A=b*h/2;return{enonce:`Aire triangle base=${b}cm, hauteur=${h}cm ?`,...makeOpts([A,b*h,A+b,A-h]),explication:`A=(b×h)÷2=(${b}×${h})÷2=${A} cm².`,niveau:2,theme_auto:"Aires & Volumes"};}
+    if(f==='cube'){const c=~~(Math.random()*5)+2,V=c**3;return{enonce:`Volume cube arête=${c}cm ?`,...makeOpts([V,c*c,6*c*c,V+c]),explication:`V=arête³=${c}³=${V} cm³.`,niveau:2,theme_auto:"Aires & Volumes"};}
+    if(f==='cyl'){const r=~~(Math.random()*4)+2,h=~~(Math.random()*6)+3,V=Math.round(Math.PI*r*r*h);return{enonce:`Volume cylindre r=${r}cm, h=${h}cm ? (π≈3,14)`,...makeOpts([V,r*r*h,Math.round(2*Math.PI*r*h),V+r*2]),explication:`V=π×r²×h≈3,14×${r}²×${h}≈${V} cm³.`,niveau:2,theme_auto:"Aires & Volumes"};}
+    const r=~~(Math.random()*5)+2,A=Math.round(Math.PI*r*r);
+    return{enonce:`Aire disque rayon=${r}cm ? (π≈3,14)`,...makeOpts([A,2*Math.round(Math.PI*r),A*2,r*r]),explication:`A=π×r²≈3,14×${r}²≈${A} cm².`,niveau:2,theme_auto:"Aires & Volumes"};
+  },
+  figure_style(){
+    const figs=[
+      {p:"Ses mains étaient des serres d'aigle.",f:"Métaphore",a:["Comparaison","Hyperbole","Personnification"],e:"Métaphore = comparaison SANS outil ('comme').",i:"Y a-t-il un 'comme' ? Si non → métaphore."},
+      {p:"Je meurs de faim !",f:"Hyperbole",a:["Métaphore","Litote","Antithèse"],e:"Hyperbole = exagération volontaire.",i:"L'auteur exagère-t-il ?"},
+      {p:"Le soleil souriait sur la vallée.",f:"Personnification",a:["Métaphore","Comparaison","Allitération"],e:"Personnification = attribut humain à un non-humain.",i:"Un inanimé se comporte-t-il comme un humain ?"},
+      {p:"Il était rapide comme l'éclair.",f:"Comparaison",a:["Métaphore","Hyperbole","Personnification"],e:"Comparaison = outil ('comme') présent.",i:"Y a-t-il 'comme', 'tel', 'semblable à' ?"},
+      {p:"Ce n'est pas sans mérite.",f:"Litote",a:["Métaphore","Euphémisme","Ironie"],e:"Litote = dire moins pour suggérer plus.",i:"L'auteur dit-il moins que ce qu'il pense ?"},
+      {p:"Il pleuvait des cordes.",f:"Métaphore",a:["Comparaison","Litote","Oxymore"],e:"Métaphore figée. Image directe sans 'comme'.",i:"Pas de mot de comparaison → métaphore."},
+    ];
+    const f=figs[~~(Math.random()*figs.length)];
+    return{enonce:`Figure de style : « ${f.p} »`,...makeOpts([f.f,...f.a]),explication:f.e,niveau:3,theme_auto:"Figures de style",indice:f.i};
+  },
+  accord_pp(){
+    const cas=[
+      {p:"Les fleurs que j'ai ___ sont magnifiques.",v:"cueillir",a:"cueillies",o:["cueilli","cueillie","cueillis"],e:"COD 'que'=les fleurs (fém.plur.) avant 'avoir' → cueillies.",i:"Le COD est-il AVANT l'auxiliaire avoir ?"},
+      {p:"Elle s'est ___ vers la sortie.",v:"tourner",a:"tournée",o:["tourné","tournés","tournées"],e:"Verbe pronominal → accord avec le sujet (elle, fém.sing.) → tournée.",i:"Pronominal : accord avec le sujet."},
+      {p:"Les lettres qu'il a ___ sont claires.",v:"écrire",a:"écrites",o:["écrit","écrite","écrits"],e:"COD 'que'=les lettres (fém.plur.) avant 'avoir' → écrites.",i:"Cherche un COD féminin pluriel AVANT l'auxiliaire."},
+      {p:"Elle a ___ toute la nuit.",v:"travailler",a:"travaillé",o:["travaillée","travaillés","travaillées"],e:"Pas de COD avant 'avoir' → pas d'accord : travaillé.",i:"Pas de COD avant 'avoir' = invariable."},
+    ];
+    const c=cas[~~(Math.random()*cas.length)];
+    return{enonce:`Participe passé de '${c.v}' : « ${c.p} »`,...makeOpts([c.a,...c.o]),explication:c.e,niveau:2,theme_auto:"Accord du participe passé",indice:c.i};
+  },
+  conjugaison(){
+    const vs=[
+      {i:"FINIR",p:"nous",t:"imparfait",f:"finissions",o:["finisions","finissons","finirions"],e:"Imparfait : radical 'finiss-' + '-ions'. Double 's' !"},
+      {i:"VENIR",p:"ils",t:"conditionnel",f:"viendraient",o:["viendront","veniraient","vendraient"],e:"Conditionnel : radical futur 'viendr-' + '-aient'."},
+      {i:"SAVOIR",p:"tu",t:"subjonctif présent",f:"saches",o:["sais","sauras","sachais"],e:"Subjonctif présent de savoir : radical irrégulier 'sach-' + '-es'."},
+      {i:"TENIR",p:"nous",t:"futur simple",f:"tiendrons",o:["tenons","tiendrions","tiendrons pas"],e:"Futur de TENIR : radical irrégulier 'tiendr-' + '-ons'."},
+    ];
+    const v=vs[~~(Math.random()*vs.length)];
+    return{enonce:`Conjugue ${v.i} (${v.p}, ${v.t}) : '${v.p} ___'`,...makeOpts([v.f,...v.o]),explication:v.e,niveau:2,theme_auto:"Conjugaison"};
+  },
+  vitesse(){
+    const vitesses=[60,80,90,100,120,50],v=vitesses[~~(Math.random()*vitesses.length)];
+    const ts=[0.5,1,1.5,2,2.5,3],t=ts[~~(Math.random()*ts.length)];
+    const d=v*t,typ=['d','v','t'][~~(Math.random()*3)];
+    if(typ==='d') return{enonce:`Véhicule à ${v}km/h pendant ${t}h. Distance ?`,...makeOpts([d,v+t,d+v,d*2]),explication:`d=v×t=${v}×${t}=${d} km.`,niveau:2,theme_auto:"Vitesse / Distance / Temps"};
+    if(typ==='v') return{enonce:`Cycliste : ${d}km en ${t}h. Vitesse moyenne ?`,...makeOpts([d/t,d*t,d/2,(d/t)+10]),explication:`v=d÷t=${d}÷${t}=${d/t} km/h.`,niveau:2,theme_auto:"Vitesse / Distance / Temps"};
+    return{enonce:`Voiture : ${d}km à ${v}km/h. Durée ?`,...makeOpts([`${t}h`,`${t+1}h`,`${t+0.5}h`,`${d}h`]),explication:`t=d÷v=${d}÷${v}=${t}h.`,niveau:2,theme_auto:"Vitesse / Distance / Temps"};
+  },
+
+  // ── NOUVELLES FACTORIES — MATHS ──────────────────────────
+  thales(){
+    const AB=[6,8,10,12,15][~~(Math.random()*5)];
+    const k=[0.5,0.6,0.75,0.8][~~(Math.random()*4)];
+    const AM=Math.round(AB*k*10)/10;
+    const BC=[4,5,6,8,9][~~(Math.random()*5)];
+    const MN=Math.round(BC*k*10)/10;
+    return{enonce:`Droites parallèles. AB=${AB}cm, AM=${AM}cm, BC=${BC}cm. Calculer MN.`,
+      ...makeOpts([MN, Math.round(MN+1.5), Math.round(BC*(1-k)*10)/10, Math.round(BC/k*10)/10]),
+      explication:`Thalès : AM/AB = MN/BC → MN = BC×AM/AB = ${BC}×${AM}/${AB} = ${MN}cm.`,
+      niveau:3,theme_auto:"Théorème de Thalès",
+      indice:"Écrire d'abord l'égalité des rapports : AM/AB = MN/BC, puis produit en croix."};
+  },
+  fonctions(){
+    const a=[1,2,3,-1,-2][~~(Math.random()*5)];
+    const b=[0,1,2,3,-1,-2,-3][~~(Math.random()*7)];
+    const x=[1,2,3,4,-1,-2][~~(Math.random()*6)];
+    const y=a*x+b;
+    const type=b===0?'linéaire':'affine';
+    const bStr=b>0?'+'+b:b<0?String(b):'';
+    const enonce='f(x)='+a+'x'+bStr+'. Calculer f('+x+').';
+    const expl='f('+x+') = '+a+'×'+x+bStr+' = '+(a*x)+bStr+' = '+y+'.';
+    return{enonce,
+      ...makeOpts([y, a*x, y+a, y-b]),
+      explication:expl,
+      niveau:2,theme_auto:'Fonctions '+type};
+  },
+  // ── NOUVELLES FACTORIES — PC ─────────────────────────────
+  masse_volume(){
+    const materiaux=[
+      {n:'eau',rho:1},{n:'aluminium',rho:2.7},{n:'fer',rho:7.8},{n:'bois',rho:0.6}
+    ];
+    const mat=materiaux[~~(Math.random()*materiaux.length)];
+    const V=[0.5,1,2,5,10][~~(Math.random()*5)];
+    const m=Math.round(mat.rho*V*100)/100;
+    const type=['m','V','rho'][~~(Math.random()*3)];
+    if(type==='m') return{enonce:`Densité de ${mat.n} : ${mat.rho} g/cm³. Volume = ${V} cm³. Calculer la masse.`,
+      ...makeOpts([`${m} g`,`${V/mat.rho} g`,`${m*2} g`,`${m+mat.rho} g`]),
+      explication:`m = ρ × V = ${mat.rho} × ${V} = ${m} g.`,niveau:2,theme_auto:"Masse / Volume / Densité"};
+    if(type==='V') return{enonce:`Masse de ${mat.n} : ${m} g. Densité : ${mat.rho} g/cm³. Calculer le volume.`,
+      ...makeOpts([`${V} cm³`,`${m*mat.rho} cm³`,`${V+1} cm³`,`${Math.round(m/2*10)/10} cm³`]),
+      explication:`V = m ÷ ρ = ${m} ÷ ${mat.rho} = ${V} cm³.`,niveau:2,theme_auto:"Masse / Volume / Densité"};
+    return{enonce:`Masse : ${m} g. Volume : ${V} cm³. Calculer la densité.`,
+      ...makeOpts([`${mat.rho} g/cm³`,`${m*V} g/cm³`,`${Math.round(m/V*2*10)/10} g/cm³`,`${mat.rho+1} g/cm³`]),
+      explication:`ρ = m ÷ V = ${m} ÷ ${V} = ${mat.rho} g/cm³.`,niveau:2,theme_auto:"Masse / Volume / Densité"};
+  },
+  conversions(){
+    const types=[
+      {de:'km',vers:'m',f:1000},{de:'m',vers:'cm',f:100},{de:'kg',vers:'g',f:1000},
+      {de:'h',vers:'min',f:60},{de:'km/h',vers:'m/s',f:1/3.6}
+    ];
+    const t=types[~~(Math.random()*types.length)];
+    const val=[1,2,5,10,0.5][~~(Math.random()*5)];
+    const res=Math.round(val*t.f*1000)/1000;
+    return{enonce:`Convertir ${val} ${t.de} en ${t.vers}.`,
+      ...makeOpts([res, val/t.f, val+t.f, res*10]),
+      explication:`${val} ${t.de} × ${t.f} = ${res} ${t.vers}.`,
+      niveau:1,theme_auto:"Conversions d'unités"};
+  },
+  // ── NOUVELLES FACTORIES — SVT ────────────────────────────
+  genetique_open(){
+    const cas=[
+      {q:"Qu'est-ce qu'un allèle dominant ?",mots_cles:["s'exprime","hétérozygote","phénotype"],rep:"Un allèle dominant s'exprime dans le phénotype même à l'état hétérozygote.",exp:"Dominant = s'exprime face au récessif (Aa → phénotype dominant). Récessif = ne s'exprime qu'à l'état homozygote (aa)."},
+      {q:"Définir le génotype et le phénotype.",mots_cles:["génotype","phénotype","observable"],rep:"Génotype = constitution génétique. Phénotype = caractère observable.",exp:"Le génotype est l'information génétique (ex: Aa). Le phénotype est ce qu'on observe (ex: yeux bruns)."},
+      {q:"Qu'est-ce que la méiose ?",mots_cles:["gamètes","chromosomes","division"],rep:"La méiose est une division cellulaire qui produit les gamètes avec 23 chromosomes.",exp:"Méiose : 46 chromosomes → 4 cellules à 23 chromosomes (gamètes). Assure la diversité génétique."},
+    ];
+    const c=cas[~~(Math.random()*cas.length)];
+    return{enonce:c.q,type:'open',mots_cles:c.mots_cles,
+      options:[c.rep],bonne_reponse:0,explication:c.exp,
+      niveau:3,theme_auto:"Génétique — réponse ouverte"};
+  },
+  photosynthese_open(){
+    const qs=[
+      {q:"Écrire l'équation de la photosynthèse (réactifs et produits).",mots_cles:["CO2","eau","glucose","oxygène"],exp:"6CO₂ + 6H₂O + lumière → C₆H₁₂O₆ + 6O₂. La plante utilise CO₂ et eau pour produire du glucose et de l'oxygène."},
+      {q:"Où se déroule la photosynthèse dans la cellule ?",mots_cles:["chloroplastes","chlorophylle","lumière"],exp:"La photosynthèse se déroule dans les chloroplastes, grâce à la chlorophylle qui capte l'énergie lumineuse."},
+    ];
+    const c=qs[~~(Math.random()*qs.length)];
+    return{enonce:c.q,type:'open',mots_cles:c.mots_cles,
+      options:[''],bonne_reponse:0,explication:c.exp,
+      niveau:2,theme_auto:"SVT — Photosynthèse"};
+  },
+  // ── NOUVELLES FACTORIES — FRANÇAIS ──────────────────────
+  grammaire_nature(){
+    const mots=[
+      {mot:"rapidement",nature:"adverbe",autres:["adjectif","nom","verbe"],exp:"Rapidement modifie un verbe ou adjectif → adverbe. Se termine en -ment."},
+      {mot:"bonheur",nature:"nom",autres:["adjectif","adverbe","verbe"],exp:"Bonheur désigne une chose abstraite → nom commun. On peut dire 'le bonheur'."},
+      {mot:"courir",nature:"verbe",autres:["nom","adjectif","adverbe"],exp:"Courir exprime une action → verbe à l'infinitif."},
+      {mot:"magnifique",nature:"adjectif",autres:["adverbe","nom","verbe"],exp:"Magnifique qualifie un nom → adjectif qualificatif."},
+      {mot:"mais",nature:"conjonction de coordination",autres:["adverbe","préposition","pronom"],exp:"Mais relie deux propositions de même nature → conjonction de coordination (Mais Or Donc Car Ni Or Et)."},
+    ];
+    const m=mots[~~(Math.random()*mots.length)];
+    return{enonce:`Quelle est la nature du mot « ${m.mot} » ?`,
+      ...makeOpts([m.nature,...m.autres]),
+      explication:m.exp,niveau:2,theme_auto:"Grammaire — Nature des mots"};
+  },
+  registres_langue(){
+    const ex=[
+      {phrase:"J'ai point compris ce truc.",registre:"familier",autres:["soutenu","courant","scientifique"],exp:"'Point' (négation sans 'ne'), 'truc' (mot vague) → registre familier."},
+      {phrase:"Je n'ai pas compris ce sujet.",registre:"courant",autres:["familier","soutenu","argotique"],exp:"Négation complète (ne...pas), vocabulaire ordinaire → registre courant."},
+      {phrase:"Je n'ai point saisi la teneur de ce propos.",registre:"soutenu",autres:["familier","courant","populaire"],exp:"'Point' (littéraire), 'saisi la teneur' (vocabulaire élevé) → registre soutenu."},
+      {phrase:"Le sujet a inhalé des vapeurs toxiques.",registre:"scientifique",autres:["familier","courant","soutenu"],exp:"Vocabulaire technique précis ('a inhalé', 'vapeurs toxiques') → registre scientifique ou médical."},
+    ];
+    const e=ex[~~(Math.random()*ex.length)];
+    return{enonce:`Quel est le registre de langue de : « ${e.phrase} » ?`,
+      ...makeOpts([e.registre,...e.autres]),
+      explication:e.exp,niveau:2,theme_auto:"Registres de langue"};
+  },
+  analyse_phrase_open(){
+    const qs=[
+      {q:"Donner la définition et un exemple d'une phrase passive.",mots_cles:["complément d'agent","par","sujet"],exp:"Phrase passive : le sujet subit l'action. Ex: 'Le chat est chassé par le chien.' = le sujet (chat) subit. Agent introduit par 'par'."},
+      {q:"Qu'est-ce qu'un COD ? Donner sa définition et un exemple.",mots_cles:["complément","direct","verbe"],exp:"COD = Complément d'Objet Direct. Se rattache directement au verbe sans préposition. Ex: 'Je mange une pomme' → 'une pomme' est COD de 'mange'."},
+      {q:"Définir la proposition subordonnée relative.",mots_cles:["pronom relatif","antécédent","qui"],exp:"Proposition subordonnée relative : introduite par un pronom relatif (qui, que, dont, où). Ex: 'Le livre que je lis...' → 'que je lis' est une subordonnée relative."},
+    ];
+    const c=qs[~~(Math.random()*qs.length)];
+    return{enonce:c.q,type:'open',mots_cles:c.mots_cles,
+      options:[''],bonne_reponse:0,explication:c.exp,
+      niveau:3,theme_auto:"Grammaire — réponse ouverte"};
+  },
+  // ── NOUVELLES FACTORIES — HISTOIRE-GÉO ──────────────────
+  dates_histoire(){
+    const evenements=[
+      {date:1789,evt:"Révolution française",autres:[1799,1815,1848],exp:"1789 : prise de la Bastille (14 juillet), début de la Révolution française."},
+      {date:1914,evt:"Début de la 1ère Guerre Mondiale",autres:[1939,1918,1904],exp:"1914 : attentat de Sarajevo (28 juin) → déclaration de guerre en août 1914."},
+      {date:1945,evt:"Fin de la 2ème Guerre Mondiale",autres:[1918,1939,1944],exp:"1945 : capitulation de l'Allemagne (8 mai) et du Japon (2 septembre)."},
+      {date:1958,evt:"Création de la Ve République",autres:[1946,1962,1944],exp:"1958 : De Gaulle revient au pouvoir, nouvelle Constitution → Ve République."},
+      {date:1944,evt:"Débarquement de Normandie",autres:[1942,1943,1945],exp:"6 juin 1944 : Débarquement allié en Normandie (Opération Overlord)."},
+      {date:1962,evt:"Indépendance de l'Algérie",autres:[1958,1954,1968],exp:"1962 : Accords d'Évian → fin de la guerre d'Algérie et indépendance."},
+    ];
+    const e=evenements[~~(Math.random()*evenements.length)];
+    return{enonce:`Quelle date correspond à : « ${e.evt} » ?`,
+      ...makeOpts([e.date,...e.autres]),
+      explication:e.exp,niveau:2,theme_auto:"Dates historiques"};
+  },
+  geo_monde_open(){
+    const qs=[
+      {q:"Citer 3 caractéristiques de la mondialisation.",mots_cles:["échanges","multinationales","flux"],exp:"La mondialisation = intensification des échanges commerciaux, financiers et humains. Acteurs : FMN, États, ONG. Flux : marchandises, capitaux, personnes, informations."},
+      {q:"Définir le développement durable.",mots_cles:["besoins","générations","futur"],exp:"Développement durable = répondre aux besoins du présent sans compromettre la capacité des générations futures à répondre aux leurs (Brundtland, 1987). 3 piliers : économique, social, environnemental."},
+      {q:"Qu'est-ce qu'une métropole mondiale ?",mots_cles:["services","décision","réseau"],exp:"Métropole mondiale = grande ville concentrant des fonctions de commandement (services supérieurs, sièges de FMN, places financières). Ex: New York, Londres, Tokyo."},
+    ];
+    const c=qs[~~(Math.random()*qs.length)];
+    return{enonce:c.q,type:'open',mots_cles:c.mots_cles,
+      options:[''],bonne_reponse:0,explication:c.exp,
+      niveau:3,theme_auto:"Géographie — réponse ouverte"};
+  },
+  statistiques(){
+    const n=~~(Math.random()*3)+5;
+    const vals=Array.from({length:n},()=>~~(Math.random()*15)+5).sort((a,b)=>a-b);
+    const somme=vals.reduce((s,v)=>s+v,0);
+    const moy=Math.round(somme/n*10)/10;
+    const med=n%2===1?vals[~~(n/2)]:(vals[n/2-1]+vals[n/2])/2;
+    const type=Math.random()<0.5?'moyenne':'médiane';
+    if(type==='moyenne'){
+      return{enonce:'Série : '+vals.join(';')+'. Calculer la moyenne.',
+        ...makeOpts([moy, vals[0], Math.round(somme/10)/10, moy+1]),
+        explication:'Moyenne = ('+vals.join('+')+')÷'+n+' = '+somme+'÷'+n+' = '+moy+'.',
+        niveau:2,theme_auto:"Statistiques"};
+    }
+    return{enonce:'Série ordonnée : '+vals.join(';')+'. Quelle est la médiane ?',
+      ...makeOpts([med, moy, vals[0], vals[vals.length-1]]),
+      explication:(n%2===1?'Valeur centrale n°'+(~~(n/2)+1):' Moyenne des valeurs n°'+n/2+' et '+(n/2+1))+' = '+med+'.',
+      niveau:2,theme_auto:"Statistiques"};
+  },
+  puissances(){
+    const bases=[2,3,5,10],b=bases[~~(Math.random()*bases.length)];
+    const exps=[2,3,4],e=exps[~~(Math.random()*exps.length)];
+    const r=Math.pow(b,e);
+    const e2=[2,3][~~(Math.random()*2)];
+    const ops=Math.random()<0.5?'calc':'mult';
+    if(ops==='calc'){
+      return{enonce:'Calculer '+b+'^'+e+'.',
+        ...makeOpts([r, b*e, b+e, Math.pow(b,e-1)]),
+        explication:b+'^'+e+' = '+Array(e).fill(b).join('×')+' = '+r+'.',
+        niveau:1,theme_auto:"Puissances"};
+    }
+    return{enonce:'Simplifier : '+b+'^'+e+' × '+b+'^'+e2+' = ?',
+      ...makeOpts([b+'^'+(e+e2), b+'^'+(e*e2), (b*b)+'^'+e, String(r*b)]),
+      explication:'Produit même base : '+b+'^'+e+' × '+b+'^'+e2+' = '+b+'^'+(e+e2)+'.',
+      niveau:2,theme_auto:"Puissances"};
+  },
+  ohm(){
+    const loi=['U','I','R'][~~(Math.random()*3)];
+    if(loi==='U'){const I=[0.5,1,2,3][~~(Math.random()*4)],R=[10,20,50,100][~~(Math.random()*4)],U=I*R;return{enonce:`Loi d'Ohm : R=${R}Ω, I=${I}A. Calculer U.`,...makeOpts([`${U}V`,`${R/I}V`,`${U+R}V`,`${U*2}V`]),explication:`U=R×I=${R}×${I}=${U}V.`,niveau:2,theme_auto:"Loi d'Ohm"};}
+    if(loi==='I'){const U=[6,9,12,24][~~(Math.random()*4)],R=[10,15,20,30,50][~~(Math.random()*5)],I=Math.round(U/R*1000)/1000;return{enonce:`Loi d'Ohm : U=${U}V, R=${R}Ω. Calculer I.`,...makeOpts([`${I}A`,`${U*R}A`,`${U+R}A`,`${Math.round(I*2*10)/10}A`]),explication:`I=U÷R=${U}÷${R}=${I}A.`,niveau:2,theme_auto:"Loi d'Ohm"};}
+    const I=[0.5,1,2][~~(Math.random()*3)],U=[6,9,12,24][~~(Math.random()*4)],R=U/I;
+    return{enonce:`Loi d'Ohm : U=${U}V, I=${I}A. Calculer R.`,...makeOpts([`${R}Ω`,`${U*I}Ω`,`${U+I}Ω`,`${R*2}Ω`]),explication:`R=U÷I=${U}÷${I}=${R}Ω.`,niveau:2,theme_auto:"Loi d'Ohm"};
+  }
+};
+
+const FACTORIES = Object.keys(G);
+
+// ── MAPPING FACTORIES PAR NIVEAU ────────────────────────────
+const FACTORIES_BY_LEVEL = {
+  1: ['pourcentage','fraction','conversions','puissances'],
+  2: ['equation','pythagore','proportionnalite','notation_sci','aire_volume','vitesse','ohm',
+      'accord_pp','conjugaison','thales','fonctions','statistiques','masse_volume',
+      'grammaire_nature','registres_langue','dates_histoire'],
+  3: ['probabilite','figure_style','genetique_open','photosynthese_open',
+      'analyse_phrase_open','geo_monde_open']
+};
+// Toutes les factories (fallback si niveau sans assez de factories dédiées)
+
+
+// ── GÉNÉRATION DE SÉRIE ──────────────────────────────────────
+function genSerie(baseQuiz=[], taille=5, niveau=0){
+  // niveau=0 → pas de filtre (examen blanc, rattrapage)
+  const pool=Array.isArray(baseQuiz)?[...baseQuiz]:[];
+  // Filtrer par niveau si spécifié
+  const filtered = niveau>0 ? pool.filter(q=>(q.niveau||1)===niveau) : pool;
+  // Factories adaptées au niveau
+  const facsByLvl = niveau>0 ? (FACTORIES_BY_LEVEL[niveau]||FACTORIES) : FACTORIES;
+
+  // Chapitre riche en questions du bon niveau → 100% JSON filtré
+  if(filtered.length>=taille) return shuffle(filtered).slice(0,taille);
+
+  // Sinon : toutes les questions JSON du niveau + génération procédurale
+  const serie=[...filtered];
+  const facs=shuffle([...facsByLvl]);
+  let fi=0;
+  while(serie.length<taille&&fi<facs.length){
+    const q=G[facs[fi]]();
+    // Marquer les questions générées avec le bon niveau
+    if(niveau>0) q.niveau=niveau;
+    serie.push(q);
+    fi++;
+  }
+  // Si pas assez de factories dédiées, compléter avec les autres
+  if(serie.length<taille){
+    const fallback=shuffle(FACTORIES.filter(f=>!facsByLvl.includes(f)));
+    let fi2=0;
+    while(serie.length<taille&&fi2<fallback.length){
+      serie.push(G[fallback[fi2]]());fi2++;
+    }
+  }
+  return serie.slice(0,taille);
+}
+
+
+// ── CLÉ DE PROGRESSION PAR NIVEAU ───────────────────────────
+function progKey(chapId, niveau){ return niveau>0 ? chapId+'__'+niveau : chapId; }
+
+// Nombre de niveaux acquis sur un chapitre (0-3)
+function niveauxAcquis(chapId){
+  return [1,2,3].filter(n=>S.progress[progKey(chapId,n)]==='acquis').length;
+}
+// Est-ce que tous les niveaux sont acquis ?
+function chapMaitrise(chapId){ return niveauxAcquis(chapId)===3; }
+// ── PERSISTANCE ──────────────────────────────────────────────
+function loadLS(){
+  try{ S.progress=JSON.parse(localStorage.getItem('rb_prog')||'{}'); }catch{}
+  try{ S.carnet=JSON.parse(localStorage.getItem('rb_carnet')||'[]'); }catch{}
+  try{ S.streakToday=parseInt(localStorage.getItem('rb_streak')||'0'); }catch{}
+}
+function saveLS(){
+  localStorage.setItem('rb_prog',JSON.stringify(S.progress));
+  localStorage.setItem('rb_carnet',JSON.stringify(S.carnet));
+  localStorage.setItem('rb_streak',String(S.streakToday));
+}
+function addCarnet(q){
+  if(!S.carnet.some(e=>e.enonce===q.enonce)){ S.carnet.push(q); saveLS(); refreshBadge(); }
+}
+function removeCarnet(enonce){ S.carnet=S.carnet.filter(e=>e.enonce!==enonce); saveLS(); refreshBadge(); }
+
+function refreshBadge(){
+  const b=$('carnet-badge');
+  if(!b) return;
+  if(S.carnet.length>0){ b.textContent=S.carnet.length; b.style.display='flex'; }
+  else b.style.display='none';
+}
+function refreshRing(){
+  // Compter les niveaux acquis sur tous les chapitres de toutes les matières
+  let totalNiveaux=0, acquisNiveaux=0;
+  S.data?.matieres?.forEach(mat=>{
+    mat.chapitres?.forEach(chap=>{
+      [1,2,3].forEach(n=>{
+        totalNiveaux++;
+        if(S.progress[progKey(chap.id,n)]==='acquis') acquisNiveaux++;
+      });
+    });
+  });
+  // Fallback : ancienne clé sans niveau
+  if(totalNiveaux===0){
+    const vals=Object.values(S.progress);
+    totalNiveaux=vals.length; acquisNiveaux=vals.filter(v=>v==='acquis').length;
+  }
+  const pct=totalNiveaux>0?Math.round(acquisNiveaux/totalNiveaux*100):0;
+  const circ=2*Math.PI*30;
+  const fill=$('ring-fill');
+  if(fill){ fill.style.strokeDasharray=circ; fill.style.strokeDashoffset=circ-(pct/100)*circ; }
+  const pctEl=$('ring-pct'); if(pctEl) pctEl.textContent=pct;
+  const strk=$('streak-val'); if(strk) strk.textContent=S.streakToday;
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────
+function setNav(id){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const btn=$(id); if(btn) btn.classList.add('active');
+}
+function goHome(){ setNav('nav-home'); renderDashboard(); }
+function goCarnet(){ setNav('nav-carnet'); renderCarnet(); }
+function goPlanning(){ setNav('nav-planning'); renderPlanning(); }
+
+// ── VUES ─────────────────────────────────────────────────────
+function renderDashboard(){
+  const v=$('view'); if(!v) return;
+  let html='';
+
+  // Bandeau session terminée
+  if(S.derniere){
+    const pct=Math.round(S.derniere.score/S.derniere.total*100);
+    html+=`<div class="session-banner">
+      <div class="session-banner-info">
+        <strong>✅ Série terminée !</strong>
+        <span>${esc(S.derniere.label)} — ${S.derniere.score}/${S.derniere.total} (${pct}%)</span>
+      </div>
+      <button class="btn-sm" onclick="relancer()">🔄 Nouvelle</button>
+    </div>`;
+  }
+
+  html+=`<div class="section-title">📚 Matières <span class="badge-count">${S.data?.matieres?.length||0}</span></div>
+         <div class="matieres-grid" id="matieres-grid"></div>`;
+
+  v.innerHTML=html;
+
+  if(!S.data?.matieres) return;
+  const grid=$('matieres-grid');
+  S.data.matieres.forEach(mat=>{
+    const nChaps=mat.chapitres?.length||0;
+    const acquis=mat.chapitres?.filter(c=>chapMaitrise(c.id)).length||0;
+    const div=document.createElement('div');
+    div.className='mat-card';
+    const pctMat = nChaps>0 ? Math.round(acquis/nChaps*100) : 0;
+    const barColor = pctMat>=80?'#10B981':pctMat>=50?'#F59E0B':'#7C3AED';
+    const allAcquis = acquis===nChaps && nChaps>0;
+    div.innerHTML=`
+      <div class="mat-icon" style="background:${mat.couleur}22;">${mat.emoji}</div>
+      <div class="mat-info" style="flex:1;min-width:0;">
+        <h3 style="display:flex;align-items:center;gap:6px;">
+          ${esc(mat.label.split(' — ')[0])}
+          ${allAcquis?'<span style="font-size:.7rem;background:#D1FAE5;color:#065F46;padding:2px 7px;border-radius:20px;font-weight:800;">✅ Acquis</span>':''}
+        </h3>
+        <p style="margin:3px 0 5px;">${acquis}/${nChaps} chapitres acquis</p>
+        <div style="height:5px;background:rgba(124,58,237,0.1);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${pctMat}%;background:${barColor};border-radius:4px;transition:width .5s;"></div>
+        </div>
+      </div>
+      <span class="mat-arrow" style="color:${allAcquis?'#10B981':'var(--accent)'};">${allAcquis?'✓':'›'}</span>`;
+    div.addEventListener('click',()=>renderMatiere(mat.id));
+    grid.appendChild(div);
+  });
+  refreshRing();
+}
+
+function renderMatiere(matId){
+  const mat=S.data?.matieres?.find(m=>m.id===matId);
+  const v=$('view'); if(!mat||!v) return;
+
+  let html=`<button class="back-btn" onclick="goHome()">← Retour</button>
+    <div class="section-title">${mat.emoji} ${esc(mat.label.split(' — ')[0])}</div>
+    <div class="chapitres-list">`;
+
+  mat.chapitres.forEach(chap=>{
+    const nQ=(chap.quiz||[]).length;
+    const nivs={};
+    (chap.quiz||[]).forEach(q=>{const n=q.niveau||1;nivs[n]=(nivs[n]||0)+1;});
+    const ok=S.progress[chap.id]==='acquis';
+
+    let srcBadge=nQ>=5?`<span class="badge badge-men">📋 ${nQ} questions MEN</span>`
+      :nQ>0?`<span class="badge badge-mix">📝 ${nQ}q + génération</span>`
+      :`<span class="badge badge-proc">⚡ Génération auto</span>`;
+
+    let nivBadges=Object.entries(nivs).map(([n,c])=>{
+      const cls=n==1?'badge-easy':n==2?'badge-med':'badge-hard';
+      const lbl=n==1?'Facile':n==2?'Intermédiaire':'Difficile';
+      return `<span class="badge ${cls}">${lbl} ×${c}</span>`;
+    }).join('');
+
+    const na=niveauxAcquis(chap.id);
+    const okBadge=na===3
+      ?'<span class="badge badge-ok">🏆 Maîtrisé</span>'
+      :na>0
+        ?'<span class="badge" style="background:#EEF2FF;color:#3730A3;border:1px solid #C7D2FE;">'+na+'/3 niveaux ✅</span>'
+        :'';
+
+    const hasFiche = !!FICHES[chap.id];
+    html+=`<div class="chap-card">
+      <div class="chap-title">${esc(chap.titre)}</div>
+      <div class="badges-row">${srcBadge}${okBadge}</div>
+      <div class="chap-fiche">${esc((chap.fiche||'').slice(0,120))}</div>
+      ${hasFiche ? '<button class=\"btn-fiche\" data-chapid=\"'+chap.id+'\" data-chaptitle=\"'+esc(chap.titre)+'\">📖 Voir la fiche de cours</button>' : ''}
+      <div class="niveau-buttons-inline" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+        ${[{n:1,emoji:'🟢',label:'Facile',cls:'niv-easy',color:'#10B981'},{n:2,emoji:'🟡',label:'Intermédiaire',cls:'niv-med',color:'#F59E0B'},{n:3,emoji:'🔴',label:'Difficile',cls:'niv-hard',color:'#EF4444'}].map(nv=>{
+          const acq=S.progress[progKey(chap.id,nv.n)]==='acquis';
+          const qCount=(chap.quiz||[]).filter(q=>(q.niveau||1)===nv.n).length;
+          const srcTxt=qCount>0?qCount+'q MEN + génération':'génération auto';
+          return `<button class="btn-niveau ${nv.cls}${acq?' niv-acquired':''}"
+            data-mat="${mat.id}" data-chap="${chap.id}" data-niveau="${nv.n}"
+            style="padding:12px 14px;border-radius:14px;gap:10px;">
+            <span style="font-size:1.2rem;">${nv.emoji}</span>
+            <span class="niv-info">
+              <span class="niv-label" style="font-size:.88rem;">${nv.label}${acq?' ✅':''}</span>
+              <span class="niv-desc" style="font-size:.7rem;">${srcTxt}</span>
+            </span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  html+='</div>';
+  v.innerHTML=html;
+
+  v.querySelectorAll('button[data-niveau]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      vibrate(8);
+      lancerQuizNiveau(btn.dataset.mat, btn.dataset.chap, parseInt(btn.dataset.niveau));
+    });
+  });
+  v.querySelectorAll('button[data-chapid]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      vibrate(6);
+      ouvrirFiche(btn.dataset.chapid, btn.dataset.chaptitle);
+    });
+  });
+}
+
+function renderCarnet(){
+  const v=$('view'); if(!v) return;
+  if(!S.carnet.length){
+    v.innerHTML=`<div class="empty-state">
+      <span class="empty-icon">🎉</span>
+      <h3>Carnet d'erreurs vide !</h3>
+      <p>Toutes tes erreurs sont corrigées. Continue comme ça !</p>
+    </div>`; return;
+  }
+  let html=`<div class="carnet-header">
+    <h3>📕 Carnet d'erreurs</h3>
+    <p>${S.carnet.length} question(s) à retravailler</p>
+    <button class="btn-primary" onclick="lancerRattrapage()">🚀 Corriger mes erreurs</button>
+  </div>`;
+  S.carnet.forEach(q=>{
+    const theme=q.theme_auto?`<span class="badge badge-men" style="margin-bottom:6px;display:inline-block;">⚡ ${esc(q.theme_auto)}</span>`:'';
+    html+=`<div class="error-card">${theme}<div class="error-q">${esc(q.enonce)}</div><div class="error-exp">💡 ${esc(q.explication)}</div></div>`;
+  });
+  v.innerHTML=html;
+}
+
+function renderPlanning(){
+  const v=$('view'); if(!v) return;
+  const dates=[
+    {label:'Oral EPI',date:'Voir établissement',coeff:2,emoji:'🎤'},
+    {label:'Français écrit',date:'26 juin 2026',coeff:2,emoji:'📖'},
+    {label:'Histoire-Géo & EMC',date:'29 juin 2026',coeff:2,emoji:'🌍'},
+    {label:'Sciences (PC+SVT)',date:'29 juin 2026 (après-midi)',coeff:2,emoji:'⚛️'},
+    {label:'Mathématiques',date:'30 juin 2026',coeff:2,emoji:'📐'},
+  ];
+  const now=new Date(), target=new Date('2026-06-26');
+  const jours=Math.max(0,Math.ceil((target-now)/(1000*60*60*24)));
+  let html=`
+    <div class="section-title">📅 Planning Brevet 2026</div>
+    <div class="mat-card" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(219,39,119,0.08));">
+      <div class="mat-icon" style="background:#EEF2FF;font-size:1.8rem;">⏳</div>
+      <div class="mat-info">
+        <h3 style="font-size:1.1rem;">J − ${jours}</h3>
+        <p>avant le premier écrit (Français)</p>
+      </div>
+    </div>`;
+  dates.forEach(d=>{
+    html+=`<div class="chap-card" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.4rem;">${d.emoji}</span>
+        <div>
+          <div class="chap-title" style="margin-bottom:2px;">${d.label}</div>
+          <div style="font-size:.78rem;color:var(--muted);">📅 ${d.date} • Coeff. ${d.coeff}</div>
+        </div>
+      </div>
+    </div>`;
+  });
+  v.innerHTML=html;
+}
+
+// ── LANCEMENT QUIZ ───────────────────────────────────────────
+function lancerQuiz(matId, chapId, niveau=0){
+  lancerQuizNiveau(matId, chapId, niveau);
+}
+
+function lancerQuizNiveau(matId, chapId, niveau=0){
+  const mat=S.data?.matieres?.find(m=>m.id===matId);
+  const chap=mat?.chapitres?.find(c=>c.id===chapId);
+  const qs=genSerie(chap?.quiz||[],5,niveau).map(q=>remixOpts(norm(q)));
+  const nivLabel=niveau===1?'🟢 Facile':niveau===2?'🟡 Intermédiaire':niveau===3?'🔴 Difficile':'';
+  const matLabel=(mat?.label?.split(' — ')[0]||'Révision');
+  const label=nivLabel?matLabel+' — '+nivLabel:matLabel;
+  S.quiz={ matId, chapId, label, qs, idx:0, score:0, rattrapage:false, niveau };
+  ouvrirQuiz();
+}
+function lancerRattrapage(){
+  if(!S.carnet.length) return;
+  const qs=shuffle([...S.carnet]).slice(0,5).map(q=>remixOpts(norm(q)));
+  S.quiz={ matId:null, chapId:'carnet', label:'Rattrapage', qs, idx:0, score:0, rattrapage:true };
+  ouvrirQuiz();
+}
+function lancerExamen(){
+  vibrate(12);
+  let toutes=[];
+  S.data?.matieres?.forEach(m=>m.chapitres?.forEach(c=>{ toutes=toutes.concat(c.quiz||[]); }));
+  const qs=genSerie(toutes,10).map(q=>remixOpts(norm(q)));
+  S.quiz={ matId:null, chapId:'examen', label:'Examen Blanc 🔥', qs, idx:0, score:0, rattrapage:false };
+  ouvrirQuiz();
+}
+function relancer(){
+  const d=S.derniere; if(!d) return;
+  S.derniere=null;
+  const niveau=S.quiz.niveau||0;
+  if(d.chapId==='carnet') lancerRattrapage();
+  else if(d.chapId==='examen') lancerExamen();
+  else lancerQuizNiveau(d.matId,d.chapId,niveau);
+}
+
+// ── OUVERTURE / FERMETURE QUIZ ───────────────────────────────
+function ouvrirQuiz(){
+  const qs=$('quiz-screen'); if(!qs) return;
+  qs.classList.add('open');
+  qs.scrollTop=0;
+  document.body.style.overflow='hidden';
+  afficherQuestion();
+}
+function fermerQuiz(){
+  const qs=$('quiz-screen'); if(!qs) return;
+  qs.classList.remove('open');
+  document.body.style.overflow='';
+  $('quiz-footer').classList.remove('open');
+}
+
+// ── AFFICHAGE QUESTION ───────────────────────────────────────
+function afficherQuestion(){
+  const {qs,idx,label}=S.quiz;
+  const q=qs[idx]; if(!q) return;
+  const pct=Math.round(idx/qs.length*100);
+
+  $('quiz-bar').style.width=pct+'%';
+  $('quiz-subject').textContent=label;
+  // Colorier le badge niveau dans le header
+  const qsEl=$('quiz-subject');
+  if(qsEl && S.quiz.niveau>0){
+    const c=S.quiz.niveau===1?'#10B981':S.quiz.niveau===2?'#F59E0B':'#EF4444';
+    qsEl.style.color=c;
+  } else if(qsEl) qsEl.style.color='';
+  // Afficher bouton fiche si disponible
+  const bfq=$('btn-fiche-quiz');
+  if(bfq) bfq.style.display = FICHES[S.quiz.chapId] ? 'flex' : 'none';
+  $('quiz-counter').textContent=`${idx+1}/${qs.length}`;
+  $('quiz-footer').classList.remove('open');
+
+  const nv=parseInt(q.niveau)||1;
+  const lvlColor=nv===1?'#10B981':nv===2?'#F59E0B':'#EF4444';
+  const lvlTxt=nv===1?'Facile':nv===2?'Intermédiaire':'Difficile';
+
+  let badgesHtml=`<span class="badge-level" style="background:${lvlColor};">${lvlTxt}</span>`;
+  if(q.theme_auto) badgesHtml+=`<span class="badge-theme">⚡ ${esc(q.theme_auto)}</span>`;
+  if(q.annale)     badgesHtml+=`<span class="badge-men-q">📋 Automatisme MEN</span>`;
+
+  let indiceHtml='';
+  if(nv>=2&&q.indice){
+    indiceHtml=`<button class="btn-hint" onclick="toggleHint(this)">💡 Voir l'indice de cours</button>
+    <div class="hint-box">${esc(q.indice)}</div>`;
+  }
+
+  let bodyHtml;
+  if(q.type==='open'){
+    bodyHtml=`
+      <div class="open-answer-wrap">
+        <textarea class="textarea-answer" id="open-input" placeholder="Écris ta réponse ici..." rows="3"></textarea>
+        <button class="btn-valider" onclick="validerReponseOuverte()">✔ Valider ma réponse</button>
+        <div class="keywords-feedback" id="kw-feedback"></div>
+      </div>`;
+  } else {
+    let optsHtml=q.options.map((opt,i)=>
+      `<button class="btn-option" data-idx="${i}" onclick="repondre(this,${i})">${esc(opt)}</button>`
+    ).join('');
+    bodyHtml=`<div class="options-grid">${optsHtml}</div>`;
+  }
+
+  $('quiz-body').innerHTML=`
+    <div class="q-badges">${badgesHtml}</div>
+    <div class="q-enonce">${esc(q.enonce)}</div>
+    ${indiceHtml}
+    ${bodyHtml}
+    <div class="explanation-box" id="exp-box">
+      <div class="exp-head">💡 Explication du professeur :</div>
+      <div class="exp-text" id="exp-text"></div>
+    </div>
+  `;
+  if(q.type==='open') setTimeout(()=>{ const t=$('open-input'); if(t) t.focus(); },100);
+  $('quiz-screen').scrollTop=0;
+}
+
+function toggleHint(btn){
+  const box=btn.nextElementSibling;
+  if(!box) return;
+  box.classList.toggle('open');
+  btn.textContent=box.classList.contains('open')?'🙈 Masquer l\'indice':'💡 Voir l\'indice de cours';
+  vibrate(6);
+}
+
+function repondre(btn,idx){
+  const q=S.quiz.qs[S.quiz.idx];
+  // Désactiver tous les boutons
+  document.querySelectorAll('.btn-option').forEach(b=>{ b.onclick=null; b.style.pointerEvents='none'; });
+  const correct=idx===q.bonne_reponse;
+  if(correct){
+    btn.classList.add('correct','pop');
+    S.quiz.score++;
+    vibrate(10);
+    if(S.quiz.rattrapage) removeCarnet(q.enonce);
+  } else {
+    btn.classList.add('wrong','shake');
+    const bonBtn=document.querySelector(`.btn-option[data-idx="${q.bonne_reponse}"]`);
+    if(bonBtn) bonBtn.classList.add('correct');
+    vibrate([20,10,20]);
+    if(!S.quiz.rattrapage) addCarnet(q);
+  }
+  $('exp-text').textContent=q.explication;
+  $('exp-box').classList.add('open');
+  $('quiz-footer').classList.add('open');
+}
+
+
+// ── RÉPONSE OUVERTE ──────────────────────────────────────────
+function normaliserTexte(s){
+  return s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s]/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+function validerReponseOuverte(){
+  const q=S.quiz.qs[S.quiz.idx];
+  const input=$('open-input'); if(!input) return;
+  const reponse=normaliserTexte(input.value);
+  const mots_cles=q.mots_cles||[];
+  const trouves=mots_cles.filter(kw=>reponse.includes(normaliserTexte(kw)));
+  const manquants=mots_cles.filter(kw=>!reponse.includes(normaliserTexte(kw)));
+  const correct=manquants.length===0;
+
+  // Désactiver le textarea et le bouton
+  input.disabled=true;
+  const btn=input.nextElementSibling; if(btn) btn.disabled=true;
+
+  // Afficher le feedback mots-clés
+  const fb=$('kw-feedback');
+  if(fb){
+    fb.innerHTML=
+      trouves.map(kw=>`<span class="kw-found">✅ ${esc(kw)}</span>`).join('')+
+      manquants.map(kw=>`<span class="kw-missing">❌ ${esc(kw)}</span>`).join('');
+  }
+
+  // Colorier le textarea
+  input.style.borderColor=correct?'#10B981':'#EF4444';
+  input.style.background=correct?'rgba(16,185,129,0.06)':'rgba(239,68,68,0.06)';
+
+  if(correct){
+    S.quiz.score++;
+    vibrate(10);
+    if(S.quiz.rattrapage) removeCarnet(q.enonce);
+  } else {
+    vibrate([20,10,20]);
+    if(!S.quiz.rattrapage) addCarnet(q);
+  }
+
+  $('exp-text').textContent=q.explication;
+  $('exp-box').classList.add('open');
+  $('quiz-footer').classList.add('open');
+}
+
+// ── FIN DE SESSION ───────────────────────────────────────────
+function finSession(){
+  const {qs,score,chapId,matId,label,rattrapage}=S.quiz;
+  S.derniere={chapId,matId,label,score,total:qs.length};
+  S.streakToday++;
+  const pct=Math.round(score/qs.length*100);
+  if(pct>=80&&chapId!=='examen'&&chapId!=='carnet'){
+    const niveau=S.quiz.niveau||0;
+    if(niveau>0){
+      S.progress[progKey(chapId,niveau)]='acquis';
+    } else {
+      S.progress[chapId]='acquis';
+    }
+  }
+  saveLS();
+  refreshRing();
+  fermerQuiz();
+
+  const emoji=pct>=80?'🏆':pct>=50?'💪':'📖';
+  const msg=pct>=80?'Excellent travail !':pct>=50?'Continue comme ça !':'Ne lâche rien !';
+  const barColor=pct>=80?'#10B981':pct>=50?'#F59E0B':'#EF4444';
+
+  let btnRattrapage=S.carnet.length>0&&!rattrapage
+    ?`<button class="btn-secondary" onclick="lancerRattrapage()">📕 Corriger ${S.carnet.length} erreur(s)</button>`:'';
+
+  $('view').innerHTML=`<div class="result-screen">
+    <span class="result-emoji">${emoji}</span>
+    <div style="font-family:var(--font-h);font-weight:900;font-size:1rem;color:var(--muted);">${esc(label)}</div>
+    <div class="result-score">${score} / ${qs.length}</div>
+    <div class="result-msg">${msg}</div>
+    <div class="result-bar-wrap">
+      <div class="result-bar-fill" style="width:${pct}%;background:${barColor};"></div>
+    </div>
+    ${(()=>{
+      const niveau=S.quiz.niveau||0;
+      const chapId=S.quiz.chapId;
+      if(niveau>0&&chapId&&chapId!=='examen'&&chapId!=='carnet'){
+        const na=niveauxAcquis(chapId);
+        if(na===3) return '<div style="background:#D1FAE5;border-radius:14px;padding:12px 16px;margin-bottom:12px;font-family:var(--font-h);font-weight:800;color:#065F46;text-align:center;">🏆 Chapitre entièrement maîtrisé !</div>';
+        const restants=['Facile','Intermédiaire','Difficile'].filter((_,i)=>S.progress[progKey(chapId,i+1)]!=='acquis');
+        return '<div style="background:rgba(124,58,237,0.08);border-radius:14px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:var(--muted);text-align:center;">Niveaux restants : '+restants.join(' · ')+'</div>';
+      }
+      return '';
+    })()}
+    <div class="result-btns">
+      <button class="btn-primary" onclick="relancer()">🔄 Nouvelle série inédite (même niveau)</button>
+      ${btnRattrapage}
+      <button class="btn-ghost" onclick="goHome()">🏠 Tableau de bord</button>
+    </div>
+  </div>`;
+  refreshRing();
+}
+
+// ── DONNÉES EMBARQUÉES (5 matières, 28 chapitres, 123 questions) ──
+const DATA_EMBEDDED = {"meta":{"exam":"Diplôme National du Brevet (DNB)","session":"2026","niveau":"Troisième","version":"1.0","derniere_maj":"2026-06-15","auteur":"RévisBrevet — généré avec Claude API"},"dates_epreuves":{"oral_projet":{"date":"2026-05-01","label":"Oral projet EPI","duree":"15-25 min","coeff":2,"note":"Date variable selon établissement"},"francais":{"date":"2026-06-26","label":"Français écrit","duree":"3h","coeff":2,"heure":"09h00"},"histoire_geo":{"date":"2026-06-29","label":"Histoire-Géographie & EMC","duree":"2h","coeff":2,"heure":"09h00"},"sciences":{"date":"2026-06-29","label":"Sciences (PC + SVT)","duree":"1h","coeff":2,"heure":"13h30"},"maths":{"date":"2026-06-30","label":"Mathématiques","duree":"2h","coeff":2,"heure":"09h00"},"session_remplacement":"2026-09-10"},"regles_notation":{"controle_continu":{"poids":0.4,"description":"Moyennes de toutes les matières de 3e"},"epreuves_finales":{"poids":0.6,"description":"4 écrits + oral projet"},"seuil_reussite":480,"total_points":800,"mentions":{"assez_bien":{"seuil":480,"label":"Assez Bien"},"bien":{"seuil":560,"label":"Bien"},"tres_bien":{"seuil":640,"label":"Très Bien"},"felicitations":{"seuil":720,"label":"Très Bien avec félicitations"}}},"matieres":[{"id":"maths","label":"Mathématiques","emoji":"📐","couleur":"#3D5A99","couleur_fond":"#EEF2FF","duree_epreuve":"2h","coeff":2,"date_epreuve":"2026-06-30","nouveaute_2026":"20 min d'automatismes SANS calculatrice + 1h40 raisonnement AVEC calculatrice","lien_eduscol":"https://eduscol.education.fr/1611/programmes-et-ressources-en-mathematiques-voie-gt","chapitres":[{"id":"maths_auto","titre":"⚡ Automatismes officiels DNB 2026 — Liste MEN complète","theme":"Nouveauté 2026 — OFFICIEL","statut":"a_reviser","priorite":"haute","conseil_strategique":"20 questions en 20 minutes = 1 min MAX par question. Si tu bloques PASSE et reviens. Ces 42 questions couvrent EXACTEMENT la liste publiée par le Ministère en octobre 2025.","source_officielle":"https://www.education.gouv.fr/sites/default/files/2025-10/dnb-2026-liste-indicative-d-automatismes-susceptibles-d-tre-mobilis-s-lors-de-l-preuve-crite-de-math-matiques-s-ries-g-n-rale-et-professionnelle--442401.pdf","fiche":"LISTE OFFICIELLE MEN (oct. 2025). Thèmes couverts : Nombres & Calculs (fractions, pourcentages, notation scientifique, carrés 1-12, divisibilité, expressions littérales, équations ax=c / x+b=c / ax+b=c) ; Géométrie (angles triangle=180°, supplémentaires, conversions longueurs/aires/volumes/temps, périmètre disque, aires triangle/rectangle/disque, volumes cube/pavé/prisme/cylindre, Pythagore, Thalès, cosinus, symétries) ; Données & Probabilités (équiprobabilité, fréquence, moyenne, médiane, lecture graphiques, proportionnalité) ; Algorithmique (programme de calcul).","mots_cles":["automatismes","calcul mental","sans calculatrice","fractions","pourcentages","géométrie","conversions","probabilités","officiel MEN 2025"],"quiz":[{"id":"auto_01","niveau":1,"type_brevet":"automatisme","theme_auto":"Fractions décimales","enonce":"Écrire 3/4 en écriture décimale (sans calculatrice).","options":["A) 0,34","B) 0,75","C) 0,43","D) 1,33"],"bonne_reponse":1,"explication":"3 ÷ 4 = 0,75. À mémoriser : 1/4=0,25 ; 1/2=0,5 ; 3/4=0,75 ; 3/2=1,5.","annale":"Liste officielle MEN oct. 2025 — Fractions simples"},{"id":"auto_02","niveau":1,"type_brevet":"automatisme","theme_auto":"Écritures multiples","enonce":"Parmi ces écritures, lesquelles sont égales à 1,2 ? 12/10 ; 6/5 ; 1+1/5 ; 120%","options":["A) Seulement 12/10","B) Seulement 6/5 et 12/10","C) Toutes sont égales à 1,2","D) Aucune"],"bonne_reponse":2,"explication":"Toutes valent 1,2 : 12/10=1,2 ; 6/5=1,2 ; 1+1/5=1,2 ; 120%=1,2. C'est exactement l'exercice type du MEN : reconnaître plusieurs écritures d'un même nombre.","annale":"Liste officielle MEN oct. 2025 — Écritures multiples d'un nombre"},{"id":"auto_03","niveau":1,"type_brevet":"automatisme","theme_auto":"Comparer des fractions","enonce":"Ranger dans l'ordre croissant : 3/4 ; 2/3 ; 5/6","options":["A) 3/4 < 2/3 < 5/6","B) 2/3 < 3/4 < 5/6","C) 5/6 < 3/4 < 2/3","D) 2/3 < 5/6 < 3/4"],"bonne_reponse":1,"explication":"Même dénominateur 12 : 2/3=8/12 ; 3/4=9/12 ; 5/6=10/12. Ordre : 2/3 < 3/4 < 5/6.","annale":"Liste officielle MEN oct. 2025 — Comparer des fractions"},{"id":"auto_04","niveau":1,"type_brevet":"automatisme","theme_auto":"Fraction d'un nombre","enonce":"Le tiers de 18 vaut ?","options":["A) 3","B) 54","C) 6","D) 9"],"bonne_reponse":2,"explication":"1/3 de 18 = 18 ÷ 3 = 6. Méthode : diviser par le dénominateur puis multiplier par le numérateur.","annale":"Liste officielle MEN oct. 2025 — Fractions d'un nombre"},{"id":"auto_05","niveau":1,"type_brevet":"automatisme","theme_auto":"Fraction d'un nombre","enonce":"Le quart de 36 vaut ?","options":["A) 144","B) 12","C) 9","D) 6"],"bonne_reponse":2,"explication":"1/4 de 36 = 36 ÷ 4 = 9. Le 'quart' = ÷ 4 toujours.","annale":"Liste officielle MEN oct. 2025 — Fractions d'un nombre"},{"id":"auto_06","niveau":1,"type_brevet":"automatisme","theme_auto":"Pourcentages simples","enonce":"Calculer 50% de 84 (sans calculatrice).","options":["A) 84","B) 42","C) 168","D) 8,4"],"bonne_reponse":1,"explication":"50% = ÷ 2. 84 ÷ 2 = 42. À mémoriser : 100%=tout ; 50%=÷2 ; 25%=÷4 ; 10%=÷10 ; 1%=÷100.","annale":"Liste officielle MEN oct. 2025 — Pourcentages 100/50/25/10/1%"},{"id":"auto_07","niveau":1,"type_brevet":"automatisme","theme_auto":"Pourcentages simples","enonce":"Calculer 25% de 160 (sans calculatrice).","options":["A) 25","B) 4","C) 40","D) 64"],"bonne_reponse":2,"explication":"25% = ÷ 4. 160 ÷ 4 = 40. Ou : 10%=16, 25% = 16+16+8 = 40.","annale":"Liste officielle MEN oct. 2025 — Pourcentages 25%"},{"id":"auto_08","niveau":2,"type_brevet":"automatisme","theme_auto":"Appliquer une diminution en %","enonce":"Un article à 120 € est soldé à -25%. Nouveau prix ?","options":["A) 95 €","B) 90 €","C) 80 €","D) 85 €"],"bonne_reponse":1,"explication":"25% de 120 = 30. Prix soldé = 120 - 30 = 90 €. Méthode : calculer la réduction (25%=÷4) puis soustraire.","annale":"Liste officielle MEN oct. 2025 — Appliquer une diminution en %"},{"id":"auto_09","niveau":2,"type_brevet":"automatisme","theme_auto":"Appliquer une augmentation en %","enonce":"Un salaire de 1200 € augmente de 10%. Nouveau salaire ?","options":["A) 1210 €","B) 1320 €","C) 1300 €","D) 1120 €"],"bonne_reponse":1,"explication":"10% de 1200 = 120. Nouveau salaire = 1200 + 120 = 1320 €. Méthode rapide : × 1,10.","annale":"Liste officielle MEN oct. 2025 — Appliquer une augmentation en %"},{"id":"auto_10","niveau":2,"type_brevet":"automatisme","theme_auto":"Notation scientifique","enonce":"Écrire 0,0045 en notation scientifique.","options":["A) 45 × 10⁻⁴","B) 4,5 × 10⁻³","C) 0,45 × 10⁻²","D) 4,5 × 10³"],"bonne_reponse":1,"explication":"On déplace la virgule de 3 rangs vers la droite → 4,5 × 10⁻³. Règle : 1 ≤ a < 10.","annale":"Liste officielle MEN oct. 2025 — Notation scientifique"},{"id":"auto_11","niveau":2,"type_brevet":"automatisme","theme_auto":"Notation scientifique","enonce":"Écrire 3,2 × 10⁴ en écriture décimale.","options":["A) 320","B) 3200","C) 32 000","D) 320 000"],"bonne_reponse":2,"explication":"10⁴ = 10 000. 3,2 × 10 000 = 32 000. La virgule se déplace de 4 rangs vers la droite.","annale":"Liste officielle MEN oct. 2025 — Notation scientifique"},{"id":"auto_12","niveau":1,"type_brevet":"automatisme","theme_auto":"Carrés de 1 à 12","enonce":"Combien vaut 9² ?","options":["A) 18","B) 81","C) 72","D) 90"],"bonne_reponse":1,"explication":"9² = 9 × 9 = 81. Carrés à mémoriser : 1,4,9,16,25,36,49,64,81,100,121,144.","annale":"Liste officielle MEN oct. 2025 — Carrés des entiers de 1 à 12"},{"id":"auto_13","niveau":1,"type_brevet":"automatisme","theme_auto":"Carrés de 1 à 12","enonce":"Quelle est la valeur de 11² ?","options":["A) 111","B) 121","C) 101","D) 22"],"bonne_reponse":1,"explication":"11² = 121. Astuce : (10+1)² = 100 + 20 + 1 = 121.","annale":"Liste officielle MEN oct. 2025 — Carrés des entiers de 1 à 12"},{"id":"auto_14","niveau":1,"type_brevet":"automatisme","theme_auto":"Critères de divisibilité","enonce":"2 358 est-il divisible par 9 ?","options":["A) Non","B) Oui, car il est pair","C) Oui, car la somme des chiffres (2+3+5+8=18) est divisible par 9","D) Oui, car il finit par 8"],"bonne_reponse":2,"explication":"Critère par 9 : somme des chiffres divisible par 9. 2+3+5+8=18 et 18÷9=2. Autres critères : par 2→unités paires ; par 3→somme divisible par 3 ; par 5→finit par 0 ou 5.","annale":"Liste officielle MEN oct. 2025 — Critères divisibilité 2,3,5,9"},{"id":"auto_15","niveau":2,"type_brevet":"automatisme","theme_auto":"Expressions littérales","enonce":"Simplifier : 3a + 2b − a + 5b","options":["A) 3a + 7b","B) 2a + 7b","C) 4a + 3b","D) 2a − 3b"],"bonne_reponse":1,"explication":"Regrouper les termes : (3a−a) + (2b+5b) = 2a + 7b. On n'additionne que les termes de même nature.","annale":"Liste officielle MEN oct. 2025 — Simplifier expressions littérales"},{"id":"auto_16","niveau":2,"type_brevet":"automatisme","theme_auto":"Équation ax = c","enonce":"Résoudre : 5x = 35","options":["A) x = 30","B) x = 40","C) x = 7","D) x = 175"],"bonne_reponse":2,"explication":"5x = 35 → x = 35 ÷ 5 = 7. Vérif : 5 × 7 = 35 ✓.","annale":"Liste officielle MEN oct. 2025 — Résoudre ax = c"},{"id":"auto_17","niveau":2,"type_brevet":"automatisme","theme_auto":"Équation x + b = c","enonce":"Résoudre : x + 8 = 15","options":["A) x = 23","B) x = 7","C) x = 120","D) x = 8"],"bonne_reponse":1,"explication":"x = 15 − 8 = 7. Vérif : 7 + 8 = 15 ✓.","annale":"Liste officielle MEN oct. 2025 — Résoudre x + b = c"},{"id":"auto_18","niveau":2,"type_brevet":"automatisme","theme_auto":"Équation ax + b = c","enonce":"Résoudre : 2x + 3 = 11","options":["A) x = 7","B) x = 4","C) x = 5","D) x = 2"],"bonne_reponse":1,"explication":"2x = 11 − 3 = 8 → x = 4. Vérif : 2×4+3 = 11 ✓.","annale":"Liste officielle MEN oct. 2025 — Résoudre ax + b = c"},{"id":"auto_19","niveau":1,"type_brevet":"automatisme","theme_auto":"Angles dans un triangle","enonce":"Triangle : deux angles mesurant 65° et 72°. Le troisième mesure ?","options":["A) 137°","B) 53°","C) 43°","D) 47°"],"bonne_reponse":2,"explication":"Somme des angles d'un triangle = 180°. 3e angle = 180 − 65 − 72 = 43°.","annale":"Liste officielle MEN oct. 2025 — Somme des angles d'un triangle"},{"id":"auto_20","niveau":1,"type_brevet":"automatisme","theme_auto":"Angles supplémentaires","enonce":"Deux angles sont supplémentaires. L'un vaut 110°. L'autre vaut ?","options":["A) 250°","B) 70°","C) 80°","D) 55°"],"bonne_reponse":1,"explication":"Supplémentaires → somme = 180°. 180° − 110° = 70°. Complémentaires → somme = 90°.","annale":"Liste officielle MEN oct. 2025 — Angles supplémentaires et complémentaires"},{"id":"auto_21","niveau":1,"type_brevet":"automatisme","theme_auto":"Conversions longueur","enonce":"Convertir 3,5 km en mètres.","options":["A) 35 m","B) 350 m","C) 3500 m","D) 0,35 m"],"bonne_reponse":2,"explication":"1 km = 1000 m. 3,5 × 1000 = 3500 m.","annale":"Liste officielle MEN oct. 2025 — Conversions mm, cm, m, km"},{"id":"auto_22","niveau":2,"type_brevet":"automatisme","theme_auto":"Conversions aires","enonce":"Convertir 2 m² en cm².","options":["A) 200 cm²","B) 2 000 cm²","C) 20 000 cm²","D) 200 000 cm²"],"bonne_reponse":2,"explication":"1 m² = 10 000 cm² (car 1 m = 100 cm et 100² = 10 000). 2 m² = 20 000 cm². PIÈGE : pour les aires, on élève le facteur de conversion au carré !","annale":"Liste officielle MEN oct. 2025 — Conversions mm², cm², m², km²"},{"id":"auto_23","niveau":2,"type_brevet":"automatisme","theme_auto":"Conversions volumes/capacités","enonce":"Convertir 2,5 L en mL.","options":["A) 25 mL","B) 250 mL","C) 2500 mL","D) 25 000 mL"],"bonne_reponse":2,"explication":"1 L = 1000 mL. 2,5 × 1000 = 2500 mL. À savoir : 1 L = 1 dm³ ; 1 m³ = 1000 L.","annale":"Liste officielle MEN oct. 2025 — Conversions mL, cL, dL, L ; dm³, L ; m³, L"},{"id":"auto_24","niveau":2,"type_brevet":"automatisme","theme_auto":"Conversions temps","enonce":"Convertir 1h 45 min en minutes.","options":["A) 145 min","B) 100 min","C) 105 min","D) 90 min"],"bonne_reponse":2,"explication":"1h = 60 min. 1h 45 min = 60 + 45 = 105 min. PIÈGE : 1h45 n'est pas 1,45h (c'est 1,75h en décimal).","annale":"Liste officielle MEN oct. 2025 — Conversions s, min, h, jour"},{"id":"auto_25","niveau":1,"type_brevet":"automatisme","theme_auto":"Périmètre d'un disque","enonce":"Disque de rayon 5 cm. Son périmètre = ? (pi ≈ 3,14)","options":["A) 15,7 cm","B) 31,4 cm","C) 78,5 cm","D) 10 cm"],"bonne_reponse":1,"explication":"Périmètre = 2 × pi × r = 2 × 3,14 × 5 = 31,4 cm. Ne pas confondre avec l'aire = pi × r² = 78,5 cm².","annale":"Liste officielle MEN oct. 2025 — Périmètre d'un disque"},{"id":"auto_26","niveau":1,"type_brevet":"automatisme","theme_auto":"Aire d'un triangle","enonce":"Triangle de base 8 cm et hauteur 5 cm. Aire = ?","options":["A) 40 cm²","B) 13 cm²","C) 20 cm²","D) 80 cm²"],"bonne_reponse":2,"explication":"Aire triangle = (base × hauteur) ÷ 2 = (8 × 5) ÷ 2 = 20 cm². Ne pas oublier le ÷ 2 !","annale":"Liste officielle MEN oct. 2025 — Aire d'un triangle"},{"id":"auto_27","niveau":1,"type_brevet":"automatisme","theme_auto":"Volume d'un pavé droit","enonce":"Pavé droit : L=6 cm, l=4 cm, h=3 cm. Volume = ?","options":["A) 13 cm³","B) 72 cm³","C) 24 cm³","D) 216 cm³"],"bonne_reponse":1,"explication":"V = L × l × h = 6 × 4 × 3 = 72 cm³.","annale":"Liste officielle MEN oct. 2025 — Volume d'un pavé droit"},{"id":"auto_28","niveau":2,"type_brevet":"automatisme","theme_auto":"Volume d'un cylindre","enonce":"Cylindre : rayon 4 cm, hauteur 10 cm. Volume = ? (pi ≈ 3,14)","options":["A) 125,6 cm³","B) 502,4 cm³","C) 1256 cm³","D) 160 cm³"],"bonne_reponse":1,"explication":"V = pi × r² × h = 3,14 × 16 × 10 = 502,4 cm³. Étapes : 1) r²=16 ; 2) × pi ; 3) × h.","annale":"Liste officielle MEN oct. 2025 — Volume d'un cylindre"},{"id":"auto_29","niveau":2,"type_brevet":"automatisme","theme_auto":"Automatisme Pythagore","enonce":"Triangle rectangle, cathètes 3 cm et 4 cm. Hypoténuse = ?","options":["A) 7 cm","B) 5 cm","C) 6 cm","D) 12 cm"],"bonne_reponse":1,"explication":"c² = 3² + 4² = 9 + 16 = 25 → c = 5 cm. Triplet 3-4-5 à mémoriser ! Autres : 5-12-13 ; 8-15-17.","annale":"Liste officielle MEN oct. 2025 — Automatisme Pythagore"},{"id":"auto_30","niveau":2,"type_brevet":"automatisme","theme_auto":"Automatisme cosinus","enonce":"Triangle rectangle, hypoténuse = 10 cm, angle A = 60°. cos(60°) = 0,5. Côté adjacent à A = ?","options":["A) 20 cm","B) 5 cm","C) 8,66 cm","D) 0,05 cm"],"bonne_reponse":1,"explication":"cos(A) = adjacent / hypoténuse → adjacent = 10 × 0,5 = 5 cm. Mémo : CAH = Cosinus = Adjacent / Hypoténuse.","annale":"Liste officielle MEN oct. 2025 — Automatisme cosinus"},{"id":"auto_31","niveau":2,"type_brevet":"automatisme","theme_auto":"Automatisme Thalès","enonce":"Droites parallèles : AB=6, AC=9, DE=4. Calculer DF.","options":["A) DF = 6","B) DF = 3","C) DF = 2,67","D) DF = 8"],"bonne_reponse":0,"explication":"Thalès : AB/AC = DE/DF → 6/9 = 4/DF → DF = 4 × 9/6 = 6. Vérif : 6/9 = 4/6 = 2/3 ✓.","annale":"Liste officielle MEN oct. 2025 — Automatisme Thalès"},{"id":"auto_32","niveau":1,"type_brevet":"automatisme","theme_auto":"Probabilité équiprobabilité","enonce":"On tire une carte au hasard dans un jeu de 52 cartes. P(cœur) = ?","options":["A) 1/52","B) 1/13","C) 1/4","D) 4/52"],"bonne_reponse":2,"explication":"Il y a 13 cœurs sur 52 cartes. P(cœur) = 13/52 = 1/4.","annale":"Liste officielle MEN oct. 2025 — Probabilité équiprobabilité"},{"id":"auto_33","niveau":1,"type_brevet":"automatisme","theme_auto":"Fréquence","enonce":"Sur 40 élèves, 16 ont eu plus de 15/20. Fréquence en % ?","options":["A) 16%","B) 40%","C) 24%","D) 45%"],"bonne_reponse":1,"explication":"Fréquence = 16/40 = 0,4 = 40%. Méthode : diviser le nb d'occurrences par l'effectif total.","annale":"Liste officielle MEN oct. 2025 — Exprimer une fréquence"},{"id":"auto_34","niveau":2,"type_brevet":"automatisme","theme_auto":"Médiane","enonce":"Série ordonnée : 4, 7, 9, 12, 15, 18, 21. Médiane = ?","options":["A) 9","B) 12","C) 15","D) 10"],"bonne_reponse":1,"explication":"7 valeurs → médiane = 4e valeur = 12. Si nb pair de valeurs : moyenne des 2 centrales.","annale":"Liste officielle MEN oct. 2025 — Déterminer une médiane"},{"id":"auto_35","niveau":1,"type_brevet":"automatisme","theme_auto":"Proportionnalité — retour à l'unité","enonce":"3 kg de pommes coûtent 4,50 €. Combien coûtent 5 kg ?","options":["A) 6,50 €","B) 7,50 €","C) 8 €","D) 5,50 €"],"bonne_reponse":1,"explication":"Retour à l'unité : 1 kg = 4,50 ÷ 3 = 1,50 €. 5 kg = 5 × 1,50 = 7,50 €.","annale":"Liste officielle MEN oct. 2025 — Proportionnalité / retour à l'unité"},{"id":"auto_36","niveau":2,"type_brevet":"automatisme","theme_auto":"Reconnaître la proportionnalité","enonce":"Graphique : x=4→y=6 ; x=8→y=12. Est-ce de la proportionnalité ?","options":["A) Non, les valeurs changent","B) Oui, le rapport y/x = 1,5 est constant","C) Non, y augmente trop","D) On ne peut pas savoir"],"bonne_reponse":1,"explication":"y/x = 6/4 = 1,5 et 12/8 = 1,5 → rapport constant → proportionnalité. La droite passe par l'origine.","annale":"Liste officielle MEN oct. 2025 — Reconnaître la proportionnalité"},{"id":"auto_37","niveau":1,"type_brevet":"automatisme","theme_auto":"Image et antécédent graphique","enonce":"Sur un graphique, pour x=3 la courbe est en y=7. Que signifie f(3)=7 ?","options":["A) L'antécédent de 3 est 7","B) L'image de 3 par f est 7","C) f ne peut pas valoir 7","D) x=7 est un antécédent de 3"],"bonne_reponse":1,"explication":"f(3)=7 : l'IMAGE de 3 est 7. L'antécédent de 7 est 3 (pas l'inverse). Image = résultat, antécédent = valeur de départ.","annale":"Liste officielle MEN oct. 2025 — Exploiter un graphique"},{"id":"auto_38","niveau":2,"type_brevet":"automatisme","theme_auto":"Pente d'une droite","enonce":"Une droite passe par (0;2) et (5;12). Coefficient directeur = ?","options":["A) 2","B) 12","C) 10","D) 5"],"bonne_reponse":0,"explication":"Pente = (12-2)/(5-0) = 10/5 = 2. La pente = variation de y quand x augmente de 1.","annale":"Liste officielle MEN oct. 2025 — Lire et interpréter un graphique"},{"id":"auto_39","niveau":2,"type_brevet":"automatisme","theme_auto":"Programme de calcul","enonce":"Programme : 'Prendre un nombre, × 3, + 5, ÷ 2'. Résultat avec 7 ?","options":["A) 10","B) 13","C) 16","D) 8"],"bonne_reponse":1,"explication":"7×3=21 ; 21+5=26 ; 26÷2=13. Appliquer les opérations DANS L'ORDRE.","annale":"Liste officielle MEN oct. 2025 — Interpréter un programme de calcul"},{"id":"auto_40","niveau":3,"type_brevet":"automatisme","theme_auto":"Inverser un programme de calcul","enonce":"Programme : 'Prendre x, calculer 2x+1'. Pour quel x obtient-on 15 ?","options":["A) x=6","B) x=7","C) x=8","D) x=14"],"bonne_reponse":1,"explication":"2x+1=15 → 2x=14 → x=7. Vérif : 2×7+1=15 ✓. 'Inverser' le programme = résoudre une équation.","annale":"Liste officielle MEN oct. 2025 — Interpréter un programme de calcul"},{"id":"auto_41","niveau":1,"type_brevet":"automatisme","theme_auto":"Droite graduée","enonce":"Sur une droite graduée, le milieu entre -3 et 5 est ?","options":["A) 1","B) 2","C) -1","D) 4"],"bonne_reponse":0,"explication":"Milieu = (-3+5)/2 = 2/2 = 1. La liste MEN précise : 'lire l'abscisse d'un point et placer un point d'abscisse donnée'.","annale":"Liste officielle MEN oct. 2025 — Droite graduée"},{"id":"auto_42","niveau":1,"type_brevet":"automatisme","theme_auto":"Symétrie axiale","enonce":"Le symétrique du point A(2;5) par rapport à l'axe des ordonnées (axe y) est ?","options":["A) (-2;5)","B) (2;-5)","C) (-2;-5)","D) (5;2)"],"bonne_reponse":0,"explication":"Symétrie par rapport à l'axe y : l'abscisse change de signe, l'ordonnée reste. A(2;5) → A'(-2;5).","annale":"Liste officielle MEN oct. 2025 — Symétrie axiale"}]},{"id":"maths_02","titre":"Nombres et calculs — fractions, puissances, racines","theme":"Nombres et calculs","statut":"a_reviser","priorite":"haute","fiche":"Maîtriser : opérations sur fractions, puissances entières (a^n), notation scientifique (3,2 × 10^5), racine carrée (√). Savoir simplifier des expressions, factoriser. Connaître les priorités opératoires (parenthèses > puissances > × ÷ > + -).","mots_cles":["fractions","puissances","racines","priorités opératoires","notation scientifique"],"quiz":[{"id":"q_maths_02_01","enonce":"Quelle est la valeur de 2^3 × 2^4 ?","options":["A) 2^7","B) 2^12","C) 4^7","D) 2^1"],"bonne_reponse":0,"explication":"Règle des puissances de même base : a^m × a^n = a^(m+n). Donc 2^3 × 2^4 = 2^(3+4) = 2^7 = 128.","type":"qcm","difficulte":"facile"},{"id":"q_maths_02_02","enonce":"Simplifie : (3/5) ÷ (9/10)","options":["A) 27/50","B) 2/3","C) 3/2","D) 5/6"],"bonne_reponse":1,"explication":"Diviser par une fraction = multiplier par son inverse. (3/5) ÷ (9/10) = (3/5) × (10/9) = 30/45 = 2/3. On simplifie par 15.","type":"qcm","difficulte":"moyen"},{"id":"q_maths_02_03","enonce":"Exprime 0,000045 en notation scientifique.","options":["A) 4,5 × 10^-5","B) 45 × 10^-6","C) 4,5 × 10^5","D) 0,45 × 10^-4"],"bonne_reponse":0,"explication":"La notation scientifique impose a × 10^n avec 1 ≤ a < 10. On déplace la virgule de 5 rangs vers la droite : 4,5 × 10^-5.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Toujours vérifier la notation scientifique : 1 ≤ a < 10. Simplifier les fractions AVANT de calculer."},{"id":"maths_03","titre":"Algèbre — équations et inéquations","theme":"Algèbre","statut":"a_reviser","priorite":"haute","fiche":"Résoudre des équations du 1er degré (ax + b = c), des systèmes de deux équations à deux inconnues (substitution ou addition), des inéquations (attention au signe quand on divise par un négatif). Développer et factoriser des expressions algébriques.","mots_cles":["équation","inéquation","système","développer","factoriser"],"quiz":[{"id":"q_maths_03_01","enonce":"Résous l'équation : 3x - 7 = 2x + 5","options":["A) x = -2","B) x = 12","C) x = 2","D) x = 6"],"bonne_reponse":1,"explication":"3x - 2x = 5 + 7 → x = 12. Toujours regrouper les termes en x d'un côté et les constantes de l'autre.","type":"qcm","difficulte":"facile"},{"id":"q_maths_03_02","enonce":"Développe et réduis : (x + 3)(x - 2)","options":["A) x² + x - 6","B) x² - 6","C) x² + x + 6","D) x² - x - 6"],"bonne_reponse":0,"explication":"Double distributivité : x×x + x×(-2) + 3×x + 3×(-2) = x² - 2x + 3x - 6 = x² + x - 6.","type":"qcm","difficulte":"moyen"},{"id":"q_maths_03_03","enonce":"Résous le système : { 2x + y = 7 ; x - y = 2 }","options":["A) x=3, y=1","B) x=1, y=5","C) x=2, y=3","D) x=4, y=-1"],"bonne_reponse":0,"explication":"Par addition : (2x+y) + (x-y) = 7+2 → 3x = 9 → x = 3. Puis y = 7 - 2×3 = 1. Vérification : 3 - 1 = 2 ✓","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"TOUJOURS vérifier la solution en la remplaçant dans l'équation de départ."},{"id":"maths_04","titre":"Géométrie plane — Pythagore, Thalès, trigonométrie","theme":"Géométrie","statut":"a_reviser","priorite":"haute","fiche":"Théorème de Pythagore et sa réciproque (triangle rectangle). Théorème de Thalès (droites parallèles, rapports). Trigonométrie dans le triangle rectangle : sin = opp/hyp, cos = adj/hyp, tan = opp/adj. Connaître les valeurs remarquables (30°, 45°, 60°).","mots_cles":["Pythagore","Thalès","trigonométrie","triangle rectangle","sin cos tan"],"quiz":[{"id":"q_maths_04_01","enonce":"Dans un triangle rectangle, les deux côtés de l'angle droit mesurent 6 cm et 8 cm. Quelle est la longueur de l'hypoténuse ?","options":["A) 12 cm","B) 14 cm","C) 10 cm","D) 9 cm"],"bonne_reponse":2,"explication":"Pythagore : c² = 6² + 8² = 36 + 64 = 100. Donc c = 10 cm. C'est le célèbre triplet pythagoricien 3-4-5 (× 2).","type":"qcm","difficulte":"facile"},{"id":"q_maths_04_02","enonce":"Dans un triangle rectangle, l'angle A vaut 35° et l'hypoténuse mesure 10 cm. Quelle est la longueur du côté adjacent à A ?","options":["A) 10 × sin(35°)","B) 10 × tan(35°)","C) 10 × cos(35°)","D) 10 / cos(35°)"],"bonne_reponse":2,"explication":"cos(A) = adjacent/hypoténuse, donc adjacent = hypoténuse × cos(A) = 10 × cos(35°) ≈ 8,19 cm.","type":"qcm","difficulte":"moyen"},{"id":"q_maths_04_03","enonce":"Deux droites parallèles coupent deux sécantes. On obtient AB = 4, AC = 6 et DE = 6. Quelle est la longueur DF selon Thalès ?","options":["A) 8","B) 9","C) 4","D) 12"],"bonne_reponse":1,"explication":"Thalès : AB/AC = DE/DF → 4/6 = 6/DF → DF = 6×6/4 = 9.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Pour Pythagore : identifie l'hypoténuse (côté opposé à l'angle droit). Pour Thalès : dessine les droites parallèles."},{"id":"maths_05","titre":"Fonctions — représentations et variations","theme":"Fonctions","statut":"a_reviser","priorite":"moyenne","fiche":"Notion de fonction, image et antécédent. Fonctions affines f(x) = ax + b (pente a, ordonnée à l'origine b). Tableau de valeurs, représentation graphique. Lecture graphique : lire une image, trouver un antécédent. Variations (croissante, décroissante, constante).","mots_cles":["fonction","image","antécédent","fonction affine","variations","graphique"],"quiz":[{"id":"q_maths_05_01","enonce":"La fonction f est définie par f(x) = 2x - 3. Quelle est l'image de 5 par f ?","options":["A) 4","B) 7","C) 13","D) 3"],"bonne_reponse":1,"explication":"f(5) = 2×5 - 3 = 10 - 3 = 7. L'image de 5 par f est 7. On remplace simplement x par 5 dans la formule.","type":"qcm","difficulte":"facile"},{"id":"q_maths_05_02","enonce":"La droite représentant f(x) = -2x + 4 est :","options":["A) Croissante, pente +2","B) Décroissante, coupe l'axe y en 4","C) Croissante, coupe l'axe y en -2","D) Constante"],"bonne_reponse":1,"explication":"Le coefficient directeur a = -2 < 0 donc la droite est décroissante. L'ordonnée à l'origine b = 4 donc elle coupe l'axe y en y = 4.","type":"qcm","difficulte":"moyen"},{"id":"q_maths_05_03","enonce":"Quel est l'antécédent de 0 par f(x) = 3x - 6 ?","options":["A) -6","B) 6","C) 2","D) 0"],"bonne_reponse":2,"explication":"Trouver l'antécédent de 0 : on résout f(x) = 0 → 3x - 6 = 0 → 3x = 6 → x = 2. L'antécédent de 0 est 2 (c'est aussi la racine de f).","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Image = tu connais x, tu calcules y. Antécédent = tu connais y, tu cherches x. Ne pas confondre !"},{"id":"maths_06","titre":"Statistiques et probabilités","theme":"Données et hasard","statut":"a_reviser","priorite":"moyenne","fiche":"Statistiques : moyenne (pondérée), médiane, étendue, quartiles (Q1, Q2, Q3), diagramme en boîte. Probabilités : fréquence, loi des grands nombres, probabilité d'un événement P(A) = cas favorables/cas possibles. Arbre de probabilités.","mots_cles":["moyenne","médiane","quartile","probabilité","arbre","fréquence"],"quiz":[{"id":"q_maths_06_01","enonce":"Les notes de Lucas sont : 8, 12, 14, 10, 16. Quelle est sa moyenne ?","options":["A) 11","B) 12","C) 13","D) 10"],"bonne_reponse":1,"explication":"(8 + 12 + 14 + 10 + 16) ÷ 5 = 60 ÷ 5 = 12. La moyenne est 12. On additionne toutes les valeurs puis on divise par leur nombre.","type":"qcm","difficulte":"facile"},{"id":"q_maths_06_02","enonce":"On lance un dé équilibré à 6 faces. Quelle est la probabilité d'obtenir un nombre pair ?","options":["A) 1/3","B) 1/6","C) 2/3","D) 1/2"],"bonne_reponse":3,"explication":"Nombres pairs sur un dé : {2, 4, 6} soit 3 cas favorables sur 6 possibles. P(pair) = 3/6 = 1/2.","type":"qcm","difficulte":"facile"},{"id":"q_maths_06_03","enonce":"Une série de 9 valeurs ordonnées est : 3, 5, 7, 8, 10, 11, 13, 15, 18. Quelle est la médiane ?","options":["A) 8","B) 9","C) 10","D) 11"],"bonne_reponse":2,"explication":"La médiane est la valeur centrale d'une série ordonnée. Ici 9 valeurs → la médiane est la 5e valeur = 10.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Pour la médiane : TOUJOURS trier d'abord. Pour les probabilités : vérifier que la somme des branches = 1."},{"id":"maths_07","titre":"Géométrie dans l'espace — volumes et sections","theme":"Géométrie","statut":"a_reviser","priorite":"moyenne","fiche":"Formules de volumes : cube (a³), parallélépipède (L×l×h), prisme (B×h), cylindre (πr²h), pyramide (B×h/3), cône (πr²h/3), sphère (4πr³/3). Représentation en perspective. Sections planes de solides.","mots_cles":["volume","cube","cylindre","pyramide","sphère","section"],"quiz":[{"id":"q_maths_07_01","enonce":"Un cylindre a un rayon de 3 cm et une hauteur de 5 cm. Quel est son volume ? (π ≈ 3,14)","options":["A) 47,1 cm³","B) 94,2 cm³","C) 141,3 cm³","D) 30 cm³"],"bonne_reponse":2,"explication":"V = πr²h = 3,14 × 3² × 5 = 3,14 × 9 × 5 = 3,14 × 45 = 141,3 cm³.","type":"qcm","difficulte":"moyen"},{"id":"q_maths_07_02","enonce":"Une pyramide à base carrée de côté 4 cm et de hauteur 6 cm. Quel est son volume ?","options":["A) 96 cm³","B) 48 cm³","C) 32 cm³","D) 16 cm³"],"bonne_reponse":2,"explication":"V = (Base × hauteur) / 3 = (4² × 6) / 3 = (16 × 6) / 3 = 96 / 3 = 32 cm³.","type":"qcm","difficulte":"moyen"},{"id":"q_maths_07_03","enonce":"Quelle section obtient-on en coupant une sphère par un plan passant par son centre ?","options":["A) Une ellipse","B) Un cercle","C) Un ovale","D) Un carré"],"bonne_reponse":1,"explication":"Toute section plane d'une sphère est un cercle. La section passant par le centre est un grand cercle de rayon égal au rayon de la sphère.","type":"qcm","difficulte":"facile"}],"conseil_strategique":"Apprendre les formules par cœur — elles ne sont PAS données au brevet ! 1 L = 1 dm³ = 1000 cm³."},{"id":"maths_08","titre":"Algorithmique et programmation Python","theme":"Informatique","statut":"a_reviser","priorite":"moyenne","fiche":"Lire et écrire un algorithme simple. En Python : variables, affectation (=), affichage (print), saisie (input), conditions (if/elif/else), boucles (for, while), fonctions (def). Comprendre ce que produit un programme donné. Exercice obligatoire au Brevet.","mots_cles":["algorithme","Python","variable","boucle","condition","fonction"],"quiz":[{"id":"q_maths_08_01","enonce":"Que produit ce programme Python ?\n n = 1\n while n <= 5:\n   print(n)\n   n = n + 2","options":["A) 1 2 3 4 5","B) 1 3 5","C) 2 4 6","D) 1 3 5 7"],"bonne_reponse":1,"explication":"n part de 1, on affiche n puis on ajoute 2. Donc : 1 (1+2=3), 3 (3+2=5), 5 (5+2=7 > 5 on s'arrête). La boucle produit 1, 3, 5.","type":"qcm","difficulte":"moyen"},{"id":"q_maths_08_02","enonce":"Quelle instruction Python permet d'afficher 'Bonjour' à l'écran ?","options":["A) display('Bonjour')","B) echo 'Bonjour'","C) print('Bonjour')","D) show('Bonjour')"],"bonne_reponse":2,"explication":"En Python, la fonction print() permet d'afficher du texte ou des valeurs à l'écran. C'est la fonction d'affichage de base.","type":"qcm","difficulte":"facile"},{"id":"q_maths_08_03","enonce":"Que vaut x après ces instructions : x = 5 ; x = x * 2 + 1 ?","options":["A) 5","B) 10","C) 11","D) 12"],"bonne_reponse":2,"explication":"x = 5, puis x = 5 × 2 + 1 = 10 + 1 = 11. En programmation, le = est une affectation : on calcule le membre droit puis on l'assigne à la variable.","type":"qcm","difficulte":"facile"}],"conseil_strategique":"Trace le programme étape par étape sur papier. Note la valeur de chaque variable à chaque ligne."}],"conseil_strategique":"Commence TOUJOURS par les automatismes (20 min, sans calculatrice). Ce sont des points quasi gratuits si tu t'entraînes. Montre TOUJOURS ta démarche dans la 2e partie."},{"id":"francais","label":"Français","emoji":"📖","couleur":"#9B5DE5","couleur_fond":"#F3EDFE","duree_epreuve":"3h","coeff":2,"date_epreuve":"2026-06-26","lien_eduscol":"https://eduscol.education.fr/1613/programmes-et-ressources-en-francais-voie-gt","chapitres":[{"id":"fr_01","titre":"Compréhension de texte — lecture et analyse","theme":"Lecture","statut":"a_reviser","priorite":"haute","fiche":"L'épreuve commence par un texte littéraire (roman, nouvelle, autobiographie...). Il faut : identifier le genre et le registre, repérer le point de vue narratif (interne, externe, omniscient), reformuler les idées importantes, identifier les procédés stylistiques (comparaison, métaphore, hyperbole, antithèse...), comprendre l'implicite du texte.","mots_cles":["compréhension","narrateur","point de vue","registre","figure de style"],"quiz":[{"id":"q_fr_01_01","enonce":"Dans un récit à la 1ère personne où le narrateur ne connaît que ses propres pensées, le point de vue est :","options":["A) Omniscient","B) Interne","C) Externe","D) Subjectif"],"bonne_reponse":1,"explication":"Le point de vue interne : le narrateur voit le monde à travers les yeux d'un seul personnage et n'a accès qu'à ses propres pensées et émotions.","type":"qcm","difficulte":"moyen"},{"id":"q_fr_01_02","enonce":"\"Ses yeux étaient deux étoiles\" est un exemple de :","options":["A) Comparaison","B) Métaphore","C) Hyperbole","D) Personnification"],"bonne_reponse":1,"explication":"Une métaphore compare sans outil de comparaison (comme, tel, ainsi que...). Ici on assimile directement les yeux à des étoiles. Si on avait dit \"comme des étoiles\", ce serait une comparaison.","type":"qcm","difficulte":"facile"},{"id":"q_fr_01_03","enonce":"Le registre d'un texte qui vise à faire rire par l'absurde et l'exagération est :","options":["A) Tragique","B) Lyrique","C) Comique","D) Épique"],"bonne_reponse":2,"explication":"Le registre comique vise à faire rire (ironie, parodie, absurde, exagération). Le lyrique exprime des sentiments, le tragique montre la fatalité, l'épique célèbre des exploits.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Souligne le texte pendant la lecture. Citation entre guillemets + analyse pour chaque réponse."},{"id":"fr_02","titre":"Grammaire et conjugaison","theme":"Langue","statut":"a_reviser","priorite":"haute","fiche":"Réviser : les classes grammaticales (nom, verbe, adjectif, pronom, déterminant, adverbe, préposition, conjonction). Les fonctions (sujet, COD, COI, attribut, complément circonstanciel). Les temps : présent, imparfait, passé simple, passé composé, futur, conditionnel, subjonctif. Discours direct et indirect.","mots_cles":["classes grammaticales","fonctions","conjugaison","temps","subjonctif","discours indirect"],"quiz":[{"id":"q_fr_02_01","enonce":"Dans \"Le chat mange la souris\", quel est la fonction de \"la souris\" ?","options":["A) Sujet","B) COI","C) COD","D) Attribut du sujet"],"bonne_reponse":2,"explication":"\"La souris\" est le COD (Complément d'Objet Direct) car il répond à la question \"mange quoi ?\". Il n'y a pas de préposition entre le verbe et le groupe nominal.","type":"qcm","difficulte":"facile"},{"id":"q_fr_02_02","enonce":"Conjugue \"finir\" au subjonctif présent, à la 3e personne du singulier.","options":["A) qu'il finira","B) qu'il finisse","C) qu'il finit","D) qu'il finirait"],"bonne_reponse":1,"explication":"Subjonctif présent de \"finir\" : que je finisse, que tu finisses, qu'il finisse... Il est utilisé après des verbes d'obligation, de doute, de souhait (ex : \"il faut que tu finisses\").","type":"qcm","difficulte":"moyen"},{"id":"q_fr_02_03","enonce":"Transforme au discours indirect : Il dit : \"Je viendrai demain.\"","options":["A) Il dit qu'il vient demain","B) Il dit qu'il viendrait le lendemain","C) Il dit qu'il viendra le lendemain","D) Il dit qu'il venait le lendemain"],"bonne_reponse":1,"explication":"Au discours indirect passé : \"viendrai\" → conditionnel \"viendrait\", \"demain\" → \"le lendemain\". Attention aux concordances des temps et aux changements de repères temporels.","type":"qcm","difficulte":"difficile"}],"conseil_strategique":"Subjonctif irréguliers à mémoriser : être→soit, avoir→ait, aller→aille, faire→fasse, pouvoir→puisse."},{"id":"fr_03","titre":"Orthographe et dictée","theme":"Langue","statut":"a_reviser","priorite":"haute","fiche":"Points clés du Brevet : accord du participe passé (avec être → accord sujet ; avec avoir → accord COD placé avant), accord de l'adjectif, homophones (a/à, est/et/es, son/sont, ces/ses, ou/où, mais/mes, on/ont), pluriel des noms composés. S'entraîner avec des dictées en ligne.","mots_cles":["accord","participe passé","homophones","pluriel","dictée"],"quiz":[{"id":"q_fr_03_01","enonce":"Choisir la bonne orthographe : \"Les fleurs qu'il ___ cueillies étaient belles.\"","options":["A) a","B) à","C) as","D) ah"],"bonne_reponse":0,"explication":"\"a\" = auxiliaire avoir (il a). Le participe \"cueillies\" s'accorde avec le COD \"que\" (mis pour \"les fleurs\", féminin pluriel) placé avant. Règle : participe passé avec avoir → accord avec le COD si placé avant.","type":"qcm","difficulte":"moyen"},{"id":"q_fr_03_02","enonce":"Laquelle de ces phrases est correctement orthographiée ?","options":["A) Il sont partis tôt.","B) On a mangé tous les gâteaux.","C) Ces livres sont a moi.","D) Ou est-il allé ?"],"bonne_reponse":1,"explication":"\"On a mangé\" est correct (on = pronom sujet, a = auxiliaire avoir). Erreurs : \"Il sont\" → ils sont ; \"a moi\" → à moi ; \"Ou\" → Où (accent quand = lieu).","type":"qcm","difficulte":"moyen"},{"id":"q_fr_03_03","enonce":"\"Les pommes de terre\" au pluriel s'écrit :","options":["A) les pomme-de-terres","B) les pommes-de-terres","C) les pommes de terre","D) les pommes-de-terre"],"bonne_reponse":2,"explication":"\"Pommes de terre\" : seul le premier nom prend le pluriel (les pommes). \"Terre\" reste invariable car c'est un complément de nom introduit sans article. Sans trait d'union dans l'usage courant.","type":"qcm","difficulte":"difficile"}],"conseil_strategique":"Participe passé avec avoir : 1) Trouver le COD 2) Est-il AVANT le verbe ? 3) Si oui → accord."},{"id":"fr_04","titre":"Rédaction — lettre, récit, argumentation","theme":"Écriture","statut":"a_reviser","priorite":"haute","fiche":"Le Brevet propose un sujet de rédaction : soit un récit (suite de texte, description), soit une lettre (formelle ou amicale), soit un texte argumentatif. Critères évalués : respect de la consigne, cohérence du propos, richesse du vocabulaire, variété des tournures, orthographe. Toujours faire un brouillon-plan (5 min).","mots_cles":["rédaction","lettre","argumentation","récit","plan","cohérence"],"quiz":[{"id":"q_fr_04_01","enonce":"Une lettre formelle se termine par :","options":["A) Bises !","B) À plus !","C) Veuillez agréer, Madame, mes salutations distinguées.","D) Cordialement, votre ami."],"bonne_reponse":2,"explication":"La formule de politesse d'une lettre formelle reprend le titre du destinataire utilisé en en-tête. Elle est longue et soutenue. \"Cordialement\" est semi-formel, \"Bises\" et \"À plus\" sont familiers.","type":"qcm","difficulte":"facile"},{"id":"q_fr_04_02","enonce":"Dans un texte argumentatif, l'ordre idéal est :","options":["A) Exemples → thèse → argument","B) Thèse → arguments → exemples → conclusion","C) Conclusion → arguments → thèse","D) Exemples → conclusion → thèse"],"bonne_reponse":1,"explication":"Structure argumentative : 1) Thèse (position), 2) Arguments (raisons), 3) Exemples (illustrations), 4) Conclusion (synthèse + ouverture). Chaque argument = 1 paragraphe.","type":"qcm","difficulte":"moyen"},{"id":"q_fr_04_03","enonce":"Pour relier deux idées qui s'opposent dans un texte argumentatif, on utilise :","options":["A) De plus, en outre","B) Ainsi, donc, c'est pourquoi","C) Cependant, néanmoins, en revanche","D) D'abord, ensuite, enfin"],"bonne_reponse":2,"explication":"Les connecteurs d'opposition : cependant, néanmoins, en revanche, toutefois, or... Les connecteurs d'addition : de plus, en outre. Les connecteurs de cause/conséquence : donc, ainsi. Les connecteurs d'ordre : d'abord, ensuite.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Toujours faire un plan (5 min). Structure = introduction + 2-3 paragraphes + conclusion."}]},{"id":"histoire_geo","label":"Histoire-Géographie & EMC","emoji":"🌍","couleur":"#C44B4B","couleur_fond":"#FDEAEA","duree_epreuve":"2h","coeff":2,"date_epreuve":"2026-06-29","lien_eduscol":"https://eduscol.education.fr/1614/programmes-et-ressources-en-histoire-geographie-voie-gt","chapitres":[{"id":"hg_01","titre":"La Seconde Guerre mondiale et ses conséquences","theme":"Histoire","statut":"a_reviser","priorite":"haute","fiche":"1939-1945 : causes, grandes étapes (Blitzkrieg, opération Barbarossa, Débarquement 1944, capitulations). Génocide des Juifs et des Tsiganes — Shoah. France : régime de Vichy, collaboration, Résistance, de Gaulle et la France Libre. Bilan : 60 millions de morts, plan Marshall, ONU fondée en 1945.","mots_cles":["Seconde Guerre mondiale","Shoah","Résistance","Vichy","de Gaulle","ONU"],"quiz":[{"id":"q_hg_01_01","enonce":"En quelle année est fondée l'Organisation des Nations Unies (ONU) ?","options":["A) 1944","B) 1945","C) 1947","D) 1948"],"bonne_reponse":1,"explication":"L'ONU est fondée en 1945 lors de la conférence de San Francisco (26 juin 1945), à la fin de la Seconde Guerre mondiale, avec pour mission de maintenir la paix internationale.","type":"qcm","difficulte":"facile"},{"id":"q_hg_01_02","enonce":"Qu'est-ce que le régime de Vichy (1940-1944) ?","options":["A) Le gouvernement de la Résistance française","B) Le gouvernement collaborateur français sous Pétain","C) L'armée française libre de De Gaulle","D) Le parlement français en exil"],"bonne_reponse":1,"explication":"Le régime de Vichy est le gouvernement français dirigé par le maréchal Pétain après la défaite de 1940. Il collabore avec l'Allemagne nazie et participe notamment à la déportation des Juifs de France.","type":"qcm","difficulte":"moyen"},{"id":"q_hg_01_03","enonce":"La Shoah désigne :","options":["A) La capitulation de l'Allemagne nazie","B) Le génocide des Juifs d'Europe par les nazis","C) Le bombardement de Hiroshima","D) L'invasion de l'URSS par Hitler"],"bonne_reponse":1,"explication":"La Shoah (\"catastrophe\" en hébreu) désigne le génocide systématique de 6 millions de Juifs d'Europe organisé par le régime nazi. Elle inclut aussi le génocide des Tsiganes (Porajmos).","type":"qcm","difficulte":"facile"}],"conseil_strategique":"5 dates clés : 1939 ; 1941 (USA+URSS) ; 1944 (Débarquement) ; mai 1945 ; août 1945."},{"id":"hg_02","titre":"La Guerre froide (1947-1991)","theme":"Histoire","statut":"a_reviser","priorite":"haute","fiche":"Bipolarisation du monde : bloc occidental (USA, OTAN) vs bloc soviétique (URSS, Pacte de Varsovie). Grandes crises : Berlin (1961-mur), Cuba (1962), Vietnam. Décolonisation et non-alignement. Détente puis Glasnost/Perestroïka (Gorbatchev). Chute du mur de Berlin 1989, dissolution URSS 1991.","mots_cles":["Guerre froide","bloc occidental","URSS","mur de Berlin","Cuba","OTAN"],"quiz":[{"id":"q_hg_02_01","enonce":"En quelle année le mur de Berlin est-il tombé ?","options":["A) 1985","B) 1987","C) 1989","D) 1991"],"bonne_reponse":2,"explication":"Le mur de Berlin tombe le 9 novembre 1989. C'est le symbole de la fin de la Guerre froide. L'URSS se dissout deux ans plus tard, en 1991.","type":"qcm","difficulte":"facile"},{"id":"q_hg_02_02","enonce":"La crise de Cuba (1962) oppose :","options":["A) France et Royaume-Uni","B) USA et URSS à propos de missiles soviétiques à Cuba","C) USA et Cuba directement","D) OTAN et Pacte de Varsovie en Europe"],"bonne_reponse":1,"explication":"En 1962, les USA découvrent des missiles soviétiques à Cuba, à 150 km de leur côte. Kennedy et Khrouchtchev s'affrontent 13 jours — l'humanité frôle la guerre nucléaire. Les missiles sont retirés.","type":"qcm","difficulte":"moyen"},{"id":"q_hg_02_03","enonce":"Le plan Marshall (1947) est :","options":["A) Un traité militaire entre USA et Europe","B) Un plan d'aide économique américain pour reconstruire l'Europe","C) La création de l'OTAN","D) Un accord de paix entre USA et URSS"],"bonne_reponse":1,"explication":"Le plan Marshall est un programme d'aide économique américain pour aider à reconstruire l'Europe occidentale après la WWII (13 milliards de dollars). Il vise aussi à contenir l'influence soviétique.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"3 crises : Berlin 1961, Cuba 1962, Vietnam 1955-1975. Pour chaque : acteurs + enjeu + issue."},{"id":"hg_03","titre":"La France de la Ve République","theme":"Histoire","statut":"a_reviser","priorite":"haute","fiche":"Fondée en 1958 par de Gaulle. Institutions : Président de la République (5 ans), Premier ministre, Assemblée nationale, Sénat, Conseil constitutionnel. Grands présidents : de Gaulle, Pompidou, Giscard, Mitterrand, Chirac, Sarkozy, Hollande, Macron. Mai 68, construction européenne, décentralisation 1982.","mots_cles":["Ve République","de Gaulle","institutions","président","parlement","1958"],"quiz":[{"id":"q_hg_03_01","enonce":"En quelle année est fondée la Ve République française ?","options":["A) 1945","B) 1946","C) 1958","D) 1962"],"bonne_reponse":2,"explication":"La Ve République est fondée en 1958 par le général de Gaulle, après la crise algérienne qui a entraîné la chute de la IVe République. La nouvelle Constitution renforce le pouvoir exécutif.","type":"qcm","difficulte":"facile"},{"id":"q_hg_03_02","enonce":"Quelle est la durée du mandat présidentiel en France depuis 2000 ?","options":["A) 4 ans","B) 5 ans","C) 6 ans","D) 7 ans"],"bonne_reponse":1,"explication":"Depuis le référendum de 2000, le mandat présidentiel est de 5 ans (quinquennat) au lieu de 7 ans (septennat). Le Président est rééligible une fois.","type":"qcm","difficulte":"facile"},{"id":"q_hg_03_03","enonce":"Que se passe-t-il en France en Mai 1968 ?","options":["A) Une guerre civile éclate","B) Un mouvement de contestation sociale et culturelle majeur","C) De Gaulle est réélu triomphalement","D) La France entre dans l'Union Européenne"],"bonne_reponse":1,"explication":"Mai 68 est un vaste mouvement de contestation : grèves étudiantes puis grève générale (10 millions de grévistes). Il remet en cause l'autorité, les valeurs traditionnelles et transforme profondément la société française.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Connaître le rôle de chaque institution. Président élu au suffrage universel direct depuis 1962."},{"id":"hg_04","titre":"Géographie — La France et ses territoires","theme":"Géographie","statut":"a_reviser","priorite":"haute","fiche":"Organisation du territoire français : métropoles (Paris, Lyon, Marseille, Bordeaux...), espaces ruraux, littoraux, montagnards. Aménagement du territoire : politiques de rééquilibrage, TGV, décentralisation. DOM-TOM. France dans l'UE. Métropolisation et périurbanisation.","mots_cles":["métropole","territoire","aménagement","métropolisation","DOM","décentralisation"],"quiz":[{"id":"q_hg_04_01","enonce":"La métropolisation désigne :","options":["A) La création de nouvelles villes","B) La concentration des populations et activités dans les grandes villes","C) L'exode rural vers les campagnes","D) La construction de métros dans les villes"],"bonne_reponse":1,"explication":"La métropolisation est le processus par lequel les grandes villes (métropoles) concentrent toujours plus de populations, d'emplois, de fonctions économiques et culturelles au détriment des espaces ruraux.","type":"qcm","difficulte":"moyen"},{"id":"q_hg_04_02","enonce":"Combien de régions compte la France métropolitaine depuis la réforme de 2016 ?","options":["A) 22","B) 18","C) 13","D) 16"],"bonne_reponse":2,"explication":"Depuis la réforme territoriale de 2016, la France métropolitaine compte 13 régions (contre 22 auparavant). En ajoutant les 5 régions ultramarines, la France compte 18 régions au total.","type":"qcm","difficulte":"moyen"},{"id":"q_hg_04_03","enonce":"Qu'est-ce qu'un DOM (Département d'Outre-Mer) ?","options":["A) Un territoire français indépendant","B) Une colonie française","C) Un département français situé hors de l'Europe continental","D) Un territoire sous mandat de l'ONU"],"bonne_reponse":2,"explication":"Les DOM sont des départements français à part entière, soumis aux mêmes lois que la métropole. Les 5 DOM-Régions : Guadeloupe, Martinique, Guyane, La Réunion, Mayotte.","type":"qcm","difficulte":"facile"}],"conseil_strategique":"Savoir localiser les 5 DOM. Distinguer métropolisation (processus) et métropole (ville)."},{"id":"hg_05","titre":"Géographie mondiale — inégalités et développement","theme":"Géographie","statut":"a_reviser","priorite":"moyenne","fiche":"Nord/Sud : pays développés vs pays en développement. Indicateurs : IDH (Indice de Développement Humain), PIB/habitant, espérance de vie, taux de scolarisation. Pays émergents (BRICS). Mondialisation : FTN (firmes transnationales), flux commerciaux, zones économiques. Développement durable : ODD, COP.","mots_cles":["IDH","développement","mondialisation","BRICS","inégalités","développement durable"],"quiz":[{"id":"q_hg_05_01","enonce":"L'IDH (Indice de Développement Humain) mesure :","options":["A) Uniquement le PIB par habitant","B) Le bonheur des habitants","C) Le niveau de vie, l'éducation et l'espérance de vie","D) La richesse naturelle d'un pays"],"bonne_reponse":2,"explication":"L'IDH est un indicateur composite mesurant 3 dimensions : niveau de vie (revenu/habitant), éducation (durée de scolarisation), et santé (espérance de vie). Il varie de 0 à 1.","type":"qcm","difficulte":"moyen"},{"id":"q_hg_05_02","enonce":"Le sigle BRICS désigne un groupe de pays :","options":["A) Développés et membres de l'OCDE","B) Émergents à forte croissance économique","C) Les plus pauvres du monde","D) Membres de l'Union Européenne"],"bonne_reponse":1,"explication":"BRICS = Brésil, Russie, Inde, Chine, Afrique du Sud. Ce sont des pays émergents à forte croissance économique qui représentent une part croissante du PIB mondial.","type":"qcm","difficulte":"moyen"},{"id":"q_hg_05_03","enonce":"Le développement durable vise à :","options":["A) Stopper toute croissance économique","B) Répondre aux besoins présents sans compromettre les générations futures","C) Développer uniquement les pays pauvres","D) Protéger la nature au détriment de l'économie"],"bonne_reponse":1,"explication":"Définition Brundtland (1987) : le développement durable répond aux besoins du présent sans compromettre la capacité des générations futures à répondre aux leurs. 3 piliers : économique, social, environnemental.","type":"qcm","difficulte":"facile"}],"conseil_strategique":"Toujours illustrer avec des pays concrets. IDH France ≈ 0,9 (élevé), Niger ≈ 0,4 (faible)."},{"id":"hg_06","titre":"EMC — Démocratie, droits et citoyenneté","theme":"EMC","statut":"a_reviser","priorite":"moyenne","fiche":"Valeurs de la République : Liberté, Égalité, Fraternité + laïcité, démocratie. Droits de l'Homme : DDHC 1789, DUDH 1948. Institutions : Parlement (Assemblée + Sénat), Gouvernement, Justice. Citoyenneté : droit de vote à 18 ans, engagement associatif, service civique. Lutte contre les discriminations.","mots_cles":["démocratie","droits de l'homme","citoyenneté","laïcité","République","DUDH"],"quiz":[{"id":"q_hg_06_01","enonce":"La DUDH (Déclaration Universelle des Droits de l'Homme) a été adoptée en :","options":["A) 1789","B) 1945","C) 1948","D) 1950"],"bonne_reponse":2,"explication":"La DUDH est adoptée le 10 décembre 1948 par l'ONU, après les horreurs de la WWII. Elle proclame des droits fondamentaux universels (vie, liberté, éducation, etc.). Ne pas confondre avec la DDHC française de 1789.","type":"qcm","difficulte":"moyen"},{"id":"q_hg_06_02","enonce":"La laïcité en France signifie :","options":["A) L'interdiction de toute religion","B) La séparation de l'Église et de l'État, liberté de conscience","C) La religion catholique comme religion d'État","D) L'obligation d'être athée dans l'espace public"],"bonne_reponse":1,"explication":"La laïcité (loi 1905) établit la séparation de l'Église et de l'État. L'État est neutre vis-à-vis des religions. Elle garantit la liberté de croyance de chacun tout en protégeant l'espace public de toute influence religieuse.","type":"qcm","difficulte":"moyen"},{"id":"q_hg_06_03","enonce":"À quel âge peut-on voter aux élections en France ?","options":["A) 16 ans","B) 17 ans","C) 18 ans","D) 21 ans"],"bonne_reponse":2,"explication":"En France, le droit de vote est accordé à 18 ans depuis 1974 (abaissé de 21 ans). Il faut être inscrit sur les listes électorales. La carte électorale est automatiquement envoyée à 18 ans.","type":"qcm","difficulte":"facile"}],"conseil_strategique":"DDHC (1789, France) ≠ DUDH (1948, ONU). Laïcité = neutralité de l'État, pas interdiction."}]},{"id":"physique_chimie","label":"Physique-Chimie","emoji":"⚛️","couleur":"#E07B39","couleur_fond":"#FFF3E8","duree_epreuve":"30 min","coeff":1,"date_epreuve":"2026-06-29","tirage_2026":true,"confirmation_tirage":"Physique-Chimie ET SVT confirmées pour 2026 (tirage officiel MEN)","lien_eduscol":"https://eduscol.education.fr/1618/programmes-et-ressources-en-physique-chimie-voie-gt","chapitres":[{"id":"pc_01","titre":"Électricité — circuits, loi d'Ohm, puissance","theme":"Électricité","statut":"a_reviser","priorite":"haute","fiche":"Circuit série vs parallèle. Loi d'Ohm : U = R × I (U en Volts, R en Ohms, I en Ampères). Puissance électrique : P = U × I (en Watts). Énergie : E = P × t (en Joules ou kWh). Générateurs (pile, secteur) et récepteurs (lampe, moteur). Lois des nœuds et des mailles.","mots_cles":["circuit","tension","intensité","résistance","loi d'Ohm","puissance"],"quiz":[{"id":"q_pc_01_01","enonce":"Une résistance de 10 Ω est soumise à une tension de 5 V. Quelle est l'intensité du courant qui la traverse ?","options":["A) 50 A","B) 2 A","C) 0,5 A","D) 15 A"],"bonne_reponse":2,"explication":"Loi d'Ohm : U = R × I → I = U/R = 5/10 = 0,5 A. Mémo : U = RI (\"URI\"). Toujours vérifier les unités : V = Ω × A.","type":"qcm","difficulte":"facile"},{"id":"q_pc_01_02","enonce":"Un appareil électrique fonctionne sous 220 V et consomme 2 A. Quelle est sa puissance ?","options":["A) 110 W","B) 222 W","C) 440 W","D) 218 W"],"bonne_reponse":2,"explication":"P = U × I = 220 × 2 = 440 W. Un four typique consomme 2000 W, une ampoule LED environ 10 W. Savoir estimer des ordres de grandeur est important.","type":"qcm","difficulte":"facile"},{"id":"q_pc_01_03","enonce":"Dans un circuit en série avec deux lampes, si une lampe est retirée :","options":["A) L'autre lampe brille plus fort","B) L'autre lampe s'éteint aussi","C) L'autre lampe continue à fonctionner normalement","D) Le courant double dans l'autre lampe"],"bonne_reponse":1,"explication":"En série, les composants sont sur le même fil. Si un composant est retiré, le circuit est ouvert et le courant ne passe plus nulle part — toutes les lampes s'éteignent. Différent du circuit parallèle.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Formule triangle URI : U en haut, R et I en bas. Cacher la valeur cherchée donne la formule."},{"id":"pc_02","titre":"Chimie — atomes, molécules, réactions","theme":"Chimie","statut":"a_reviser","priorite":"haute","fiche":"Structure de l'atome : noyau (protons + neutrons) + électrons. Numéro atomique Z = nb protons. Tableau périodique : familles, périodes. Molécules : représentation de Lewis. Réactions chimiques : réactifs → produits, conservation de la masse (loi de Lavoisier), équilibrage d'équations. pH : acide (<7), neutre (=7), basique (>7).","mots_cles":["atome","molécule","réaction chimique","conservation masse","pH","tableau périodique"],"quiz":[{"id":"q_pc_02_01","enonce":"L'atome de carbone (C) possède 6 protons. Combien d'électrons possède-t-il à l'état neutre ?","options":["A) 3","B) 12","C) 6","D) 0"],"bonne_reponse":2,"explication":"Un atome neutre possède autant d'électrons que de protons. Carbone : Z = 6 → 6 protons → 6 électrons. Si Z = 6, la configuration électronique est (2,4).","type":"qcm","difficulte":"facile"},{"id":"q_pc_02_02","enonce":"La loi de conservation de la masse (Lavoisier) stipule que :","options":["A) La masse augmente toujours lors d'une réaction","B) La masse totale des réactifs égale celle des produits","C) Certains atomes disparaissent lors d'une réaction","D) La masse diminue lors d'une combustion"],"bonne_reponse":1,"explication":"\"Rien ne se perd, rien ne se crée, tout se transforme\" — Lavoisier. Les atomes se réarrangent mais leur nombre est conservé. La masse totale avant = masse totale après.","type":"qcm","difficulte":"moyen"},{"id":"q_pc_02_03","enonce":"Le jus de citron a un pH de 2. Il est :","options":["A) Neutre","B) Basique","C) Acide","D) Légèrement basique"],"bonne_reponse":2,"explication":"pH < 7 = acide. pH = 7 = neutre. pH > 7 = basique. Le jus de citron (pH≈2) est très acide. Le sang (pH≈7,4) est légèrement basique. L'eau pure (pH=7) est neutre.","type":"qcm","difficulte":"facile"}],"conseil_strategique":"Pour équilibrer une équation : ne jamais modifier les formules, seulement les coefficients devant."},{"id":"pc_03","titre":"Mécanique — forces, mouvement, vitesse","theme":"Mécanique","statut":"a_reviser","priorite":"haute","fiche":"Forces : poids (P = m × g, g ≈ 10 N/kg sur Terre), réaction normale, frottements, poussée d'Archimède. Principe d'inertie (Newton 1) : sans force, mouvement rectiligne uniforme. Vitesse : v = d/t (en m/s). Unités : 1 km/h = 1/3,6 m/s. Représenter une force par un vecteur (point d'application, direction, sens, norme).","mots_cles":["force","poids","mouvement","vitesse","Newton","inertie"],"quiz":[{"id":"q_pc_03_01","enonce":"Un objet de masse 5 kg est posé sur Terre (g = 10 N/kg). Quel est son poids ?","options":["A) 5 N","B) 0,5 N","C) 50 N","D) 500 N"],"bonne_reponse":2,"explication":"P = m × g = 5 × 10 = 50 N. Attention : la masse (kg) ≠ le poids (N = Newton). Sur la Lune (g≈1,6 N/kg), le même objet pèserait 8 N mais aurait toujours une masse de 5 kg.","type":"qcm","difficulte":"facile"},{"id":"q_pc_03_02","enonce":"Une voiture parcourt 120 km en 1h30. Quelle est sa vitesse moyenne en km/h ?","options":["A) 80 km/h","B) 90 km/h","C) 100 km/h","D) 60 km/h"],"bonne_reponse":0,"explication":"v = d/t = 120 km / 1,5 h = 80 km/h. Attention : 1h30 = 1,5 h (pas 1,3 h !). Toujours convertir les durées en heures décimales.","type":"qcm","difficulte":"moyen"},{"id":"q_pc_03_03","enonce":"Selon le principe d'inertie (1ère loi de Newton), un objet soumis à aucune force :","options":["A) S'arrête progressivement","B) Accélère indéfiniment","C) Reste immobile ou en mouvement rectiligne uniforme","D) Tombe vers le bas"],"bonne_reponse":2,"explication":"1ère loi de Newton (principe d'inertie) : si la somme des forces est nulle, l'objet est soit immobile, soit en mouvement rectiligne uniforme (vitesse constante). C'est la situation idéale sans frottements.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"MASSE (kg) ≠ POIDS (N). Masse = propriété de l'objet. Poids = dépend de g. Toujours les unités !"},{"id":"pc_04","titre":"Énergie — formes, transferts, ressources","theme":"Énergie","statut":"a_reviser","priorite":"moyenne","fiche":"Formes d'énergie : cinétique (mouvement), potentielle (hauteur), thermique (chaleur), chimique (aliments, carburant), électrique, rayonnante (lumière). Transferts : travail, chaleur, rayonnement. Sources d'énergie : renouvelables (solaire, éolien, hydraulique) vs fossiles (pétrole, gaz, charbon). Bilan énergétique.","mots_cles":["énergie","cinétique","thermique","renouvelable","fossile","transfert"],"quiz":[{"id":"q_pc_04_01","enonce":"Laquelle de ces sources d'énergie est renouvelable ?","options":["A) Le charbon","B) Le pétrole","C) Le gaz naturel","D) L'énergie solaire"],"bonne_reponse":3,"explication":"Les énergies renouvelables sont inépuisables à l'échelle humaine : solaire, éolien, hydraulique, géothermique, biomasse. Le charbon, pétrole et gaz sont des combustibles fossiles non renouvelables.","type":"qcm","difficulte":"facile"},{"id":"q_pc_04_02","enonce":"Une voiture en mouvement possède principalement de l'énergie :","options":["A) Chimique","B) Potentielle","C) Cinétique","D) Nucléaire"],"bonne_reponse":2,"explication":"L'énergie cinétique est l'énergie liée au mouvement : Ec = ½mv². Plus la voiture va vite et est lourde, plus son énergie cinétique est grande. C'est pourquoi les accidents à grande vitesse sont plus graves.","type":"qcm","difficulte":"facile"},{"id":"q_pc_04_03","enonce":"La conversion d'énergie dans une centrale thermique est :","options":["A) Électrique → chimique","B) Chimique → thermique → mécanique → électrique","C) Solaire → électrique","D) Mécanique → chimique"],"bonne_reponse":1,"explication":"Centrale thermique : combustion (énergie chimique) → chaleur (thermique) → vapeur qui tourne une turbine (mécanique) → alternateur (électrique). Chaque conversion entraîne des pertes (rendement < 100%).","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Identifier la chaîne de conversion : énergie initiale → pertes → énergie finale."}]},{"id":"svt","label":"SVT — Sciences de la Vie et de la Terre","emoji":"🧬","couleur":"#4CAF50","couleur_fond":"#EAF6EA","duree_epreuve":"30 min","coeff":1,"date_epreuve":"2026-06-29","tirage_2026":true,"confirmation_tirage":"SVT ET Physique-Chimie confirmées pour 2026 (tirage officiel MEN)","lien_eduscol":"https://eduscol.education.fr/1616/programmes-et-ressources-en-sciences-de-la-vie-et-de-la-terre-voie-gt","chapitres":[{"id":"svt_01","titre":"Génétique — ADN, chromosomes, hérédité","theme":"Génétique","statut":"a_reviser","priorite":"haute","fiche":"ADN = molécule support de l'information génétique. Gène = portion d'ADN. Allèles = formes différentes d'un gène. Chromosome : 46 chromosomes chez l'humain (23 paires), dont XX (femme) ou XY (homme). Méiose → gamètes (ovule/spermatozoïde). Dominance/récessivité. Mutations génétiques.","mots_cles":["ADN","gène","chromosome","allèle","méiose","hérédité","mutation"],"quiz":[{"id":"q_svt_01_01","enonce":"Combien de chromosomes possède une cellule humaine normale (somatique) ?","options":["A) 23","B) 46","C) 48","D) 92"],"bonne_reponse":1,"explication":"Les cellules humaines contiennent 46 chromosomes (23 paires). Les gamètes (ovule, spermatozoïde) sont haploïdes : 23 chromosomes. La fécondation reconstitue les 46 chromosomes.","type":"qcm","difficulte":"facile"},{"id":"q_svt_01_02","enonce":"Quels sont les chromosomes sexuels d'un homme ?","options":["A) XX","B) XY","C) YY","D) XO"],"bonne_reponse":1,"explication":"Les hommes ont les chromosomes sexuels XY. Les femmes ont XX. C'est le spermatozoïde qui détermine le sexe : s'il porte un X → fille (XX), s'il porte un Y → garçon (XY).","type":"qcm","difficulte":"facile"},{"id":"q_svt_01_03","enonce":"Un allèle récessif s'exprime :","options":["A) Toujours, quel que soit l'autre allèle","B) Uniquement en présence d'un allèle dominant","C) Seulement si les deux allèles sont récessifs","D) Jamais chez les humains"],"bonne_reponse":2,"explication":"Un allèle récessif ne s'exprime que si l'individu est homozygote récessif (aa). Si un allèle dominant (A) est présent, il masque le récessif (Aa → phénotype dominant). Exemple : groupe sanguin O est récessif.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Hiérarchie : ADN → gène → allèle → chromosome → cellule."},{"id":"svt_02","titre":"Système immunitaire — défenses, vaccins, antibiotiques","theme":"Santé","statut":"a_reviser","priorite":"haute","fiche":"Défenses non spécifiques : barrières physiques (peau), inflammation, phagocytose. Défenses spécifiques : lymphocytes B (anticorps) et T. Mémoire immunitaire → base de la vaccination. Vaccin = antigènes inactivés qui entraînent la mémoire sans la maladie. Antibiotiques : efficaces contre bactéries, INEFFICACES contre virus.","mots_cles":["système immunitaire","lymphocyte","anticorps","vaccination","phagocytose","antibiotique"],"quiz":[{"id":"q_svt_02_01","enonce":"Les anticorps sont produits par :","options":["A) Les lymphocytes T","B) Les lymphocytes B","C) Les phagocytes","D) Les globules rouges"],"bonne_reponse":1,"explication":"Les lymphocytes B (= plasmocytes quand activés) produisent les anticorps. Les lymphocytes T, eux, détruisent directement les cellules infectées (lymphocytes T cytotoxiques) ou coordonnent la réponse immunitaire (T auxiliaires).","type":"qcm","difficulte":"moyen"},{"id":"q_svt_02_02","enonce":"Un médecin prescrit des antibiotiques pour une grippe. Cette prescription est :","options":["A) Correcte, les antibiotiques tuent tous les microbes","B) Correcte si la grippe est grave","C) Incorrecte, les antibiotiques n'agissent pas sur les virus","D) Correcte, pour éviter les complications"],"bonne_reponse":2,"explication":"Les antibiotiques agissent sur les bactéries, pas sur les virus. La grippe est causée par un virus (influenza). Prescrire des antibiotiques contre un virus est inefficace et contribue à l'antibiorésistance.","type":"qcm","difficulte":"moyen"},{"id":"q_svt_02_03","enonce":"Le principe de la vaccination repose sur :","options":["A) Injecter directement des anticorps","B) La mémoire immunitaire développée par une première exposition","C) Renforcer les phagocytes","D) Bloquer la multiplication des virus"],"bonne_reponse":1,"explication":"La vaccination introduit des antigènes (virus/bactérie inactivé ou fragment) qui déclenchent une réponse immunitaire et créent une mémoire. En cas de vrai contact ultérieur, la réponse est rapide et efficace.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"PIÈGE : antibiotiques contre un VIRUS = FAUX et dangereux (antibiorésistance)."},{"id":"svt_03","titre":"Nutrition et digestion","theme":"Corps humain","statut":"a_reviser","priorite":"haute","fiche":"Nutriments : glucides (énergie rapide), lipides (réserves), protéines (construction), vitamines, minéraux, eau. Digestion : bouche (amylase) → estomac (pepsine) → intestin grêle (absorption) → gros intestin. Enzymes digestives. Circulation sanguine distribue les nutriments. Besoins énergétiques.","mots_cles":["nutriment","digestion","enzyme","absorption","glucide","protéine","lipide"],"quiz":[{"id":"q_svt_03_01","enonce":"Où se produit principalement l'absorption des nutriments ?","options":["A) Dans l'estomac","B) Dans le gros intestin","C) Dans l'intestin grêle","D) Dans la bouche"],"bonne_reponse":2,"explication":"L'intestin grêle est le lieu principal d'absorption des nutriments (glucides, lipides, protéines, vitamines). Sa surface est très grande grâce aux villosités intestinales (~200 m²). L'estomac dégrade surtout les protéines.","type":"qcm","difficulte":"moyen"},{"id":"q_svt_03_02","enonce":"Les glucides sont principalement utilisés par l'organisme pour :","options":["A) Construire les muscles","B) Fournir de l'énergie rapidement","C) Former les hormones","D) Constituer les membranes cellulaires"],"bonne_reponse":1,"explication":"Les glucides (sucres) sont la source d'énergie rapide préférentielle des cellules. Le glucose est dégradé lors de la respiration cellulaire pour produire de l'ATP. Les lipides constituent des réserves énergétiques à long terme.","type":"qcm","difficulte":"facile"},{"id":"q_svt_03_03","enonce":"Quelle enzyme commence à digérer l'amidon dès la bouche ?","options":["A) La pepsine","B) La lipase","C) L'amylase salivaire","D) La trypsine"],"bonne_reponse":2,"explication":"L'amylase salivaire (ptvaline) dégrade l'amidon en sucres simples dès la bouche. La pepsine agit sur les protéines dans l'estomac. La lipase dégrade les graisses. La trypsine est pancréatique.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Digestion = SIMPLIFICATION. Amidon→glucose. Protéines→acides aminés. Lipides→acides gras."},{"id":"svt_04","titre":"Écologie — biodiversité et écosystèmes","theme":"Écologie","statut":"a_reviser","priorite":"moyenne","fiche":"Écosystème = biocénose (êtres vivants) + biotope (milieu). Chaîne alimentaire : producteurs → consommateurs 1er ordre → consommateurs 2e ordre → décomposeurs. Réseaux trophiques. Biodiversité (spécifique, génétique, écosystémique). Perturbations : pollution, déforestation, changement climatique, espèces invasives.","mots_cles":["écosystème","chaîne alimentaire","biodiversité","biotope","biocénose","décomposeur"],"quiz":[{"id":"q_svt_04_01","enonce":"Dans une chaîne alimentaire, les producteurs sont :","options":["A) Les animaux herbivores","B) Les champignons décomposeurs","C) Les végétaux chlorophylliens","D) Les carnivores"],"bonne_reponse":2,"explication":"Les producteurs sont les végétaux (et algues) qui synthétisent de la matière organique grâce à la photosynthèse (lumière + CO₂ + eau → glucose + O₂). Ils constituent la base de toutes les chaînes alimentaires.","type":"qcm","difficulte":"facile"},{"id":"q_svt_04_02","enonce":"La biodiversité désigne :","options":["A) Le nombre total d'individus sur Terre","B) La variété du vivant à toutes ses échelles","C) Uniquement le nombre d'espèces animales","D) La diversité des paysages"],"bonne_reponse":1,"explication":"La biodiversité comprend 3 niveaux : diversité des espèces (spécifique), diversité génétique au sein d'une espèce, diversité des écosystèmes. Elle est essentielle à l'équilibre des écosystèmes.","type":"qcm","difficulte":"moyen"},{"id":"q_svt_04_03","enonce":"Le rôle des décomposeurs dans un écosystème est de :","options":["A) Produire de l'énergie solaire","B) Chasser les herbivores","C) Recycler la matière organique morte en matière minérale","D) Photosynthétiser"],"bonne_reponse":2,"explication":"Les décomposeurs (bactéries, champignons) dégradent la matière organique morte (feuilles, cadavres) en sels minéraux réutilisables par les plantes. Ils bouclent ainsi les cycles de la matière.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Flèche = 'est mangé par'. Producteurs TOUJOURS au début. Décomposeurs recyclent tout."},{"id":"svt_05","titre":"Reproduction et sexualité","theme":"Corps humain","statut":"a_reviser","priorite":"moyenne","fiche":"Puberté : transformations physiques et hormonales. Appareil reproducteur masculin (testicules, spermatozoïdes) et féminin (ovaires, ovules, cycle menstruel ~28j). Fécondation : fusion ovule + spermatozoïde → zygote. Grossesse : 9 mois, développement embryon/fœtus. Contraception : différentes méthodes, modes d'action.","mots_cles":["puberté","ovulation","fécondation","grossesse","contraception","hormones"],"quiz":[{"id":"q_svt_05_01","enonce":"La fécondation chez l'être humain a lieu :","options":["A) Dans l'utérus","B) Dans le vagin","C) Dans les trompes de Fallope","D) Dans les ovaires"],"bonne_reponse":2,"explication":"La fécondation (fusion ovule + spermatozoïde) se produit généralement dans les trompes de Fallope. L'œuf fécondé (zygote) migre ensuite vers l'utérus pour s'y implanter (nidation).","type":"qcm","difficulte":"moyen"},{"id":"q_svt_05_02","enonce":"La durée moyenne d'un cycle menstruel est de :","options":["A) 14 jours","B) 21 jours","C) 28 jours","D) 35 jours"],"bonne_reponse":2,"explication":"Le cycle menstruel dure en moyenne 28 jours (mais varie entre 21 et 35 jours selon les femmes). L'ovulation se produit généralement vers le 14e jour. Les règles durent 3 à 7 jours.","type":"qcm","difficulte":"facile"},{"id":"q_svt_05_03","enonce":"Le préservatif est le seul moyen de contraception qui :","options":["A) Empêche à 100% la grossesse","B) Protège aussi contre les IST","C) Est remboursé à 100% par la Sécu","D) N'a aucun effet secondaire"],"bonne_reponse":1,"explication":"Le préservatif est le seul contraceptif qui protège à la fois contre les grossesses non désirées ET contre les IST (Infections Sexuellement Transmissibles comme le VIH). Il est essentiel de combiner les méthodes.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Fécondation dans les TROMPES. Nidation dans l'UTÉRUS. Légender TOUS les schémas."},{"id":"svt_06","titre":"Géologie — tectonique des plaques et séismes","theme":"Géologie","statut":"a_reviser","priorite":"moyenne","fiche":"Structure de la Terre : croûte, manteau, noyau externe (liquide), noyau interne (solide). Plaques tectoniques (~12 grandes plaques). Mouvements : convergence (subduction, collision → montagnes), divergence (rifts, dorsales), coulissage. Séismes : foyer, épicentre, ondes sismiques, magnitude (Richter). Volcans.","mots_cles":["tectonique","plaque","séisme","volcan","subduction","dorsale","manteau"],"quiz":[{"id":"q_svt_06_01","enonce":"Où se situe le foyer d'un séisme ?","options":["A) À la surface terrestre","B) En profondeur, là où se produit la rupture","C) Au centre de la Terre","D) Dans les océans uniquement"],"bonne_reponse":1,"explication":"Le foyer (ou hypocentre) est le point de rupture en profondeur. L'épicentre est la projection du foyer à la surface terrestre, là où les secousses sont ressenties le plus fort.","type":"qcm","difficulte":"moyen"},{"id":"q_svt_06_02","enonce":"La subduction se produit quand :","options":["A) Deux plaques s'écartent l'une de l'autre","B) Une plaque plonge sous une autre","C) Deux plaques coulissent horizontalement","D) Une plaque se fracture en deux"],"bonne_reponse":1,"explication":"La subduction = une plaque océanique (plus dense) plonge sous une plaque continentale. Elle génère des séismes, des volcans et peut former des fosses océaniques. Exemples : Andes, Japon.","type":"qcm","difficulte":"moyen"},{"id":"q_svt_06_03","enonce":"Les dorsales océaniques sont des zones où les plaques :","options":["A) Se rapprochent","B) S'écartent et créent du plancher océanique","C) Entrent en collision","D) Plongent dans le manteau"],"bonne_reponse":1,"explication":"Les dorsales océaniques sont des chaînes de montagnes sous-marines où deux plaques s'écartent. Du magma remonte et forme du nouveau plancher océanique. Exemple : dorsale médio-atlantique.","type":"qcm","difficulte":"moyen"}],"conseil_strategique":"Foyer = profondeur. Épicentre = surface (le plus secoué)."}]}],"schema_localstorage":{"profil":{"prenom":"string","avatar":"string (emoji)","classe":"string","etablissement":"string","date_creation":"ISO date"},"progression":{"[chapitre_id]":{"statut":"a_reviser | en_cours | acquis","date_debut":"ISO date","date_maitrise":"ISO date | null","nb_revisions":"number"}},"sm2":{"[chapitre_id]":{"easiness":"number (2.5 défaut)","interval":"number (jours)","repetitions":"number","next_review":"ISO date","last_score":"number (0-5)"}},"quiz_history":{"[session_id]":{"date":"ISO date","matiere_id":"string","chapitre_id":"string","source":"local | claude_api | opentdb","score":"number","total":"number","erreurs":["question_id"]}},"profil_lacunes":{"[chapitre_id]":{"taux_erreur":"number (0-1)","questions_ratees":["string"],"derniere_maj":"ISO date"}},"streak":{"current":"number","best":"number","last_activity":"ISO date","history":["ISO date"]}},"prompts_ia":{"quiz_cours":"Tu es un professeur de 3e préparant le DNB 2026. Génère 5 questions QCM ORIGINALES sur le chapitre '{chapitre}' de la matière '{matiere}'. Programme BO officiel, niveau Troisième. Difficulté : {difficulte}/3. Format JSON strict : {\"questions\":[{\"enonce\":\"...\",\"options\":[\"A)...\",\"B)...\",\"C)...\",\"D)...\"],\"bonne_reponse\":0,\"explication\":\"...\"}]}. Jamais deux fois la même question.","automatismes_maths":"Tu es un professeur de maths 3e. Génère 10 questions d'AUTOMATISMES mathématiques style DNB 2026 (répondre en moins de 2 min sans calculatrice). Thèmes : fractions, pourcentages, conversions, calcul littéral simple, lecture graphique. Format JSON identique.","exercice_ouvert":"Tu es un professeur de 3e. Pose UNE question ouverte de type Brevet (développement rédigé, calcul avec justification, ou analyse de document) sur '{chapitre}'. Fournis ensuite les éléments de correction attendus. Format : {\"question\":\"...\",\"type\":\"calcul|redaction|analyse\",\"correction\":{\"points_attendus\":[\"...\"],\"exemple_reponse\":\"...\"}}","feedback_lacunes":"L'élève a répondu à ces questions de '{matiere}' - '{chapitre}'. Erreurs : {erreurs}. Identifie la lacune principale en 1 phrase et génère 3 questions ciblées sur ce point précis."},"programme_progression":{"description":"Plan de révision en 4 semaines avant le DNB 2026","principe":"Chaque semaine a un thème. Le moteur adaptatif ajuste la difficulté automatiquement selon tes résultats.","semaines":[{"numero":1,"label":"Semaine 1 — Fondamentaux & Automatismes","objectif":"Sécuriser les bases : calcul mental, fractions, pourcentages, géométrie de base","chapitres_prioritaires":["maths_auto","maths_02","fr_03","hg_01"],"conseil":"20 min par jour sur les automatismes maths SANS calculatrice. Ce sont 20 points quasi gratuits !","seuil_passage":0.7},{"numero":2,"label":"Semaine 2 — Algèbre, Géométrie & Langue","objectif":"Équations, Pythagore, Thalès, trigonométrie, grammaire française","chapitres_prioritaires":["maths_03","maths_04","fr_01","fr_02","hg_02"],"conseil":"Pour chaque formule géo : l'écrire, la dessiner, l'appliquer. Triade gagnante.","seuil_passage":0.7},{"numero":3,"label":"Semaine 3 — Sciences & Histoire-Géo","objectif":"Physique-chimie, SVT, histoire contemporaine, géographie France","chapitres_prioritaires":["pc_01","pc_02","svt_01","svt_02","hg_03","hg_04"],"conseil":"Sciences : 30 min seulement à l'examen. Priorité aux formules et définitions clés.","seuil_passage":0.7},{"numero":4,"label":"Semaine 4 — Révision finale & Simulation","objectif":"Revoir les lacunes identifiées, simuler des conditions d'examen","chapitres_prioritaires":["maths_05","maths_06","fr_04","hg_05","hg_06","svt_03","svt_04"],"conseil":"Mode Examen Blanc : chronomètre, sans aide. Reproduire les conditions réelles du brevet.","seuil_passage":0.8}],"jalons":{"j_minus_14":"Lancer la semaine 1 — automatismes sécurisés","j_minus_10":"Semaine 2 — vérifier chapitres rouges","j_minus_7":"Semaine 3 — sciences et histoire-géo","j_minus_3":"Semaine 4 — simulation brevet complet","j_minus_1":"Révision légère uniquement, repos et sommeil !"}}};
+
+
+// ── FICHES DE COURS ──────────────────────────────────────────
+const FICHES = {
+  maths_auto:{titre:"Automatismes mathématiques",sections:[
+    {icon:"📐",label:"Priorités opératoires",contenu:"Parenthèses → Puissances → × et ÷ → + et −. Toujours de gauche à droite au même niveau."},
+    {icon:"💡",label:"Identités remarquables",formule:"(a+b)² = a²+2ab+b²   |   (a-b)² = a²-2ab+b²   |   (a+b)(a-b) = a²-b²"},
+    {icon:"⚠️",label:"Piège classique",contenu:"√(a+b) ≠ √a+√b. La racine ne se distribue PAS sur une addition.",piege:true}
+  ]},
+  maths_03:{titre:"Équations",sections:[
+    {icon:"📐",label:"Résoudre ax+b=c",contenu:"1) ax = c−b. 2) x = (c−b)/a."},
+    {icon:"💡",label:"Formule",formule:"ax + b = c  →  x = (c−b) / a"},
+    {icon:"📝",label:"Exemple",contenu:"3x + 5 = 17 → 3x = 12 → x = 4. Vérif : 3×4+5=17 ✓"},
+    {icon:"⚠️",label:"Piège inéquation",contenu:"Division par un nombre négatif → le sens de l'inégalité s'inverse.",piege:true}
+  ]},
+  maths_04:{titre:"Théorème de Pythagore",sections:[
+    {icon:"📐",label:"Énoncé",contenu:"Dans un triangle rectangle, hyp² = côté1² + côté2²."},
+    {icon:"💡",label:"Formule",formule:"hyp² = a² + b²   →   hyp = √(a² + b²)"},
+    {icon:"📝",label:"Triplets classiques",contenu:"(3,4,5) — (5,12,13) — (6,8,10) — (8,15,17)"},
+    {icon:"⚠️",label:"Piège",contenu:"L'hypoténuse est TOUJOURS opposée à l'angle droit — le plus long côté.",piege:true}
+  ]},
+  maths_05:{titre:"Fonctions linéaires et affines",sections:[
+    {icon:"📐",label:"Définitions",contenu:"Linéaire : f(x)=ax (passe par l'origine). Affine : f(x)=ax+b. a = coefficient directeur, b = ordonnée à l'origine."},
+    {icon:"💡",label:"Formule",formule:"f(x) = ax + b   |   a = (y2−y1)/(x2−x1)"},
+    {icon:"⚠️",label:"Piège",contenu:"Fonction linéaire passe OBLIGATOIREMENT par (0,0). Si b≠0 → affine.",piege:true}
+  ]},
+  maths_06:{titre:"Statistiques",sections:[
+    {icon:"📐",label:"Indicateurs",contenu:"Moyenne = somme ÷ n. Médiane = valeur centrale (série ordonnée). Étendue = max − min."},
+    {icon:"💡",label:"Formule moyenne",formule:"Moyenne = (Σ xi × ni) / N"},
+    {icon:"⚠️",label:"Piège",contenu:"Médiane ≠ Moyenne. La médiane est insensible aux valeurs extrêmes.",piege:true}
+  ]},
+  fr_01:{titre:"Compréhension & Lecture",sections:[
+    {icon:"📖",label:"Types de textes",contenu:"Narratif, Descriptif, Argumentatif, Explicatif, Injonctif."},
+    {icon:"💡",label:"Analyser un texte",contenu:"1) Qui parle ? 2) De quoi ? 3) Comment ? (procédés). 4) Pour quoi faire ? (visée)."},
+    {icon:"⚠️",label:"Piège",contenu:"Auteur (réel) ≠ Narrateur (voix fictive dans le texte).",piege:true}
+  ]},
+  fr_02:{titre:"Grammaire & Orthographe",sections:[
+    {icon:"📐",label:"Nature vs Fonction",contenu:"Nature = ce qu'est le mot (nom, verbe...). Fonction = ce qu'il fait (sujet, COD...)."},
+    {icon:"💡",label:"Accord participe passé",formule:"Avec Être → accord sujet | Avec Avoir → accord COD si avant"},
+    {icon:"⚠️",label:"Piège",contenu:"'Elle s'est lavé les mains' (COD après → pas d'accord). 'Les mains qu'elle s'est lavées' (COD avant → accord).",piege:true}
+  ]},
+  fr_04:{titre:"Rédaction",sections:[
+    {icon:"📝",label:"Paragraphe",contenu:"1) Idée directrice. 2) Développement. 3) Exemple. 4) Conclusion partielle."},
+    {icon:"💡",label:"Connecteurs logiques",contenu:"Cause: car, parce que. Conséquence: donc, c'est pourquoi. Opposition: mais, cependant. Addition: de plus."},
+    {icon:"⚠️",label:"Piège",contenu:"Éviter 'je pense que'. Préférer 'Il apparaît que', 'On peut affirmer que'.",piege:true}
+  ]},
+  hg_01:{titre:"1ère Guerre Mondiale",sections:[
+    {icon:"🌍",label:"Dates clés",contenu:"1914 : attentat Sarajevo (28 juin), déclaration guerre. 1916 : Verdun. 1917 : USA + révolution russe. 1918 : armistice (11 nov)."},
+    {icon:"💡",label:"Chiffres",formule:"~18 millions de morts | 4 ans de conflit | Génocide arménien 1915"},
+    {icon:"⚠️",label:"Piège",contenu:"1918 = armistice (cessez-le-feu) ≠ 1919 = Traité de Versailles (paix officielle).",piege:true}
+  ]},
+  hg_02:{titre:"2ème Guerre Mondiale",sections:[
+    {icon:"🌍",label:"Dates clés",contenu:"1939 : invasion Pologne. 1940 : chute France, appel 18 juin. 1941 : Pearl Harbor. 1944 : Débarquement. 1945 : capitulations."},
+    {icon:"💡",label:"La Shoah",formule:"~6 millions de victimes | Solution finale 1942 | Auschwitz, Treblinka..."},
+    {icon:"⚠️",label:"Piège",contenu:"Camp de concentration (travail forcé) ≠ camp d'extermination (mort immédiate).",piege:true}
+  ]},
+  hg_05:{titre:"Géographie — Mondialisation",sections:[
+    {icon:"🌍",label:"Définition",contenu:"Intensification des échanges à l'échelle mondiale depuis les années 1980."},
+    {icon:"💡",label:"Acteurs",contenu:"FMN, États, ONG, ONU, OMC, FMI. Métropoles mondiales : New York, Londres, Tokyo."},
+    {icon:"⚠️",label:"Piège",contenu:"La mondialisation creuse les inégalités. BRICS = émergents (Brésil, Russie, Inde, Chine, Afrique du Sud).",piege:true}
+  ]},
+  hg_03:{titre:"La République française",sections:[
+    {icon:"🏙️",label:"Les Républiques",contenu:"Ire (1792), IIe (1848), IIIe (1870), IVe (1946), Ve (1958-aujourd'hui). Constitution 1958 : De Gaulle."},
+    {icon:"💡",label:"Valeurs",formule:"Liberté — Égalité — Fraternité | Laïcité | Démocratie représentative"},
+    {icon:"⚠️",label:"Piège",contenu:"Laïcité (loi 1905) ≠ athéisme. Séparation État/Églises, pas interdiction de religion.",piege:true}
+  ]},
+  pc_01:{titre:"Électricité — Loi d'Ohm",sections:[
+    {icon:"⚡",label:"Loi d'Ohm",contenu:"U = tension (V), R = résistance (Ω), I = intensité (A)."},
+    {icon:"💡",label:"Formule",formule:"U = R × I   |   R = U/I   |   I = U/R"},
+    {icon:"📝",label:"Triangle URi",contenu:"U en haut, R et I en bas. Couvrir la grandeur cherchée pour trouver la formule."},
+    {icon:"⚠️",label:"Piège circuit",contenu:"Série : même intensité, tensions s'additionnent. Parallèle : même tension, intensités s'additionnent.",piege:true}
+  ]},
+  pc_04:{titre:"Énergie et puissance",sections:[
+    {icon:"⚡",label:"Définitions",contenu:"Puissance P (Watts) = énergie/seconde. Énergie E (Joules ou kWh) = puissance × durée."},
+    {icon:"💡",label:"Formules",formule:"P = U × I (W)   |   E = P × t (J)   |   1 kWh = 3 600 000 J"},
+    {icon:"⚠️",label:"Piège",contenu:"Puissance (W) ≠ Énergie (J ou kWh). La puissance est un débit, l'énergie une quantité.",piege:true}
+  ]},
+  pc_02:{titre:"Chimie — Atomes",sections:[
+    {icon:"⚗️",label:"Structure",contenu:"Noyau (protons+, neutrons) + électrons (−). Z = nb protons = nb électrons (neutre)."},
+    {icon:"💡",label:"Molécules courantes",formule:"H₂O | CO₂ | O₂ | NaCl | H₂SO₄"},
+    {icon:"⚠️",label:"Piège",contenu:"Atome O ≠ molécule O₂. Ne pas confondre indices dans les formules.",piege:true}
+  ]},
+  pc_03:{titre:"Optique — Lumière",sections:[
+    {icon:"🔭",label:"Propagation",contenu:"Lumière en ligne droite. Vitesse dans le vide : c = 3×10⁸ m/s."},
+    {icon:"💡",label:"Réfraction (Snell-Descartes)",formule:"n₁ × sin(i₁) = n₂ × sin(i₂)"},
+    {icon:"⚠️",label:"Piège",contenu:"Réflexion (rebond) ≠ réfraction (changement direction). Angle réflexion = angle incidence.",piege:true}
+  ]},
+  svt_01:{titre:"Génétique",sections:[
+    {icon:"🧬",label:"Vocabulaire",contenu:"Gène = portion ADN. Allèle = version d'un gène. Génotype = constitution génétique. Phénotype = caractère observable."},
+    {icon:"💡",label:"Dominance",formule:"AA ou Aa → phénotype dominant | aa → phénotype récessif"},
+    {icon:"📝",label:"Tableau de Punnett",contenu:"Aa × Aa : AA(25%), Aa(50%), aa(25%). 75% dominant, 25% récessif."},
+    {icon:"⚠️",label:"Piège",contenu:"Hétérozygote (Aa) a le phénotype dominant MAIS porte l'allèle récessif.",piege:true}
+  ]},
+  svt_04:{titre:"Écosystèmes",sections:[
+    {icon:"🌿",label:"Chaîne alimentaire",contenu:"Producteur → Consommateur 1er ordre → Consommateur 2e ordre → Décomposeur."},
+    {icon:"💡",label:"Photosynthèse",formule:"6CO₂ + 6H₂O + lumière → C₆H₁₂O₆ + 6O₂"},
+    {icon:"⚠️",label:"Piège",contenu:"La photosynthèse a lieu dans les chloroplastes. Les plantes respirent AUSSI.",piege:true}
+  ]},
+  svt_02:{titre:"Corps humain & Santé",sections:[
+    {icon:"�ꮀ",label:"Systèmes",contenu:"Circulatoire, Respiratoire, Digestif, Nerveux, Immunitaire."},
+    {icon:"💡",label:"Immunité",formule:"1ère ligne: peau | 2ème: phagocytose | 3ème: anticorps spécifiques"},
+    {icon:"⚠️",label:"Piège",contenu:"Anticorps ≠ antidote. Anticorps produits par l'organisme, spécifiques à UN antigène.",piege:true}
+  ]},
+  svt_05:{titre:"Reproduction",sections:[
+    {icon:"🧬",label:"Méiose",contenu:"46 chromosomes → 4 gamètes à 23. Fécondation : 23+23 = 46 (zygote)."},
+    {icon:"💡",label:"Cycle menstruel",formule:"~28 jours | Ovulation J14 | Endomètre préparé | Menstruations si pas grossesse"},
+    {icon:"⚠️",label:"Piège",contenu:"Méiose (23 chr, reproduction) ≠ Mitose (46 chr, croissance).",piege:true}
+  ]},
+  // ── FICHES SUPPLÉMENTAIRES ────────────────────────────────
+  maths_02:{titre:"Nombres et calculs",sections:[
+    {icon:"📐",label:"Puissances",contenu:"aⁿ = a×a×...×a (n fois). Règles : aᵐ×aⁿ = aᵐ⁺ⁿ, aᵐ÷aⁿ = aᵐ⁻ⁿ, (aᵐ)ⁿ = aᵐⁿ. a⁰=1, a⁻ⁿ=1/aⁿ."},
+    {icon:"💡",label:"Notation scientifique",formule:"a × 10ⁿ avec 1 ≤ a < 10"},
+    {icon:"📝",label:"Fractions",contenu:"a/b ÷ c/d = a/b × d/c. Comparer : même dénominateur ou produit en croix."},
+    {icon:"⚠️",label:"Piège",contenu:"√(a+b) ≠ √a+√b. Priorités : ( ) → puissances → ×÷ → +−.",piege:true}
+  ]},
+  maths_07:{titre:"Géométrie dans l'espace",sections:[
+    {icon:"📐",label:"Formules de volumes",contenu:"Cube : a³. Pavé : L×l×h. Cylindre : π×r²×h. Pyramide : (B×h)/3. Cône : (π×r²×h)/3. Sphère : (4/3)×π×r³."},
+    {icon:"💡",label:"Conversions volumes",formule:"1 m³ = 1000 L = 1 000 000 cm³   |   1 L = 1 dm³"},
+    {icon:"⚠️",label:"Piège",contenu:"Ces formules ne sont PAS données au brevet — les apprendre par cœur !",piege:true}
+  ]},
+  maths_08:{titre:"Algorithmique Python",sections:[
+    {icon:"💻",label:"Instructions de base",contenu:"print() = afficher. input() = saisie. if/elif/else = condition. for i in range(n) = boucle n fois. while = boucle tant que. def = définir une fonction."},
+    {icon:"💡",label:"Exemple de boucle",formule:"for i in range(5): print(i)  → affiche 0,1,2,3,4"},
+    {icon:"📝",label:"Méthode",contenu:"Tracer le programme étape par étape, noter la valeur de chaque variable à chaque ligne."},
+    {icon:"⚠️",label:"Piège",contenu:"range(n) va de 0 à n-1 (pas de 1 à n). L'indentation est OBLIGATOIRE en Python.",piege:true}
+  ]},
+  fr_03:{titre:"Orthographe et dictée",sections:[
+    {icon:"📝",label:"Accord participe passé",contenu:"Avec ÊTRE → accord sujet. Avec AVOIR → accord COD si placé AVANT. Sans COD avant → invariable."},
+    {icon:"💡",label:"Homophones piégeux",formule:"a/à — est/et/es — son/sont — ces/ses — ou/où — mais/mes — on/ont"},
+    {icon:"⚠️",label:"Piège classique",contenu:"'Elle a mangé les pommes' (COD après = pas d'accord). 'Les pommes qu'elle a mangées' (COD avant = accord).",piege:true}
+  ]},
+  hg_04:{titre:"Géographie — France et territoires",sections:[
+    {icon:"🌍",label:"Organisation",contenu:"13 régions métropolitaines + 5 régions ultramarines (DOM) depuis 2016. 3 grandes métropoles : Paris, Lyon, Marseille."},
+    {icon:"💡",label:"Métropolisation",formule:"Concentration des populations et activités dans les grandes villes"},
+    {icon:"📝",label:"DOM-ROM",contenu:"Guadeloupe, Martinique, Guyane, La Réunion, Mayotte. Même lois que la métropole."},
+    {icon:"⚠️",label:"Piège",contenu:"18 régions au total (13 métro + 5 ultra-marine) ≠ 22 (avant 2016).",piege:true}
+  ]},
+  hg_05:{titre:"Géographie mondiale",sections:[
+    {icon:"🌍",label:"IDH",contenu:"Indice de Développement Humain : niveau de vie + éducation + espérance de vie. Varie de 0 à 1."},
+    {icon:"💡",label:"BRICS",formule:"Brésil — Russie — Inde — Chine — Afrique du Sud (pays émergents)"},
+    {icon:"📝",label:"Développement durable",contenu:"Répondre aux besoins présents sans compromettre les générations futures (Brundtland 1987). 3 piliers : économique, social, environnemental."},
+    {icon:"⚠️",label:"Piège",contenu:"PIB ≠ IDH. Un pays peut avoir un PIB élevé mais un IDH faible (inégalités internes).",piege:true}
+  ]},
+  hg_06:{titre:"EMC — Citoyenneté et démocratie",sections:[
+    {icon:"🏛️",label:"Valeurs républicaines",formule:"Liberté — Égalité — Fraternité | Laïcité | Démocratie"},
+    {icon:"💡",label:"Textes fondateurs",contenu:"DDHC 1789 (France), DUDH 1948 (ONU). Droit de vote à 18 ans en France (depuis 1974)."},
+    {icon:"📝",label:"Institutions",contenu:"Président (5 ans), Premier ministre, Assemblée nationale (577 députés), Sénat (348 sénateurs)."},
+    {icon:"⚠️",label:"Piège",contenu:"DDHC (1789, France) ≠ DUDH (1948, ONU). Laïcité ≠ athéisme — c'est la neutralité de l'État.",piege:true}
+  ]},
+  svt_03:{titre:"Nutrition et digestion",sections:[
+    {icon:"🫀",label:"Nutriments",contenu:"Glucides (énergie rapide), Lipides (réserves), Protéines (construction). + Vitamines, Minéraux, Eau."},
+    {icon:"💡",label:"Trajet digestif",formule:"Bouche → Œsophage → Estomac → Intestin grêle (absorption) → Gros intestin → Rectum"},
+    {icon:"📝",label:"Enzymes clés",contenu:"Amylase salivaire (bouche, amidon), Pepsine (estomac, protéines), Lipase (intestin, graisses)."},
+    {icon:"⚠️",label:"Piège",contenu:"L'absorption se fait dans l'INTESTIN GRÊLE (pas l'estomac). L'estomac dégrade principalement les protéines.",piege:true}
+  ]},
+  svt_06:{titre:"Géologie — Tectonique des plaques",sections:[
+    {icon:"🌍",label:"Structure Terre",contenu:"Croûte (0-30 km) → Manteau (30-2900 km) → Noyau externe liquide → Noyau interne solide."},
+    {icon:"💡",label:"Mouvements des plaques",formule:"Divergence (écartement, dorsales) | Convergence (subduction, montagnes) | Coulissage"},
+    {icon:"📝",label:"Séisme",contenu:"Foyer = point de rupture en profondeur. Épicentre = projection à la surface. Magnitude = Richter."},
+    {icon:"⚠️",label:"Piège",contenu:"Foyer (en profondeur) ≠ Épicentre (en surface). C'est l'épicentre qui est le plus secoué.",piege:true}
+  ]},
+
+};
+
+// ── FONCTIONS FICHE ──────────────────────────────────────────
+function renderFicheContent(chapId){
+  const fiche=FICHES[chapId];
+  if(!fiche) return '<div style="text-align:center;padding:24px;color:var(--muted);"><span style="font-size:2.5rem;">📝</span><p style="margin-top:12px;">Fiche en cours de rédaction.</p></div>';
+  return fiche.sections.map(s=>{
+    const cls='fiche-section'+(s.piege?' fiche-piege':'');
+    const body=(s.formule?'<code class="fiche-formule">'+esc(s.formule)+'</code>':'')+(s.contenu?'<p style="margin:0">'+esc(s.contenu)+'</p>':'');
+    return '<div class="'+cls+'"><div class="fiche-section-title">'+s.icon+' '+esc(s.label)+'</div><div class="fiche-section-body">'+body+'</div></div>';
+  }).join('');
+}
+
+function ouvrirFiche(chapId,chapTitre){
+  const fiche=FICHES[chapId];
+  $('sheet-title').textContent='📖 '+(fiche?.titre||chapTitre);
+  $('sheet-body').innerHTML=renderFicheContent(chapId);
+  $('sheet-overlay').classList.add('open');
+  $('bottom-sheet').classList.add('open');
+  let startY=0;
+  const bs=$('bottom-sheet');
+  const onStart=e=>{startY=e.touches[0].clientY;};
+  const onEnd=e=>{if(e.changedTouches[0].clientY-startY>80){fermerFiche();}bs.removeEventListener('touchstart',onStart);bs.removeEventListener('touchend',onEnd);};
+  bs.addEventListener('touchstart',onStart,{passive:true});
+  bs.addEventListener('touchend',onEnd,{passive:true});
+}
+
+function fermerFiche(){
+  $('sheet-overlay').classList.remove('open');
+  $('bottom-sheet').classList.remove('open');
+}
+
+function ouvrirFicheQuiz(){
+  ouvrirFiche(S.quiz.chapId,S.quiz.label);
+}
+
+async function loadData(){
+  // Données embarquées — zéro dépendance réseau
+  S.data = DATA_EMBEDDED;
+  // Tentative fetch pour mise à jour éventuelle (silencieuse)
+  try{
+    const r=await fetch('troisieme.json');
+    if(r.ok){ const d=await r.json(); if(d&&d.matieres) S.data=d; }
+  }catch{}
+}
+
+// ── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async ()=>{
   loadLS();
   await loadData();
@@ -12,12 +1943,13 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   refreshRing();
   goHome();
 
-  // Fermer quiz (Navigation d'origine préservée)
+  // Fermer quiz
   $('quiz-close').addEventListener('click', fermerQuiz);
   $('quiz-close').addEventListener('touchstart', e=>{ e.preventDefault(); fermerQuiz(); }, {passive:false});
 
   // Bouton Continuer
-  $('quiz-next').addEventListener('click', ()=>{\n    S.quiz.idx++;
+  $('quiz-next').addEventListener('click', ()=>{
+    S.quiz.idx++;
     if(S.quiz.idx<S.quiz.qs.length) afficherQuestion();
     else finSession();
   });
@@ -26,16 +1958,20 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   $('fab-examen').addEventListener('click', lancerExamen);
   $('fab-examen').addEventListener('touchstart', e=>{ e.preventDefault(); lancerExamen(); }, {passive:false});
 
-  // Thème (Bouton d'origine)
-  $('btn-theme').addEventListener('click', ()=>{\n    document.body.classList.toggle('dark-bg');
+  // Thème
+  $('btn-theme').addEventListener('click', ()=>{
+    document.body.classList.toggle('dark-bg');
     $('btn-theme').textContent=document.body.classList.contains('dark-bg')?'☀️':'🌙';
   });
 
   // Swipe bas pour fermer le quiz
   let touchStartY=0;
   $('quiz-screen').addEventListener('touchstart',e=>{ touchStartY=e.touches[0].clientY; },{passive:true});
-  $('quiz-screen').addEventListener('touchmove',e=>{
-    let touchY=e.touches[0].clientY;
-    if(touchY-touchStartY>150 && $('quiz-screen').scrollTop<=0) fermerQuiz();
+  $('quiz-screen').addEventListener('touchend',e=>{
+    const dy=e.changedTouches[0].clientY-touchStartY;
+    if(dy>80&&$('quiz-screen').scrollTop===0) fermerQuiz();
   },{passive:true});
 });
+</script>
+</body>
+</html>
