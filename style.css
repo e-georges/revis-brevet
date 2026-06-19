@@ -1,5 +1,5 @@
 /* =============================================
-   RévisBrevet 2026 — style.css (Édition UI)
+   RévisBrevet 2026 — style.css (MOBILE ONLY ENGINE)
    ============================================= */
 :root {
   --color-primary:   #4F46E5;
@@ -7,157 +7,140 @@
   --color-danger:    #EF4444;
   --color-warning:   #F59E0B;
   --bg-app:          #F8FAFC;
-  --bg-sidebar:      #FFFFFF;
   --bg-card:         #FFFFFF;
   --text-primary:    #0F172A;
   --text-secondary:  #64748B;
   --border-color:    #E2E8F0;
-  --shadow-card:     0 4px 12px rgba(15,23,42,0.04);
-  --font-main:       'Inter', system-ui, -apple-system, sans-serif;
-  --radius:          12px;
+  --font-main:       'Inter', system-ui, sans-serif;
+  --radius:          16px;
 }
 
+/* Force l'affichage type smartphone peu importe l'écran */
 body {
   margin: 0;
   font-family: var(--font-main);
-  background-color: var(--bg-app);
+  background-color: #0F172A; /* Fond sombre extérieur */
   color: var(--text-primary);
   display: flex;
+  justify-content: center;
+  align-items: center;
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
 }
-.app-container { display: flex; width: 100%; }
 
-/* SIDEBAR LAYOUT */
-.sidebar {
-  width: 280px;
-  background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
-  padding: 24px;
-  box-sizing: border-box;
+/* Le conteneur simule un iPhone/Android parfait */
+.app-container {
+  width: 100%;
+  max-width: 430px; /* Taille iPhone 15 Pro Max */
+  height: 100vh;
+  background-color: var(--bg-app);
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5);
 }
-.sidebar-brand {
-  font-size: 1.2rem;
-  font-weight: 900;
-  color: var(--color-primary);
+
+/* Zone de contenu principale scrollable verticalement */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 90px 16px; /* 90px pour ne pas buter sur la barre du bas */
+  box-sizing: border-box;
+}
+
+.view-section { animation: fadeIn 0.2s ease-out; }
+
+/* BARRE DE NAVIGATION BASSE (Comme une vraie App Mobile) */
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border-color);
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
-  margin-bottom: 24px;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom); /* Support encoche basse iPhone */
 }
-.user-profile-widget {
-  background: var(--bg-app);
-  padding: 14px;
-  border-radius: var(--radius);
-  margin-bottom: 20px;
+.nav-item {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 1;
 }
-.profile-info h3 { margin: 0; font-size: 0.95rem; }
-.profile-meta { font-size: 0.78rem; color: var(--text-secondary); }
+.nav-item.active { color: var(--color-primary); }
+.nav-item span:first-child { font-size: 1.3rem; }
 
-/* MAIN */
-.main-content { flex: 1; padding: 32px; box-sizing: border-box; max-width: 1100px; margin: 0 auto; }
-.view-section { animation: fadeIn 0.25s ease-in-out; }
-
+/* COMPOSANTS SMARTPHONE */
 .card {
   background: var(--bg-card);
   border-radius: var(--radius);
   border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-card);
-  padding: 20px;
+  padding: 16px;
+  margin-bottom: 16px;
   box-sizing: border-box;
 }
-.matieres-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-  margin-top: 16px;
-}
-.chapitre-item:hover {
-  background-color: #EEF2FF !important;
-  cursor: pointer;
-}
+.matieres-grid { display: flex; flex-direction: column; gap: 14px; }
 
-/* BUTTONS & BADGES */
-.btn-primary, .btn-secondary {
-  border: none; padding: 10px 18px; border-radius: 8px; font-family: inherit; font-weight: 600; cursor: pointer;
+/* Boutons adaptés aux doigts (Hauteur min 48px pour l'ergonomie tactile) */
+.btn-primary, .btn-secondary, .option-btn {
+  min-height: 48px;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
 }
 .btn-primary { background: var(--color-primary); color: white; }
 .btn-secondary { background: var(--border-color); color: var(--text-primary); }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
 .option-btn {
-  width: 100%; text-align: left; padding: 12px 16px; margin-bottom: 8px;
-  border: 1.5px solid var(--border-color); border-radius: 8px; background: white;
-  font-size: .95rem; font-family: inherit; cursor: pointer; transition: all .15s;
+  background: white;
+  border: 1.5px solid var(--border-color);
+  justify-content: flex-start;
+  padding: 0 16px;
+  margin-bottom: 10px;
 }
-.option-btn:hover:not(:disabled) { border-color: var(--color-primary); background: var(--bg-app); }
+.option-btn:active { background: var(--bg-app); }
 
-.badge { font-size: 0.75rem; font-weight: 700; background: #E0E7FF; color: var(--color-primary); padding: 4px 10px; border-radius: 12px; }
-
-/* QUIZ UI */
-.quiz-container { max-width: 600px; margin: 20px auto; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-.quiz-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.progress-bar-container { background: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden; }
-.progress-fill { background: var(--color-accent); height: 100%; width: 0%; transition: width 0.25s; }
-.explanation-box { padding: 14px; border-radius: 8px; margin-top: 16px; }
-.explanation-box.good { background-color: #DCFCE7; color: #14532D; }
-.explanation-box.bad { background-color: #FEE2E2; color: #7F1D1D; }
-
-.hidden { display: none !important; }
-.btn-icon { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
-
-/* ── ANIMATION ENGINE FLASHCARDS 3D ── */
-.flashcard-perspective {
-  perspective: 1000px;
-  width: 100%;
-  height: 280px;
-}
-.flashcard-card {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-}
-.flashcard-card.flipped {
-  transform: rotateY(180deg);
-}
-.flashcard-face {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  border-radius: 16px;
-  padding: 24px;
-  box-sizing: border-box;
+/* WIDGET PROFIL HAUT DE PAGE */
+.mobile-header {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* FLASHCARDS INTERACTIVES SUIVANT LE POUCE */
+.flashcard-perspective { perspective: 1000px; width: 100%; height: 320px; }
+.flashcard-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.4s; }
+.flashcard-card.flipped { transform: rotateY(180deg); }
+.flashcard-face {
+  position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+  border-radius: var(--radius); padding: 20px; box-sizing: border-box;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
   border: 1px solid var(--border-color);
 }
-.flashcard-front {
-  background: #FFFFFF;
-  color: var(--text-primary);
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-.flashcard-back {
-  background: linear-gradient(135deg, #1E1B4B, #312E81);
-  color: #FFFFFF;
-  transform: rotateY(180deg);
-  font-size: 0.98rem;
-  line-height: 1.5;
-}
+.flashcard-front { background: white; font-size: 1.1rem; font-weight: 700; }
+.flashcard-back { background: linear-gradient(135deg, #1E1B4B, #312E81); color: white; transform: rotateY(180deg); font-size: 0.95rem; }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-@media (max-width: 768px) {
-  body { flex-direction: column; }
-  .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
-  .main-content { padding: 16px; }
-  .matieres-grid { grid-template-columns: 1fr; }
-}
+.hidden { display: none !important; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
