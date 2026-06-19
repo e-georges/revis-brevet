@@ -1,5 +1,5 @@
 /* =============================================
-   RévisBrevet 2026 — style.css (MOBILE ENGINE)
+   RévisBrevet 2026 — style.css (MOBILE NATIVE ENGINE)
    ============================================= */
 :root {
   --color-primary:   #4F46E5;
@@ -48,7 +48,7 @@ body {
 
 .view-section { animation: fadeIn 0.2s ease-out; }
 
-/* BOTTOM NAVIGATION MENU */
+/* BOTTOM TAB NAVIGATION BAR */
 .bottom-nav {
   position: absolute;
   bottom: 0;
@@ -82,7 +82,7 @@ body {
 .nav-item.active { color: var(--color-primary); }
 .nav-item span:first-child { font-size: 1.3rem; }
 
-/* LAYOUT CARDS */
+/* COMPOSANTS CARTES SMARTPHONE */
 .card {
   background: var(--bg-card);
   border-radius: var(--radius);
@@ -92,9 +92,46 @@ body {
   box-sizing: border-box;
 }
 .matieres-grid { display: flex; flex-direction: column; gap: 14px; }
+
+/* STRUCTURE ACCORDÉON (TIROIR COMPACT MOBILE) */
+.matiere-card-wrapper {
+  padding: 0 !important; /* Laisse le trigger faire toute la largeur */
+  overflow: hidden;
+}
+.matiere-trigger-header {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: var(--bg-card);
+  user-select: none;
+}
+.matiere-trigger-header:active {
+  background: #F1F5F9;
+}
+.arrow-indicator {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+.arrow-indicator.rotated {
+  transform: rotate(180deg);
+}
+.matiere-chapters-body {
+  padding: 0 16px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease-out;
+}
+.hidden-drawer {
+  display: none !important;
+}
+
+.chapitre-item { transition: background 0.15s; }
 .chapitre-item:active { background-color: #EEF2FF !important; }
 
-/* ERGONOMICS TACTILE BUTTONS */
+/* TOUCH BUTTONS DESIGN */
 .btn-primary, .btn-secondary, .option-btn {
   min-height: 48px;
   border: none;
@@ -118,6 +155,7 @@ body {
   justify-content: flex-start;
   padding: 0 16px;
   margin-bottom: 10px;
+  text-align: left;
 }
 .option-btn:active:not(:disabled) { background: var(--bg-app); }
 
@@ -138,7 +176,7 @@ body {
 
 .hidden { display: none !important; }
 
-/* ── FLASHCARDS 3D ENGINE ── */
+/* ── INTERACTIVE FLASHCARDS 3D ENGINE ── */
 .flashcard-perspective { perspective: 1000px; width: 100%; height: 320px; }
 .flashcard-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
 .flashcard-card.flipped { transform: rotateY(180deg); }
