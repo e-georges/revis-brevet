@@ -1,5 +1,5 @@
 // ============================================================
-// RévisBrevet 2026 — app.js (Version Mobile Accordéon Finale)
+// RévisBrevet 2026 — app.js (UI/UX PRO MAX EDITION)
 // ============================================================
 
 const AppState = {
@@ -19,7 +19,6 @@ const AppState = {
 
 const $ = id => document.getElementById(id);
 
-// Banque de secours si troisieme.json est en cours de transfert
 const DATA_SECOURS = {
   matieres: [
     {
@@ -165,56 +164,57 @@ async function initialiserApp() {
   configurerFlashcardsMenu();
 }
 
-// MOTEUR DE SELECTION ET DEPLIEMENT ACCORDEON SMARTPHONE
+// ── ACCORDÉON TACTILE ANIMÉ PRO MAX ──
 function construireMenuMatieres() {
   const container = $('matieres-container');
+  if (!container) return;
   container.innerHTML = "";
-  if (!AppState.data || !AppState.data.matieres) return;
+  
+  const dataToUse = (AppState.data && AppState.data.matieres) ? AppState.data : DATA_SECOURS;
 
-  AppState.data.matieres.forEach(m => {
+  dataToUse.matieres.forEach(m => {
     if (!m.chapitres) return;
     
     const card = document.createElement('div');
     card.className = 'card matiere-card-wrapper';
     
-    // Header cliquable pour ouvrir/fermer l'accordéon
     const header = document.createElement('div');
     header.className = 'matiere-trigger-header';
     header.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:1.3rem;">${m.emoji || '📚'}</span>
-        <h3 style="margin:0; font-size:1rem; font-weight:700;">${m.label || m.id}</h3>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.4rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">${m.emoji || '📚'}</span>
+        <h3 style="margin:0; font-size:1rem; font-weight:700; color:var(--text-primary); letter-spacing:-0.01em;">${m.label || m.id}</h3>
       </div>
       <span class="arrow-indicator">▼</span>
     `;
     
-    // Container masqué par défaut contenant la liste des chapitres
     const bodyContent = document.createElement('div');
-    bodyContent.className = 'matiere-chapters-body hidden-drawer';
+    bodyContent.className = 'matiere-chapters-body';
     
     m.chapitres.forEach(c => {
       const row = document.createElement('div');
       row.className = 'chapitre-item';
-      row.style.cssText = "padding:12px; margin-top:8px; background:var(--bg-app); border-radius:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;";
+      row.style.cssText = "padding:14px 12px; margin-top:10px; background:var(--bg-card); border-radius:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);";
       row.onclick = (e) => ouvrirPreQuiz(m.id, c.id, e);
       row.innerHTML = `
-        <span style="font-weight:600; font-size:.85rem; padding-right:8px; text-align:left;">${c.titre}</span>
-        <span style="font-size:.7rem; color:var(--text-secondary); background:white; padding:2px 6px; border-radius:8px; white-space:nowrap;">${c.theme || 'DNB'}</span>
+        <span style="font-weight:600; font-size:.85rem; padding-right:12px; text-align:left; color:var(--text-primary); line-height:1.3;">${c.titre}</span>
+        <span style="font-size:.68rem; font-weight:700; color:var(--text-secondary); background:var(--bg-app); padding:4px 8px; border-radius:8px; white-space:nowrap; border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.02em;">${c.theme || 'DNB'}</span>
       `;
       bodyContent.appendChild(row);
     });
 
-    // Événement d'ouverture exclusive au clic
     header.onclick = () => {
-      const estOuvert = !bodyContent.classList.contains('hidden-drawer');
+      const estOuvert = bodyContent.classList.contains('is-open');
       
-      // Ferme tous les autres tiroirs de matières ouverts sur la page
-      document.querySelectorAll('.matiere-chapters-body').forEach(b => b.classList.add('hidden-drawer'));
+      // Ferme tous les autres tiroirs ouverts avec effondrement CSS
+      document.querySelectorAll('.matiere-chapters-body').forEach(b => b.classList.remove('is-open'));
       document.querySelectorAll('.arrow-indicator').forEach(a => a.classList.remove('rotated'));
+      document.querySelectorAll('.matiere-card-wrapper').forEach(w => w.classList.remove('is-expanded'));
       
-      // Alterne l'état actuel de la matière cliquée
+      // Alterne l'état de la matière ciblée
       if (!estOuvert) {
-        bodyContent.classList.remove('hidden-drawer');
+        bodyContent.classList.add('is-open');
+        card.classList.add('is-expanded');
         header.querySelector('.arrow-indicator').classList.add('rotated');
       }
     };
@@ -230,7 +230,9 @@ let currentChapitreSelected = null;
 
 function ouvrirPreQuiz(matiereId, chapitreId, event) {
   if (event) event.stopPropagation();
-  currentMatiereSelected = AppState.data.matieres.find(m => m.id === matiereId);
+  
+  const dataToUse = (AppState.data && AppState.data.matieres) ? AppState.data : DATA_SECOURS;
+  currentMatiereSelected = dataToUse.matieres.find(m => m.id === matiereId);
   currentChapitreSelected = currentMatiereSelected.chapitres.find(c => c.id === chapitreId);
   
   $('home-screen').classList.add('hidden');
@@ -474,9 +476,9 @@ function configurerFlashcardsMenu() {
 
 function genererFlashcardsPool() {
   flashcardsPool = [];
-  if (!AppState.data || !AppState.data.matieres) return;
+  const dataToUse = (AppState.data && AppState.data.matieres) ? AppState.data : DATA_SECOURS;
   
-  AppState.data.matieres.forEach(m => {
+  dataToUse.matieres.forEach(m => {
     if (!m.chapitres) return;
     m.chapitres.forEach(c => {
       if (c.cours && c.cours.trim() !== "") {
