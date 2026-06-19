@@ -1,6 +1,6 @@
-// ============================================================
-// RévisBrevet 2026 — app.js (UI/UX PRO MAX EDITION)
-// ============================================================
+// ==========================================================================
+// RévisBrevet 2026 — app.js (SOFT UI EVOLUTION EDITION — FULL MECHANICAL LOGIC)
+// ==========================================================================
 
 const AppState = {
   data: null,
@@ -25,6 +25,7 @@ const DATA_SECOURS = {
       id: "maths",
       label: "Mathématiques",
       emoji: "📐",
+      categorie: "Sciences",
       chapitres: [
         {
           id: "fractions",
@@ -34,22 +35,17 @@ const DATA_SECOURS = {
           piege: "Oublier la priorité opératoire de la multiplication sur l'addition !"
         }
       ]
-    },
-    {
-      id: "francais",
-      label: "Français",
-      emoji: "✍️",
-      chapitres: [
-        {
-          id: "figures_style",
-          titre: "Les Figures de Style",
-          theme: "Grammaire",
-          cours: "Métaphore : comparaison sans mot-outil.\nComparaison : avec mot-outil (comme, tel, ...).",
-          piege: "Confondre métaphore et comparaison à cause d'une lecture trop rapide."
-        }
-      ]
     }
   ]
+};
+
+// Dictionnaire des SVG de secours pour remplacer complètement les émojis dans l'interface graphique
+const SVGMappings = {
+  "maths": `<svg viewBox="0 0 24 24"><path d="M22 10v4h-6v6h-4v-6H6v-4h6V4h4v6h6z"/></svg>`,
+  "francais": `<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+  "histoire": `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/></svg>`,
+  "svt": `<svg viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2.5 3.19-2.5 5.5h20c0-2.31-1-4.24-2.5-5.5M12 2a5 5 0 1 0 0 10 5 5 0 1 0 0-10z"/></svg>`,
+  "physique": `<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`
 };
 
 function obtenirQuestionsFiltrees(pool, quantite) {
@@ -60,23 +56,23 @@ function obtenirQuestionsFiltrees(pool, quantite) {
   }
   const selectionnees = shuffleArr(questionsDisponibles).slice(0, quantite);
   selectionnees.forEach(q => AppState.historiqueQuestions.push(q.enonce));
-  if (AppState.historiqueQuestions.length > 40) AppState.historiqueQuestions.shift();
+  if (AppState.historiqueQuestions.length > 50) AppState.historiqueQuestions.shift();
   localStorage.setItem('dnb_history_anti_repeat', JSON.stringify(AppState.historiqueQuestions));
   return selectionnees;
 }
 
 function genererQuestionMutationMaths() {
-  const pList = [5, 10, 20, 25, 50, 75];
-  const vList = [40, 60, 80, 100, 200, 300];
+  const pList = [5, 10, 15, 20, 25, 30, 40, 50, 60, 75];
+  const vList = [30, 40, 50, 60, 80, 100, 120, 150, 200, 300, 400, 500];
   const p = pList[Math.floor(Math.random() * pList.length)];
   const v = vList[Math.floor(Math.random() * vList.length)];
-  const res = (p * v) / 100;
+  const res = parseFloat(((p * v) / 100).toFixed(2));
   
   const enonce = `Calculer ${p}% de ${v} €.`;
   const bonneReponse = `${res} €`;
-  const explication = `Prendre ${p}%, c'est faire (${p} × ${v}) / 100 = ${res} €.`;
+  const explication = `Prendre ${p}%, revient à calculer (${p} × ${v}) / 100 = ${res} €.`;
   
-  const options = [bonneReponse, `${res + 5} €`, `${res - 2 > 0 ? res - 2 : res + 10} €`, `${res * 2} €`];
+  const options = [bonneReponse, `${parseFloat((res + (v * 0.05)).toFixed(2))} €`, `${res - 2 > 0 ? parseFloat((res - 2).toFixed(2)) : parseFloat((res + 10).toFixed(2))} €`, `${parseFloat((res * 1.5).toFixed(2))} €`];
   const shuffled = shuffleArr([...new Set(options)]);
   return { enonce, options: shuffled, bonne_reponse: shuffled.indexOf(bonneReponse), explication };
 }
@@ -87,14 +83,18 @@ let tempsRestant = 45;
 function lancerTimer() {
   clearInterval(timerInterval);
   tempsRestant = 45;
-  $('quiz-timer').style.display = 'block';
+  $('quiz-timer').style.display = 'inline-flex';
   $('quiz-timer').textContent = `⏱️ ${tempsRestant}s`;
+  $('quiz-timer').style.background = '#E2E8F0';
   $('quiz-timer').style.color = 'var(--text-primary)';
 
   timerInterval = setInterval(() => {
     tempsRestant--;
     $('quiz-timer').textContent = `⏱️ ${tempsRestant}s`;
-    if (tempsRestant <= 10) $('quiz-timer').style.color = 'var(--color-danger)';
+    if (tempsRestant <= 10) {
+      $('quiz-timer').style.background = '#FEE2E2';
+      $('quiz-timer').style.color = 'var(--color-danger)';
+    }
     if (tempsRestant <= 0) {
       clearInterval(timerInterval);
       forcerEchecTimeout();
@@ -106,7 +106,7 @@ function forcerEchecTimeout() {
   document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
   $('quiz-explanation-box').className = "explanation-box visible bad";
   $('explanation-status').textContent = "⏰ TEMPS ÉCOULÉ !";
-  $('explanation-text').textContent = "Les 45 secondes imparties pour cet automatisme sont écoulées.";
+  $('explanation-text').textContent = "Les 45 secondes maximales pour cet automatisme sont passées.";
   $('quiz-next').disabled = false;
   enregistrerLacune("Automatismes");
 }
@@ -124,14 +124,14 @@ function analyserLacunes() {
   let maxEchecs = 0;
   for (const theme in AppState.adaptive) {
     const stat = AppState.adaptive[theme];
-    if (stat.echecs > maxEchecs && (stat.echecs / stat.total) >= 0.4) {
+    if (stat.echecs > maxEchecs && (stat.echecs / stat.total) >= 0.35) {
       maxEchecs = stat.echecs;
       pireTheme = theme;
     }
   }
   if (pireTheme) {
     $('lacunes-box').classList.remove('hidden');
-    $('lacunes-text').innerHTML = `🚨 **Alerte Révision :** Tes derniers résultats montrent des fragilités en **${pireTheme}**. Travaille ce thème en priorité !`;
+    $('lacunes-text').innerHTML = `💡 <b>Focus Révision :</b> Tes statistiques signalent des erreurs fréquentes sur le thème <b>${pireTheme}</b>. Passe par l'onglet Flashcards pour consolider tes connaissances !`;
   } else {
     $('lacunes-box').classList.add('hidden');
   }
@@ -164,65 +164,80 @@ async function initialiserApp() {
   configurerFlashcardsMenu();
 }
 
-// ── ACCORDÉON TACTILE ANIMÉ PRO MAX ──
 function construireMenuMatieres() {
   const container = $('matieres-container');
   if (!container) return;
   container.innerHTML = "";
   
-  const dataToUse = (AppState.data && AppState.data.matieres) ? AppState.data : DATA_SECOURS;
-
+  const dataToUse = AppState.data || DATA_SECOURS;
+  const groupes = {};
+  
   dataToUse.matieres.forEach(m => {
-    if (!m.chapitres) return;
-    
-    const card = document.createElement('div');
-    card.className = 'card matiere-card-wrapper';
-    
-    const header = document.createElement('div');
-    header.className = 'matiere-trigger-header';
-    header.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:1.4rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">${m.emoji || '📚'}</span>
-        <h3 style="margin:0; font-size:1rem; font-weight:700; color:var(--text-primary); letter-spacing:-0.01em;">${m.label || m.id}</h3>
-      </div>
-      <span class="arrow-indicator">▼</span>
-    `;
-    
-    const bodyContent = document.createElement('div');
-    bodyContent.className = 'matiere-chapters-body';
-    
-    m.chapitres.forEach(c => {
-      const row = document.createElement('div');
-      row.className = 'chapitre-item';
-      row.style.cssText = "padding:14px 12px; margin-top:10px; background:var(--bg-card); border-radius:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);";
-      row.onclick = (e) => ouvrirPreQuiz(m.id, c.id, e);
-      row.innerHTML = `
-        <span style="font-weight:600; font-size:.85rem; padding-right:12px; text-align:left; color:var(--text-primary); line-height:1.3;">${c.titre}</span>
-        <span style="font-size:.68rem; font-weight:700; color:var(--text-secondary); background:var(--bg-app); padding:4px 8px; border-radius:8px; white-space:nowrap; border:1px solid var(--border-color); text-transform:uppercase; letter-spacing:0.02em;">${c.theme || 'DNB'}</span>
-      `;
-      bodyContent.appendChild(row);
-    });
-
-    header.onclick = () => {
-      const estOuvert = bodyContent.classList.contains('is-open');
-      
-      // Ferme tous les autres tiroirs ouverts avec effondrement CSS
-      document.querySelectorAll('.matiere-chapters-body').forEach(b => b.classList.remove('is-open'));
-      document.querySelectorAll('.arrow-indicator').forEach(a => a.classList.remove('rotated'));
-      document.querySelectorAll('.matiere-card-wrapper').forEach(w => w.classList.remove('is-expanded'));
-      
-      // Alterne l'état de la matière ciblée
-      if (!estOuvert) {
-        bodyContent.classList.add('is-open');
-        card.classList.add('is-expanded');
-        header.querySelector('.arrow-indicator').classList.add('rotated');
-      }
-    };
-
-    card.appendChild(header);
-    card.appendChild(bodyContent);
-    container.appendChild(card);
+    const cat = m.categorie || "Enseignement Général";
+    if (!groupes[cat]) groupes[cat] = [];
+    groupes[cat].push(m);
   });
+
+  for (const [nomCategorie, listeMatieres] of Object.entries(groupes)) {
+    const titreCategorie = document.createElement('div');
+    titreCategorie.className = 'category-group-title';
+    titreCategorie.textContent = nomCategorie;
+    container.appendChild(titreCategorie);
+
+    listeMatieres.forEach(m => {
+      if (!m.chapitres) return;
+      
+      const card = document.createElement('div');
+      card.className = 'card matiere-card-wrapper';
+      
+      const header = document.createElement('div');
+      header.className = 'matiere-trigger-header';
+      
+      const defaultIcon = `<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+      const svgIcon = SVGMappings[m.id] || defaultIcon;
+
+      header.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="header-icon-box">${svgIcon}</div>
+          <h3 style="margin:0; font-size:1rem; font-weight:700; color:var(--text-primary); letter-spacing:-0.01em;">${m.label || m.id}</h3>
+        </div>
+        <svg class="arrow-indicator" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      `;
+      
+      const bodyContent = document.createElement('div');
+      bodyContent.className = 'matiere-chapters-body';
+      
+      m.chapitres.forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'chapitre-item';
+        row.style.cssText = "padding:16px 14px; margin-top:12px; background:var(--bg-card); border-radius:12px; display:flex; justify-content:space-between; align-items:center; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);";
+        row.onclick = (e) => ouvrirPreQuiz(m.id, c.id, e);
+        row.innerHTML = `
+          <span style="font-weight:600; font-size:.88rem; padding-right:12px; text-align:left; color:var(--text-primary); line-height:1.4;">${c.titre}</span>
+          <span style="font-size:.68rem; font-weight:700; color:var(--color-primary); background:#EEF2FF; padding:5px 10px; border-radius:8px; white-space:nowrap; text-transform:uppercase; letter-spacing:0.03em;">${c.theme || 'DNB'}</span>
+        `;
+        bodyContent.appendChild(row);
+      });
+
+      header.onclick = () => {
+        const estOuvert = bodyContent.classList.contains('is-open');
+        
+        document.querySelectorAll('.matiere-chapters-body').forEach(b => b.classList.remove('is-open'));
+        document.querySelectorAll('.arrow-indicator').forEach(a => a.classList.remove('rotated'));
+        document.querySelectorAll('.matiere-card-wrapper').forEach(w => w.classList.remove('is-expanded'));
+        
+        if (!estOuvert) {
+          bodyContent.classList.add('is-open');
+          card.classList.add('is-expanded');
+          header.querySelector('.arrow-indicator').classList.add('rotated');
+        }
+      };
+
+      card.appendChild(header);
+      card.appendChild(bodyContent);
+      container.appendChild(card);
+    });
+  }
 }
 
 let currentMatiereSelected = null;
@@ -231,7 +246,7 @@ let currentChapitreSelected = null;
 function ouvrirPreQuiz(matiereId, chapitreId, event) {
   if (event) event.stopPropagation();
   
-  const dataToUse = (AppState.data && AppState.data.matieres) ? AppState.data : DATA_SECOURS;
+  const dataToUse = AppState.data || DATA_SECOURS;
   currentMatiereSelected = dataToUse.matieres.find(m => m.id === matiereId);
   currentChapitreSelected = currentMatiereSelected.chapitres.find(c => c.id === chapitreId);
   
@@ -240,8 +255,8 @@ function ouvrirPreQuiz(matiereId, chapitreId, event) {
   
   $('pre-quiz-title').textContent = currentChapitreSelected.titre;
   $('pre-quiz-theme').textContent = currentChapitreSelected.theme || "Général";
-  $('pre-quiz-cours-text').textContent = currentChapitreSelected.cours || "Pas de fiche de cours associée.";
-  $('pre-quiz-piege-text').textContent = currentChapitreSelected.piege || "Pas de piège listé.";
+  $('pre-quiz-cours-text').textContent = currentChapitreSelected.cours || "Résumé de cours non spécifié.";
+  $('pre-quiz-piege-text').textContent = currentChapitreSelected.piege || "Pas de vigilance particulière recensée.";
 
   $('btn-lvl-1').onclick = () => lancerQuiz(1);
   $('btn-lvl-2').onclick = () => lancerQuiz(2);
@@ -273,14 +288,15 @@ function lancerQuiz(niveau) {
   AppState.quiz.niveauFiltre = niveau;
   
   if (currentMatiereSelected.id === 'maths') {
-    AppState.quiz.questions = [genererQuestionMutationMaths(), genererQuestionMutationMaths(), genererQuestionMutationMaths(), genererQuestionMutationMaths(), genererQuestionMutationMaths()];
+    // Mode infini adaptatif pour les mathématiques
+    AppState.quiz.questions = Array.from({length: 5}, () => genererQuestionMutationMaths());
   } else {
     let pool = currentChapitreSelected.questions ? currentChapitreSelected.questions.filter(q => q.niveau === niveau) : [];
     AppState.quiz.questions = obtenirQuestionsFiltrees(pool, 3);
   }
   
   if(AppState.quiz.questions.length === 0) {
-    alert("Aucune question de ce niveau disponible pour ce chapitre.");
+    alert("Aucune question de ce niveau n'est disponible pour ce chapitre.");
     return;
   }
 
@@ -294,11 +310,7 @@ $('btn-mode-automatismes').onclick = () => {
   AppState.quiz.idx = 0;
   AppState.quiz.score = 0;
   AppState.quiz.isAutomatisme = true;
-  AppState.quiz.questions = [];
-  
-  for (let i = 0; i < 10; i++) {
-    AppState.quiz.questions.push(genererQuestionMutationMaths());
-  }
+  AppState.quiz.questions = Array.from({length: 10}, () => genererQuestionMutationMaths());
   
   $('home-screen').classList.add('hidden');
   $('quiz-screen').classList.remove('hidden');
@@ -342,18 +354,21 @@ function soumettreReponse(indexChoisi, boutonClique) {
   if (estCorrect) {
     AppState.quiz.score++;
     boutonClique.style.background = "#DCFCE7";
-    boutonClique.style.borderColor = "#22C55E";
+    boutonClique.style.borderColor = "var(--color-success)";
+    boutonClique.style.color = "#15803D";
     $('quiz-explanation-box').className = "explanation-box visible good";
-    $('explanation-status').textContent = "✅ Correct !";
+    $('explanation-status').textContent = "✅ EXCELLENT";
   } else {
     boutonClique.style.background = "#FEE2E2";
-    boutonClique.style.borderColor = "#EF4444";
+    boutonClique.style.borderColor = "var(--color-danger)";
+    boutonClique.style.color = "#B91C1C";
     if (boutons[currentQ.bonne_reponse]) {
       boutons[currentQ.bonne_reponse].style.background = "#DCFCE7";
-      boutons[currentQ.bonne_reponse].style.borderColor = "#22C55E";
+      boutons[currentQ.bonne_reponse].style.borderColor = "var(--color-success)";
+      boutons[currentQ.bonne_reponse].style.color = "#15803D";
     }
     $('quiz-explanation-box').className = "explanation-box visible bad";
-    $('explanation-status').textContent = "❌ Erreur";
+    $('explanation-status').textContent = "❌ COMPLÉMENT DE COURS";
   }
   
   $('explanation-text').textContent = currentQ.explication || "";
@@ -368,12 +383,14 @@ $('quiz-next').onclick = () => {
   if (AppState.quiz.idx < AppState.quiz.questions.length) {
     afficherQuestion();
   } else {
-    alert(`🏁 Session terminée ! Score : ${AppState.quiz.score} / ${AppState.quiz.questions.length}`);
+    alert(`🏁 Fin de session ! Score : ${AppState.quiz.score} / ${AppState.quiz.questions.length}`);
     goHome();
   }
 };
 
-$('quiz-close').onclick = () => { if (confirm("Abandonner la session en cours ?")) goHome(); };
+$('quiz-close').onclick = () => { 
+  if (confirm("Voulez-vous quitter l'entraînement en cours ?")) goHome(); 
+};
 
 function ouvrirExerciceOuvert() {
   $('pre-quiz-screen').classList.add('hidden');
@@ -392,7 +409,7 @@ function ouvrirExerciceOuvert() {
 
   $('btn-validate-open-ex').onclick = () => {
     if ($('open-ex-textarea').value.trim().length < 5) {
-      alert("Saisis ta réponse avant d'ouvrir la grille d'auto-évaluation.");
+      alert("Saisissez votre réflexion au brouillon avant d'afficher les critères de validation.");
       return;
     }
     $('btn-validate-open-ex').classList.add('hidden');
@@ -403,8 +420,8 @@ function ouvrirExerciceOuvert() {
     if(currentChapitreSelected.exercice_ouvert.criteres) {
       currentChapitreSelected.exercice_ouvert.criteres.forEach((critere, index) => {
         const label = document.createElement('label');
-        label.style.cssText = "display:flex; align-items:start; gap:8px; font-size:.8rem; background:var(--bg-app); padding:8px; border-radius:8px; cursor:pointer;";
-        label.innerHTML = `<input type="checkbox" class="critere-cb" value="${index}"> <span>${critere}</span>`;
+        label.style.cssText = "display:flex; align-items:start; gap:10px; font-size:.85rem; background:white; padding:12px; border-radius:10px; cursor:pointer; border:1px solid var(--border-color); font-weight:500;";
+        label.innerHTML = `<input type="checkbox" class="critere-cb" value="${index}" style="margin-top:2px;"> <span>${critere}</span>`;
         containerCriteres.appendChild(label);
       });
     }
@@ -438,7 +455,7 @@ function configurerFlashcardsMenu() {
       
       genererFlashcardsPool();
       if (flashcardsPool.length === 0) {
-        alert("Aucun cours ou piège trouvé pour générer les flashcards.");
+        alert("Ajoutez des fiches de cours ou pièges dans votre catalogue pour générer les flashcards.");
         return;
       }
       currentFlashcardIdx = 0;
@@ -464,7 +481,7 @@ function configurerFlashcardsMenu() {
       e.stopPropagation();
       currentFlashcardIdx++;
       if (currentFlashcardIdx >= flashcardsPool.length) {
-        alert("🎉 Session terminée ! Tu as révisé toutes les fiches de mémorisation active.");
+        alert("🎉 Bravo ! Toutes les flashcards actives ont été consultées.");
         if ($('nav-home')) $('nav-home').click();
         else goHome();
       } else {
@@ -476,7 +493,7 @@ function configurerFlashcardsMenu() {
 
 function genererFlashcardsPool() {
   flashcardsPool = [];
-  const dataToUse = (AppState.data && AppState.data.matieres) ? AppState.data : DATA_SECOURS;
+  const dataToUse = AppState.data || DATA_SECOURS;
   
   dataToUse.matieres.forEach(m => {
     if (!m.chapitres) return;
@@ -485,7 +502,7 @@ function genererFlashcardsPool() {
         flashcardsPool.push({
           matiere: m.label || m.id,
           chapitre: c.titre,
-          recto: `Que faut-il retenir impérativement sur le chapitre :\n\n"${c.titre}" ?`,
+          recto: `Que faut-il impérativement retenir sur le chapitre :\n\n"${c.titre}" ?`,
           verso: c.cours
         });
       }
@@ -493,8 +510,8 @@ function genererFlashcardsPool() {
         flashcardsPool.push({
           matiere: m.label || m.id,
           chapitre: c.titre,
-          recto: `Quel est le piège classique des correcteurs au Brevet sur :\n\n"${c.titre}" ?`,
-          verso: `⚠️ ATTENTION PIÈGE :\n\n${c.piege}`
+          recto: `Quel piège classique les correcteurs du Brevet cachent-ils sur :\n\n"${c.titre}" ?`,
+          verso: c.piege
         });
       }
     });
