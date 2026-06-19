@@ -1,532 +1,250 @@
-// ============================================================
-// RévisBrevet 2026 — app.js (Version Mobile Accordéon Finale)
-// ============================================================
-
-const AppState = {
-  data: null,
-  progress: {},
-  adaptive: {}, 
-  historiqueQuestions: [],
-  quiz: {
-    chapitreId: null,
-    questions: [],
-    idx: 0,
-    score: 0,
-    isAutomatisme: false,
-    niveauFiltre: 1
-  }
-};
-
-const $ = id => document.getElementById(id);
-
-// Banque de secours si troisieme.json est absent ou mal formaté
-const DATA_SECOURS = {
-  matieres: [
-    {
-      id: "maths",
-      label: "Mathématiques",
-      emoji: "📐",
-      chapitres: [
-        {
-          id: "fractions",
-          titre: "Calculs avec des fractions",
-          theme: "Nombres",
-          cours: "Pour additionner ou soustraire deux fractions, il faut les mettre au même dénominateur. Pour multiplier, on multiplie les numérateurs entre eux et les dénominateurs entre eux.",
-          piege: "Oublier la priorité opératoire de la multiplication sur l'addition !"
-        }
-      ]
-    },
-    {
-      id: "francais",
-      label: "Français",
-      emoji: "✍️",
-      chapitres: [
-        {
-          id: "figures_style",
-          titre: "Les Figures de Style",
-          theme: "Grammaire",
-          cours: "Métaphore : comparaison sans mot-outil.\nComparaison : avec mot-outil (comme, tel, ...).",
-          piege: "Confondre métaphore et comparaison à cause d'une lecture trop rapide."
-        }
-      ]
-    }
-  ]
-};
-
-// ── TRAITEMENT ET CHARGEMENT DU POOL DE QUESTIONS TEXTUELLES (Anti-Répétition) ──
-function obtenirQuestionsFiltrees(pool, quantite) {
-  let questionsDisponibles = pool.filter(q => !AppState.historiqueQuestions.includes(q.enonce));
-  if (questionsDisponibles.length < quantite) {
-    AppState.historiqueQuestions = AppState.historiqueQuestions.filter(enonce => !pool.some(q => q.enonce === enonce));
-    questionsDisponibles = pool;
-  }
-  const selectionnees = shuffleArr(questionsDisponibles).slice(0, quantite);
-  selectionnees.forEach(q => AppState.historiqueQuestions.push(q.enonce));
-  if (AppState.historiqueQuestions.length > 40) AppState.historiqueQuestions.shift();
-  localStorage.setItem('dnb_history_anti_repeat', JSON.stringify(AppState.historiqueQuestions));
-  return selectionnees;
+/* =============================================
+   RévisBrevet 2026 — style.css (UI/UX PRO MAX EDITION)
+   ============================================= */
+:root {
+  --color-primary:   #4F46E5;
+  --color-accent:    #06B6D4;
+  --color-danger:    #EF4444;
+  --color-warning:   #F59E0B;
+  --bg-app:          #F8FAFC;
+  --bg-card:         #FFFFFF;
+  --text-primary:    #0F172A;
+  --text-secondary:  #64748B;
+  --border-color:    #E2E8F0;
+  --font-main:       'Inter', system-ui, sans-serif;
+  --radius:          16px;
+  
+  /* UX Pro Max Elevate & Shadows tokens */
+  --shadow-sm:       0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-md:       0 8px 16px -4px rgba(15, 23, 42, 0.08);
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-// ── MUTATION NUMÉRIQUE DES MATHÉMATIQUES ──
-function genererQuestionMutationMaths() {
-  const pList = [5, 10, 20, 25, 50, 75];
-  const vList = [40, 60, 80, 100, 200, 300];
-  const p = pList[Math.floor(Math.random() * pList.length)];
-  const v = vList[Math.floor(Math.random() * vList.length)];
-  const res = (p * v) / 100;
-  
-  const enonce = `Calculer ${p}% de ${v} €.`;
-  const bonneReponse = `${res} €`;
-  const explication = `Prendre ${p}%, c'est faire (${p} × ${v}) / 100 = ${res} €.`;
-  
-  const options = [bonneReponse, `${res + 5} €`, `${res - 2 > 0 ? res - 2 : res + 10} €`, `${res * 2} €`];
-  const shuffled = shuffleArr([...new Set(options)]);
-  return { enonce, options: shuffled, bonne_reponse: shuffled.indexOf(bonneReponse), explication };
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  background-color: #0F172A;
+  color: var(--text-primary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
 }
 
-// ── SPRINT CHRONOMÉTRÉ DES AUTOMATISMES ──
-let timerInterval = null;
-let tempsRestant = 45;
-
-function lancerTimer() {
-  clearInterval(timerInterval);
-  tempsRestant = 45;
-  $('quiz-timer').style.display = 'block';
-  $('quiz-timer').textContent = `⏱️ ${tempsRestant}s`;
-  $('quiz-timer').style.color = 'var(--text-primary)';
-
-  timerInterval = setInterval(() => {
-    tempsRestant--;
-    $('quiz-timer').textContent = `⏱️ ${tempsRestant}s`;
-    if (tempsRestant <= 10) $('quiz-timer').style.color = 'var(--color-danger)';
-    if (tempsRestant <= 0) {
-      clearInterval(timerInterval);
-      forcerEchecTimeout();
-    }
-  }, 1000);
+.app-container {
+  width: 100%;
+  max-width: 430px;
+  height: 100vh;
+  background-color: var(--bg-app);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 50px rgba(0,0,0,0.4);
 }
 
-function forcerEchecTimeout() {
-  document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
-  $('quiz-explanation-box').className = "explanation-box visible bad";
-  $('explanation-status').textContent = "⏰ TEMPS ÉCOULÉ !";
-  $('explanation-text').textContent = "Les 45 secondes imparties pour cet automatisme sont écoulées.";
-  $('quiz-next').disabled = false;
-  enregistrerLacune("Automatismes");
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px 90px 16px;
+  box-sizing: border-box;
 }
 
-// ── DIAGNOSTIC LOCALISÉ DES POINTS FAIBLES ──
-function enregistrerLacune(theme, estSucces = false) {
-  if (!AppState.adaptive[theme]) AppState.adaptive[theme] = { echecs: 0, total: 0 };
-  AppState.adaptive[theme].total++;
-  if (!estSucces) AppState.adaptive[theme].echecs++;
-  localStorage.setItem('dnb_adaptive_analytics', JSON.stringify(AppState.adaptive));
-  analyserLacunes();
+.view-section { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* BOTTOM TAB NAVIGATION BAR */
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 72px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 1;
+  height: 100%;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+.nav-item.active { color: var(--color-primary); transform: translateY(-1px); }
+.nav-item span:first-child { font-size: 1.4rem; transition: var(--transition-smooth); }
+.nav-item.active span:first-child { transform: scale(1.1); }
+
+/* COMPOSANTS CARTES */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  box-shadow: var(--shadow-sm);
+}
+.matieres-grid { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── ACCORDÉON ANIMÉ PRO MAX (Frictionless Mechanical Transitions) ── */
+.matiere-card-wrapper {
+  padding: 0 !important;
+  overflow: hidden;
+  transition: var(--transition-smooth);
+  border: 1px solid var(--border-color);
+}
+.matiere-card-wrapper.is-expanded {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(79, 70, 229, 0.3);
 }
 
-function analyserLacunes() {
-  let pireTheme = null;
-  let maxEchecs = 0;
-  for (const theme in AppState.adaptive) {
-    const stat = AppState.adaptive[theme];
-    if (stat.echecs > maxEchecs && (stat.echecs / stat.total) >= 0.4) {
-      maxEchecs = stat.echecs;
-      pireTheme = theme;
-    }
-  }
-  if (pireTheme) {
-    $('lacunes-box').classList.remove('hidden');
-    $('lacunes-text').innerHTML = `🚨 **Alerte Révision :** Tes derniers résultats montrent des fragilités en **${pireTheme}**. Travaille ce thème en priorité !`;
-  } else {
-    $('lacunes-box').classList.add('hidden');
-  }
+.matiere-trigger-header {
+  padding: 18px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: var(--bg-card);
+  user-select: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background 0.2s ease;
+}
+.matiere-trigger-header:active {
+  background: #F1F5F9;
 }
 
-// ── INITIALISATION ET CHARGEMENT DU JSON ──
-async function initialiserApp() {
-  const savedAdaptive = localStorage.getItem('dnb_adaptive_analytics');
-  if (savedAdaptive) AppState.adaptive = JSON.parse(savedAdaptive);
-  
-  const savedHistory = localStorage.getItem('dnb_history_anti_repeat');
-  if (savedHistory) AppState.historiqueQuestions = JSON.parse(savedHistory);
-  
-  try {
-    const res = await fetch('troisieme.json');
-    if (res.ok) {
-      AppState.data = await res.json();
-    } else {
-      AppState.data = DATA_SECOURS;
-    }
-  } catch (e) {
-    AppState.data = DATA_SECOURS;
-  }
-  
-  if (!AppState.data || !AppState.data.matieres) {
-    AppState.data = DATA_SECOURS;
-  }
-  
-  construireMenuMatieres();
-  analyserLacunes();
-  configurerFlashcardsMenu();
+.arrow-indicator {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #F1F5F9;
+  padding: 6px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+.arrow-indicator.rotated {
+  transform: rotate(180deg);
+  background: #EEF2FF;
+  color: var(--color-primary);
 }
 
-// MOTEUR DE SELECTION ET DEPLIEMENT ACCORDEON SMARTPHONE
-function construireMenuMatieres() {
-  const container = $('matieres-container');
-  if (!container) return;
-  container.innerHTML = "";
-  
-  const dataToUse = (AppState.data && AppState.data.matieres) ? AppState.data : DATA_SECOURS;
-
-  dataToUse.matieres.forEach(m => {
-    if (!m.chapitres) return;
-    
-    const card = document.createElement('div');
-    card.className = 'card matiere-card-wrapper';
-    
-    const header = document.createElement('div');
-    header.className = 'matiere-trigger-header';
-    header.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:1.3rem;">${m.emoji || '📚'}</span>
-        <h3 style="margin:0; font-size:1rem; font-weight:700; color:var(--text-primary);">${m.label || m.id}</h3>
-      </div>
-      <span class="arrow-indicator">▼</span>
-    `;
-    
-    const bodyContent = document.createElement('div');
-    bodyContent.className = 'matiere-chapters-body hidden-drawer';
-    
-    m.chapitres.forEach(c => {
-      const row = document.createElement('div');
-      row.className = 'chapitre-item';
-      row.style.cssText = "padding:12px; margin-top:8px; background:var(--bg-app); border-radius:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;";
-      row.onclick = (e) => ouvrirPreQuiz(m.id, c.id, e);
-      row.innerHTML = `
-        <span style="font-weight:600; font-size:.85rem; padding-right:8px; text-align:left; color:var(--text-primary);">${c.titre}</span>
-        <span style="font-size:.7rem; color:var(--text-secondary); background:white; padding:2px 6px; border-radius:8px; white-space:nowrap; border:1px solid var(--border-color);">${c.theme || 'DNB'}</span>
-      `;
-      bodyContent.appendChild(row);
-    });
-
-    header.onclick = () => {
-      const estOuvert = !bodyContent.classList.contains('hidden-drawer');
-      
-      // Ferme tous les autres tiroirs
-      document.querySelectorAll('.matiere-chapters-body').forEach(b => b.classList.add('hidden-drawer'));
-      document.querySelectorAll('.arrow-indicator').forEach(a => a.classList.remove('rotated'));
-      
-      // Alterne l'état actuel
-      if (!estOuvert) {
-        bodyContent.classList.remove('hidden-drawer');
-        header.querySelector('.arrow-indicator').classList.add('rotated');
-      }
-    };
-
-    card.appendChild(header);
-    card.appendChild(bodyContent);
-    container.appendChild(card);
-  });
+/* Conteneur tiroir avec masquage physique par max-height */
+.matiere-chapters-body {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  padding: 0 16px;
+  background: #FAFAFC; /* Différenciation de profondeur (Functional Layering) */
+  display: flex;
+  flex-direction: column;
+}
+.matiere-chapters-body.is-open {
+  max-height: 500px; /* Assez grand pour contenir les chapitres */
+  opacity: 1;
+  padding-bottom: 16px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
 }
 
-// ── NAVIGATION INTERNE ──
-let currentMatiereSelected = null;
-let currentChapitreSelected = null;
-
-function ouvrirPreQuiz(matiereId, chapitreId, event) {
-  if (event) event.stopPropagation();
-  
-  const dataToUse = (AppState.data && AppState.data.matieres) ? AppState.data : DATA_SECOURS;
-  currentMatiereSelected = dataToUse.matieres.find(m => m.id === matiereId);
-  currentChapitreSelected = currentMatiereSelected.chapitres.find(c => c.id === chapitreId);
-  
-  $('home-screen').classList.add('hidden');
-  $('pre-quiz-screen').classList.remove('hidden');
-  
-  $('pre-quiz-title').textContent = currentChapitreSelected.titre;
-  $('pre-quiz-theme').textContent = currentChapitreSelected.theme || "Général";
-  $('pre-quiz-cours-text').textContent = currentChapitreSelected.cours || "Pas de fiche de cours associée.";
-  $('pre-quiz-piege-text').textContent = currentChapitreSelected.piege || "Pas de piège listé.";
-
-  $('btn-lvl-1').onclick = () => lancerQuiz(1);
-  $('btn-lvl-2').onclick = () => lancerQuiz(2);
-  $('btn-lvl-3').onclick = () => lancerQuiz(3);
-  
-  if (currentChapitreSelected.exercice_ouvert) {
-    $('btn-open-exercice').classList.remove('hidden');
-    $('btn-open-exercice').onclick = () => ouvrirExerciceOuvert();
-  } else {
-    $('btn-open-exercice').classList.add('hidden');
-  }
+.chapitre-item {
+  transition: var(--transition-smooth);
+  border: 1px solid transparent;
+}
+.chapitre-item:active {
+  background-color: #EEF2FF !important;
+  border-color: rgba(79, 70, 229, 0.2);
+  transform: scale(0.98);
 }
 
-function goHome() {
-  $('pre-quiz-screen').classList.add('hidden');
-  if($('open-exercise-screen')) $('open-exercise-screen').classList.add('hidden');
-  $('quiz-screen').classList.add('hidden');
-  $('flashcards-screen').classList.add('hidden');
-  $('home-screen').classList.remove('hidden');
-  clearInterval(timerInterval);
-  $('quiz-timer').style.display = 'none';
+/* NATIVE TOUCH BUTTONS DESIGN */
+.btn-primary, .btn-secondary, .option-btn {
+  min-height: 52px;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  transition: var(--transition-smooth);
+}
+.btn-primary { background: var(--color-primary); color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+.btn-secondary { background: var(--border-color); color: var(--text-primary); cursor: pointer; }
+.btn-secondary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+.option-btn {
+  background: white;
+  border: 1.5px solid var(--border-color);
+  justify-content: flex-start;
+  padding: 0 16px;
+  margin-bottom: 10px;
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+}
+.option-btn:active:not(:disabled) { background: var(--bg-app); transform: scale(0.99); }
+
+.badge { font-size: 0.72rem; font-weight: 700; background: #E0E7FF; color: var(--color-primary); padding: 4px 10px; border-radius: 12px; display: inline-block; }
+
+.mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-function lancerQuiz(niveau) {
-  AppState.quiz.chapitreId = currentChapitreSelected.id;
-  AppState.quiz.idx = 0;
-  AppState.quiz.score = 0;
-  AppState.quiz.isAutomatisme = false;
-  AppState.quiz.niveauFiltre = niveau;
-  
-  if (currentMatiereSelected.id === 'maths') {
-    AppState.quiz.questions = [genererQuestionMutationMaths(), genererQuestionMutationMaths(), genererQuestionMutationMaths(), genererQuestionMutationMaths(), genererQuestionMutationMaths()];
-  } else {
-    let pool = currentChapitreSelected.questions ? currentChapitreSelected.questions.filter(q => q.niveau === niveau) : [];
-    AppState.quiz.questions = obtenirQuestionsFiltrees(pool, 3);
-  }
-  
-  if(AppState.quiz.questions.length === 0) {
-    alert("Aucune question de ce niveau disponible pour ce chapitre.");
-    return;
-  }
+.explanation-box { padding: 14px; border-radius: 12px; margin-top: 16px; box-shadow: var(--shadow-sm); }
+.explanation-box.good { background-color: #DCFCE7; color: #14532D; border: 1px solid #BBF7D0; }
+.explanation-box.bad { background-color: #FEE2E2; color: #7F1D1D; border: 1px solid #FCA5A5; }
 
-  $('pre-quiz-screen').classList.add('hidden');
-  $('quiz-screen').classList.remove('hidden');
-  afficherQuestion();
+.hidden { display: none !important; }
+
+/* ── INTERACTIVE FLASHCARDS 3D ENGINE ── */
+.flashcard-perspective { perspective: 1200px; width: 100%; height: 340px; }
+.flashcard-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+.flashcard-card.flipped { transform: rotateY(180deg); }
+.flashcard-face {
+  position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+  border-radius: 20px; padding: 24px; box-sizing: border-box;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+.flashcard-front { background: white; color: var(--text-primary); }
+.flashcard-back {
+  background: linear-gradient(135deg, #0F172A, #1E1B4B) !important;
+  color: #FFFFFF !important;
+  transform: rotateY(180deg);
+  white-space: pre-line;
+  overflow-y: auto;
+  border: none;
 }
 
-$('btn-mode-automatismes').onclick = () => {
-  AppState.quiz.chapitreId = "automatismes_global";
-  AppState.quiz.idx = 0;
-  AppState.quiz.score = 0;
-  AppState.quiz.isAutomatisme = true;
-  AppState.quiz.questions = [];
-  
-  for (let i = 0; i < 10; i++) {
-    AppState.quiz.questions.push(genererQuestionMutationMaths());
-  }
-  
-  $('home-screen').classList.add('hidden');
-  $('quiz-screen').classList.remove('hidden');
-  afficherQuestion();
-};
-
-function afficherQuestion() {
-  clearInterval(timerInterval);
-  $('quiz-explanation-box').className = "explanation-box hidden";
-  $('quiz-next').disabled = true;
-  
-  const totalQs = AppState.quiz.questions.length;
-  const currentQ = AppState.quiz.questions[AppState.quiz.idx];
-  
-  $('quiz-progress-text').textContent = `Question ${AppState.quiz.idx + 1} / ${totalQs}`;
-  $('quiz-progress-bar').style.width = `${((AppState.quiz.idx + 1) / totalQs) * 100}%`;
-  $('quiz-question-text').textContent = currentQ.enonce;
-  
-  const optionsContainer = $('quiz-options-container');
-  optionsContainer.innerHTML = "";
-  
-  currentQ.options.forEach((opt, index) => {
-    const btn = document.createElement('button');
-    btn.className = "option-btn";
-    btn.textContent = opt;
-    btn.onclick = () => soumettreReponse(index, btn);
-    optionsContainer.appendChild(btn);
-  });
-
-  if (AppState.quiz.isAutomatisme) lancerTimer();
-  else $('quiz-timer').style.display = 'none';
-}
-
-function soumettreReponse(indexChoisi, boutonClique) {
-  clearInterval(timerInterval);
-  const currentQ = AppState.quiz.questions[AppState.quiz.idx];
-  const boutons = document.querySelectorAll('.option-btn');
-  boutons.forEach(b => b.disabled = true);
-  
-  const estCorrect = (indexChoisi === currentQ.bonne_reponse);
-  if (estCorrect) {
-    AppState.quiz.score++;
-    boutonClique.style.background = "#DCFCE7";
-    boutonClique.style.borderColor = "#22C55E";
-    $('quiz-explanation-box').className = "explanation-box visible good";
-    $('explanation-status').textContent = "✅ Correct !";
-  } else {
-    boutonClique.style.background = "#FEE2E2";
-    boutonClique.style.borderColor = "#EF4444";
-    if (boutons[currentQ.bonne_reponse]) {
-      boutons[currentQ.bonne_reponse].style.background = "#DCFCE7";
-      boutons[currentQ.bonne_reponse].style.borderColor = "#22C55E";
-    }
-    $('quiz-explanation-box').className = "explanation-box visible bad";
-    $('explanation-status').textContent = "❌ Erreur";
-  }
-  
-  $('explanation-text').textContent = currentQ.explication || "";
-  $('quiz-next').disabled = false;
-  
-  const themeConcerne = currentChapitreSelected ? currentChapitreSelected.theme : "Automatismes";
-  enregistrerLacune(themeConcerne, estCorrect);
-}
-
-$('quiz-next').onclick = () => {
-  AppState.quiz.idx++;
-  if (AppState.quiz.idx < AppState.quiz.questions.length) {
-    afficherQuestion();
-  } else {
-    alert(`🏁 Session terminée ! Score : ${AppState.quiz.score} / ${AppState.quiz.questions.length}`);
-    goHome();
-  }
-};
-
-$('quiz-close').onclick = () => { if (confirm("Abandonner la session en cours ?")) goHome(); };
-
-// ── SUJETS DE RÉDACTION OUVERTS ──
-function ouvrirExerciceOuvert() {
-  $('pre-quiz-screen').classList.add('hidden');
-  $('open-exercise-screen').classList.remove('hidden');
-  
-  $('open-ex-title').textContent = currentChapitreSelected.titre;
-  $('open-ex-enonce').textContent = currentChapitreSelected.exercice_ouvert.enonce;
-  $('open-ex-textarea').value = "";
-  $('open-ex-correction-box').classList.add('hidden');
-  $('btn-validate-open-ex').classList.remove('hidden');
-
-  $('btn-close-exercise').onclick = () => {
-    $('open-exercise-screen').classList.add('hidden');
-    $('pre-quiz-screen').classList.remove('hidden');
-  };
-
-  $('btn-validate-open-ex').onclick = () => {
-    if ($('open-ex-textarea').value.trim().length < 5) {
-      alert("Saisis ta réponse avant d'ouvrir la grille d'auto-évaluation.");
-      return;
-    }
-    $('btn-validate-open-ex').classList.add('hidden');
-    $('open-ex-correction-box').classList.remove('hidden');
-    
-    const containerCriteres = $('open-ex-critere-list');
-    containerCriteres.innerHTML = "";
-    if(currentChapitreSelected.exercice_ouvert.criteres) {
-      currentChapitreSelected.exercice_ouvert.criteres.forEach((critere, index) => {
-        const label = document.createElement('label');
-        label.style.cssText = "display:flex; align-items:start; gap:8px; font-size:.8rem; background:var(--bg-app); padding:8px; border-radius:8px; cursor:pointer;";
-        label.innerHTML = `<input type="checkbox" class="critere-cb" value="${index}"> <span>${critere}</span>`;
-        containerCriteres.appendChild(label);
-      });
-    }
-  };
-
-  $('btn-finish-open-ex').onclick = () => {
-    const total = document.querySelectorAll('.critere-cb').length;
-    const coches = document.querySelectorAll('.critere-cb:checked').length;
-    alert(`Auto-évaluation enregistrée.`);
-    enregistrerLacune(currentChapitreSelected.theme, total > 0 ? (coches / total) >= 0.6 : true);
-    goHome();
-  };
-}
-
-// ── MODULE INTERACTIF DES FLASHCARDS ──
-let flashcardsPool = [];
-let currentFlashcardIdx = 0;
-
-function configurerFlashcardsMenu() {
-  if ($('nav-home')) {
-    $('nav-home').onclick = () => {
-      $('nav-home').classList.add('active');
-      $('nav-flashcards').classList.remove('active');
-      goHome();
-    };
-  }
-
-  if ($('nav-flashcards')) {
-    $('nav-flashcards').onclick = () => {
-      $('nav-flashcards').classList.add('active');
-      if ($('nav-home')) $('nav-home').classList.remove('active');
-      
-      genererFlashcardsPool();
-      if (flashcardsPool.length === 0) {
-        alert("Aucun cours ou piège trouvé pour générer les flashcards.");
-        return;
-      }
-      currentFlashcardIdx = 0;
-      $('home-screen').classList.add('hidden');
-      $('pre-quiz-screen').classList.add('hidden');
-      $('quiz-screen').classList.add('hidden');
-      if ($('open-exercise-screen')) $('open-exercise-screen').classList.add('hidden');
-      $('flashcards-screen').classList.remove('hidden');
-      afficherFlashcard();
-    };
-  }
-
-  const cardBox = $('flashcard-card-box');
-  if (cardBox) {
-    cardBox.onclick = (e) => {
-      e.stopPropagation();
-      cardBox.classList.toggle('flipped');
-    };
-  }
-
-  if ($('flashcard-next')) {
-    $('flashcard-next').onclick = (e) => {
-      e.stopPropagation();
-      currentFlashcardIdx++;
-      if (currentFlashcardIdx >= flashcardsPool.length) {
-        alert("🎉 Session terminée ! Tu as révisé toutes les fiches de mémorisation active.");
-        if ($('nav-home')) $('nav-home').click();
-        else goHome();
-      } else {
-        afficherFlashcard();
-      }
-    };
-  }
-}
-
-function genererFlashcardsPool() {
-  flashcardsPool = [];
-  const dataToUse = (AppState.data && AppState.data.matieres) ? AppState.data : DATA_SECOURS;
-  
-  dataToUse.matieres.forEach(m => {
-    if (!m.chapitres) return;
-    m.chapitres.forEach(c => {
-      if (c.cours && c.cours.trim() !== "") {
-        flashcardsPool.push({
-          matiere: m.label || m.id,
-          chapitre: c.titre,
-          recto: `Que faut-il retenir impérativement sur le chapitre :\n\n"${c.titre}" ?`,
-          verso: c.cours
-        });
-      }
-      if (c.piege && c.piege.trim() !== "") {
-        flashcardsPool.push({
-          matiere: m.label || m.id,
-          chapitre: c.titre,
-          recto: `Quel est le piège classique des correcteurs au Brevet sur :\n\n"${c.titre}" ?`,
-          verso: `⚠️ ATTENTION PIÈGE :\n\n${c.piege}`
-        });
-      }
-    });
-  });
-  
-  flashcardsPool = shuffleArr(flashcardsPool);
-}
-
-function afficherFlashcard() {
-  if (flashcardsPool.length === 0) return;
-  const card = flashcardsPool[currentFlashcardIdx];
-  $('flashcard-card-box').classList.remove('flipped');
-  
-  $('flashcard-meta').textContent = `${card.matiere} • ${card.chapitre} (${currentFlashcardIdx + 1}/${flashcardsPool.length})`;
-  $('flashcard-front-text').textContent = card.recto;
-  $('flashcard-back-text').textContent = card.verso;
-}
-
-function shuffleArr(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-document.addEventListener('DOMContentLoaded', initialiserApp);
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
