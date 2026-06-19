@@ -1,12 +1,12 @@
 // ============================================================
-// RévisBrevet 2026 — app.js (Version Mobile-Only Finale)
+// RévisBrevet 2026 — app.js (Version Mobile Accordéon Finale)
 // ============================================================
 
 const AppState = {
   data: null,
   progress: {},
   adaptive: {}, 
-  historiqueQuestions: [], // Anti-Répétition persistant
+  historiqueQuestions: [],
   quiz: {
     chapitreId: null,
     questions: [],
@@ -19,7 +19,7 @@ const AppState = {
 
 const $ = id => document.getElementById(id);
 
-// Banque de secours au cas où troisieme.json est absent, mal formaté ou lent à charger
+// Banque de secours si troisieme.json est en cours de transfert
 const DATA_SECOURS = {
   matieres: [
     {
@@ -31,8 +31,8 @@ const DATA_SECOURS = {
           id: "fractions",
           titre: "Calculs avec des fractions",
           theme: "Nombres",
-          cours: "Pour additionner ou soustraire deux fractions, il faut impérativement les mettre au même dénominateur.\nPour multiplier, on multiplie les numérateurs entre eux et les dénominateurs entre eux.\nPour diviser par une fraction, on multiplie par son inverse.",
-          piege: "Oublier la priorité des opérations ! La multiplication et la division restent prioritaires sur l'addition et la soustraction, même au milieu de fractions."
+          cours: "Pour additionner ou soustraire deux fractions, il faut les mettre au même dénominateur. Pour multiplier, on multiplie les numérateurs entre eux et les dénominateurs entre eux.",
+          piege: "Oublier la priorité opératoire de la multiplication sur l'addition !"
         }
       ]
     },
@@ -43,84 +43,45 @@ const DATA_SECOURS = {
       chapitres: [
         {
           id: "figures_style",
-          titre: "Les Figures de Style incontournables",
+          titre: "Les Figures de Style",
           theme: "Grammaire",
-          cours: "La Métaphore : compare deux éléments sans outil de comparaison.\nLa Comparaison : utilise un outil (comme, tel que, semblable à).\nLa Personnification : attribue des traits humains à un objet ou un animal.",
-          piege: "Confondre la métaphore et la comparaison. S'il y a le mot 'comme', c'est TOUJOURS une comparaison !"
+          cours: "Métaphore : comparaison sans mot-outil.\nComparaison : avec mot-outil (comme, tel, ...).",
+          piege: "Confondre métaphore et comparaison à cause d'une lecture trop rapide."
         }
       ]
     }
   ]
 };
 
-// ── TRAITEMENT ET CHARGEMENT DU POOL DE QUESTIONS TEXTUELLES (Anti-Répétition) ──
 function obtenirQuestionsFiltrees(pool, quantite) {
   let questionsDisponibles = pool.filter(q => !AppState.historiqueQuestions.includes(q.enonce));
-  
   if (questionsDisponibles.length < quantite) {
     AppState.historiqueQuestions = AppState.historiqueQuestions.filter(enonce => !pool.some(q => q.enonce === enonce));
     questionsDisponibles = pool;
   }
-  
   const selectionnees = shuffleArr(questionsDisponibles).slice(0, quantite);
-  
   selectionnees.forEach(q => AppState.historiqueQuestions.push(q.enonce));
   if (AppState.historiqueQuestions.length > 40) AppState.historiqueQuestions.shift();
   localStorage.setItem('dnb_history_anti_repeat', JSON.stringify(AppState.historiqueQuestions));
-  
   return selectionnees;
 }
 
-// ── MUTATION NUMÉRIQUE DES MATHÉMATIQUES ──
 function genererQuestionMutationMaths() {
-  const pList = [5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 80, 90];
-  const vList = [30, 40, 50, 60, 80, 100, 120, 150, 200, 300, 500];
-  const hList = [0.5, 1, 1.25, 1.5, 1.75, 2, 2.5, 3.5];
+  const pList = [5, 10, 20, 25, 50, 75];
+  const vList = [40, 60, 80, 100, 200, 300];
+  const p = pList[Math.floor(Math.random() * pList.length)];
+  const v = vList[Math.floor(Math.random() * vList.length)];
+  const res = (p * v) / 100;
   
-  let enonce = "", bonneReponse = "", explication = "";
-  const types = ['pourcentage', 'conversion', 'calcul_mental', 'fraction'];
-  const randType = types[Math.floor(Math.random() * types.length)];
+  const enonce = `Calculer ${p}% de ${v} €.`;
+  const bonneReponse = `${res} €`;
+  const explication = `Prendre ${p}%, c'est faire (${p} × ${v}) / 100 = ${res} €.`;
   
-  if (randType === 'pourcentage') {
-    const p = pList[Math.floor(Math.random() * pList.length)];
-    const v = vList[Math.floor(Math.random() * vList.length)];
-    const res = (p * v) / 100;
-    enonce = `Calculer ${p}% de ${v} €.`;
-    bonneReponse = `${res} €`;
-    explication = `Prendre ${p}%, c'est faire (${p} × ${v}) / 100 = ${res} €.`;
-  } else if (randType === 'conversion') {
-    const h = hList[Math.floor(Math.random() * hList.length)];
-    const res = h * 60;
-    enonce = `Convertir ${h} heure(s) en minutes.`;
-    bonneReponse = `${res} minutes`;
-    explication = `1 heure = 60 min. Donc ${h}h × 60 = ${res} minutes.`;
-  } else if (randType === 'fraction') {
-    const num = [1, 3, 5, 7][Math.floor(Math.random() * 4)];
-    enonce = `Quelle est la valeur décimale de la fraction ${num}/2 ?`;
-    bonneReponse = `${num / 2}`;
-    explication = `Diviser par 2 revient à prendre la moitié : ${num} ÷ 2 = ${num / 2}.`;
-  } else {
-    const a = Math.floor(Math.random() * 9) + 4;
-    const b = [9, 11, 19, 21][Math.floor(Math.random() * 4)];
-    const res = a * b;
-    enonce = `Calculer rapidement de tête : ${a} × ${b}`;
-    bonneReponse = `${res}`;
-    explication = `Astuce de calcul mental : ${a} × ${b} = ${res}.`;
-  }
-
-  const valNum = parseFloat(bonneReponse);
-  const options = [
-    bonneReponse,
-    isNaN(valNum) ? "Aucune" : `${valNum + 5} ${enonce.includes('€') ? '€' : enonce.includes('minutes') ? 'minutes' : ''}`.trim(),
-    isNaN(valNum) ? "10" : `${valNum - 2 > 0 ? valNum - 2 : valNum + 12} ${enonce.includes('€') ? '€' : enonce.includes('minutes') ? 'minutes' : ''}`.trim(),
-    isNaN(valNum) ? "42" : `${valNum * 2} ${enonce.includes('€') ? '€' : enonce.includes('minutes') ? 'minutes' : ''}`.trim()
-  ];
-  
+  const options = [bonneReponse, `${res + 5} €`, `${res - 2 > 0 ? res - 2 : res + 10} €`, `${res * 2} €`];
   const shuffled = shuffleArr([...new Set(options)]);
   return { enonce, options: shuffled, bonne_reponse: shuffled.indexOf(bonneReponse), explication };
 }
 
-// ── SPRINT CHRONOMÉTRÉ DES AUTOMATISMES ──
 let timerInterval = null;
 let tempsRestant = 45;
 
@@ -151,7 +112,6 @@ function forcerEchecTimeout() {
   enregistrerLacune("Automatismes");
 }
 
-// ── DIAGNOSTIC LOCALISÉ DES POINTS FAIBLES ──
 function enregistrerLacune(theme, estSucces = false) {
   if (!AppState.adaptive[theme]) AppState.adaptive[theme] = { echecs: 0, total: 0 };
   AppState.adaptive[theme].total++;
@@ -172,13 +132,12 @@ function analyserLacunes() {
   }
   if (pireTheme) {
     $('lacunes-box').classList.remove('hidden');
-    $('lacunes-text').innerHTML = `🚨 **Alerte Révision :** Tu as des erreurs sur le thème **${pireTheme}**. Sers-toi des **Flashcards** pour mieux retenir !`;
+    $('lacunes-text').innerHTML = `🚨 **Alerte Révision :** Tes derniers résultats montrent des fragilités en **${pireTheme}**. Travaille ce thème en priorité !`;
   } else {
     $('lacunes-box').classList.add('hidden');
   }
 }
 
-// ── INITIALISATION ET CHARGEMENT DU JSON ──
 async function initialiserApp() {
   const savedAdaptive = localStorage.getItem('dnb_adaptive_analytics');
   if (savedAdaptive) AppState.adaptive = JSON.parse(savedAdaptive);
@@ -191,15 +150,12 @@ async function initialiserApp() {
     if (res.ok) {
       AppState.data = await res.json();
     } else {
-      console.warn("Fichier troisieme.json introuvable, utilisation de la banque de secours.");
       AppState.data = DATA_SECOURS;
     }
   } catch (e) {
-    console.error("Erreur réseau pour troisieme.json, bascule de secours actives.", e);
     AppState.data = DATA_SECOURS;
   }
   
-  // Si le JSON chargé est vide ou invalide, on force la banque de secours
   if (!AppState.data || !AppState.data.matieres) {
     AppState.data = DATA_SECOURS;
   }
@@ -209,36 +165,66 @@ async function initialiserApp() {
   configurerFlashcardsMenu();
 }
 
-function construirMenuMatieres() {
+// MOTEUR DE SELECTION ET DEPLIEMENT ACCORDEON SMARTPHONE
+function construireMenuMatieres() {
   const container = $('matieres-container');
   container.innerHTML = "";
   if (!AppState.data || !AppState.data.matieres) return;
 
   AppState.data.matieres.forEach(m => {
     if (!m.chapitres) return;
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.padding = '14px';
     
-    let chapitresHTML = m.chapitres.map(c => `
-      <div class="chapitre-item" style="padding:10px; margin-top:8px; background:var(--bg-app); border-radius:10px; display:flex; justify-content:space-between; align-items:center;" onclick="ouvrirPreQuiz('${m.id}', '${c.id}', event)">
-        <span style="font-weight:600; font-size:.85rem; padding-right:8px;">${c.titre}</span>
-        <span style="font-size:.7rem; color:var(--text-secondary); background:white; padding:2px 6px; border-radius:8px; white-space:nowrap;">${c.theme || 'DNB'}</span>
-      </div>
-    `).join('');
-
-    card.innerHTML = `
-      <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+    const card = document.createElement('div');
+    card.className = 'card matiere-card-wrapper';
+    
+    // Header cliquable pour ouvrir/fermer l'accordéon
+    const header = document.createElement('div');
+    header.className = 'matiere-trigger-header';
+    header.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:1.3rem;">${m.emoji || '📚'}</span>
         <h3 style="margin:0; font-size:1rem; font-weight:700;">${m.label || m.id}</h3>
       </div>
-      <div style="display:flex; flex-direction:column;">${chapitresHTML}</div>
+      <span class="arrow-indicator">▼</span>
     `;
+    
+    // Container masqué par défaut contenant la liste des chapitres
+    const bodyContent = document.createElement('div');
+    bodyContent.className = 'matiere-chapters-body hidden-drawer';
+    
+    m.chapitres.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'chapitre-item';
+      row.style.cssText = "padding:12px; margin-top:8px; background:var(--bg-app); border-radius:10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;";
+      row.onclick = (e) => ouvrirPreQuiz(m.id, c.id, e);
+      row.innerHTML = `
+        <span style="font-weight:600; font-size:.85rem; padding-right:8px; text-align:left;">${c.titre}</span>
+        <span style="font-size:.7rem; color:var(--text-secondary); background:white; padding:2px 6px; border-radius:8px; white-space:nowrap;">${c.theme || 'DNB'}</span>
+      `;
+      bodyContent.appendChild(row);
+    });
+
+    // Événement d'ouverture exclusive au clic
+    header.onclick = () => {
+      const estOuvert = !bodyContent.classList.contains('hidden-drawer');
+      
+      // Ferme tous les autres tiroirs de matières ouverts sur la page
+      document.querySelectorAll('.matiere-chapters-body').forEach(b => b.classList.add('hidden-drawer'));
+      document.querySelectorAll('.arrow-indicator').forEach(a => a.classList.remove('rotated'));
+      
+      // Alterne l'état actuel de la matière cliquée
+      if (!estOuvert) {
+        bodyContent.classList.remove('hidden-drawer');
+        header.querySelector('.arrow-indicator').classList.add('rotated');
+      }
+    };
+
+    card.appendChild(header);
+    card.appendChild(bodyContent);
     container.appendChild(card);
   });
 }
 
-// ── NAVIGATION MOBILE ──
 let currentMatiereSelected = null;
 let currentChapitreSelected = null;
 
@@ -292,7 +278,7 @@ function lancerQuiz(niveau) {
   }
   
   if(AppState.quiz.questions.length === 0) {
-    alert("Aucune question de ce niveau pour l'instant ! Bascule sur un autre niveau.");
+    alert("Aucune question de ce niveau disponible pour ce chapitre.");
     return;
   }
 
@@ -356,7 +342,7 @@ function soumettreReponse(indexChoisi, boutonClique) {
     boutonClique.style.background = "#DCFCE7";
     boutonClique.style.borderColor = "#22C55E";
     $('quiz-explanation-box').className = "explanation-box visible good";
-    $('explanation-status').textContent = "✅ Super !";
+    $('explanation-status').textContent = "✅ Correct !";
   } else {
     boutonClique.style.background = "#FEE2E2";
     boutonClique.style.borderColor = "#EF4444";
@@ -365,7 +351,7 @@ function soumettreReponse(indexChoisi, boutonClique) {
       boutons[currentQ.bonne_reponse].style.borderColor = "#22C55E";
     }
     $('quiz-explanation-box').className = "explanation-box visible bad";
-    $('explanation-status').textContent = "❌ Attention";
+    $('explanation-status').textContent = "❌ Erreur";
   }
   
   $('explanation-text').textContent = currentQ.explication || "";
@@ -380,14 +366,13 @@ $('quiz-next').onclick = () => {
   if (AppState.quiz.idx < AppState.quiz.questions.length) {
     afficherQuestion();
   } else {
-    alert(`🏁 Session finie ! Score : ${AppState.quiz.score} / ${AppState.quiz.questions.length}`);
+    alert(`🏁 Session terminée ! Score : ${AppState.quiz.score} / ${AppState.quiz.questions.length}`);
     goHome();
   }
 };
 
-$('quiz-close').onclick = () => { if (confirm("Quitter le quiz ?")) goHome(); };
+$('quiz-close').onclick = () => { if (confirm("Abandonner la session en cours ?")) goHome(); };
 
-// ── SUJETS DE RÉDACTION OUVERTS ──
 function ouvrirExerciceOuvert() {
   $('pre-quiz-screen').classList.add('hidden');
   $('open-exercise-screen').classList.remove('hidden');
@@ -405,7 +390,7 @@ function ouvrirExerciceOuvert() {
 
   $('btn-validate-open-ex').onclick = () => {
     if ($('open-ex-textarea').value.trim().length < 5) {
-      alert("Écris un début de réponse avant de voir la correction.");
+      alert("Saisis ta réponse avant d'ouvrir la grille d'auto-évaluation.");
       return;
     }
     $('btn-validate-open-ex').classList.add('hidden');
@@ -426,13 +411,12 @@ function ouvrirExerciceOuvert() {
   $('btn-finish-open-ex').onclick = () => {
     const total = document.querySelectorAll('.critere-cb').length;
     const coches = document.querySelectorAll('.critere-cb:checked').length;
-    alert(`Résultats pris en compte : ${coches} / ${total} réussis.`);
+    alert(`Auto-évaluation enregistrée.`);
     enregistrerLacune(currentChapitreSelected.theme, total > 0 ? (coches / total) >= 0.6 : true);
     goHome();
   };
 }
 
-// ── MODULE FLASHCARDS INTERACTIF PARFAIT ──
 let flashcardsPool = [];
 let currentFlashcardIdx = 0;
 
@@ -452,7 +436,7 @@ function configurerFlashcardsMenu() {
       
       genererFlashcardsPool();
       if (flashcardsPool.length === 0) {
-        alert("Aucun cours ou piège trouvé pour les Flashcards.");
+        alert("Aucun cours ou piège trouvé pour générer les flashcards.");
         return;
       }
       currentFlashcardIdx = 0;
@@ -478,7 +462,7 @@ function configurerFlashcardsMenu() {
       e.stopPropagation();
       currentFlashcardIdx++;
       if (currentFlashcardIdx >= flashcardsPool.length) {
-        alert("🎉 Bravo ! Tu as révisé toutes les cartes de mémorisation active !");
+        alert("🎉 Session terminée ! Tu as révisé toutes les fiches de mémorisation active.");
         if ($('nav-home')) $('nav-home').click();
         else goHome();
       } else {
@@ -507,7 +491,7 @@ function genererFlashcardsPool() {
         flashcardsPool.push({
           matiere: m.label || m.id,
           chapitre: c.titre,
-          recto: `Quel est le piège classique au Brevet concernant :\n\n"${c.titre}" ?`,
+          recto: `Quel est le piège classique des correcteurs au Brevet sur :\n\n"${c.titre}" ?`,
           verso: `⚠️ ATTENTION PIÈGE :\n\n${c.piege}`
         });
       }
