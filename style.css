@@ -15,11 +15,11 @@
   --radius:          16px;
 }
 
-/* Force l'affichage type smartphone peu importe l'écran */
+/* Force un affichage centré type maquette smartphone sur PC, plein écran sur Mobile */
 body {
   margin: 0;
   font-family: var(--font-main);
-  background-color: #0F172A; /* Fond sombre extérieur */
+  background-color: #0F172A; /* Fond obscur extérieur sur PC */
   color: var(--text-primary);
   display: flex;
   justify-content: center;
@@ -28,10 +28,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Le conteneur simule un iPhone/Android parfait */
+/* Le conteneur simule un smartphone parfait */
 .app-container {
   width: 100%;
-  max-width: 430px; /* Taille iPhone 15 Pro Max */
+  max-width: 430px; /* Largeur iPhone Pro Max standard */
   height: 100vh;
   background-color: var(--bg-app);
   display: flex;
@@ -41,31 +41,31 @@ body {
   box-shadow: 0 0 40px rgba(0,0,0,0.5);
 }
 
-/* Zone de contenu principale scrollable verticalement */
+/* Contenu scrollable verticalement */
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 16px 90px 16px; /* 90px pour ne pas buter sur la barre du bas */
+  padding: 16px 16px 90px 16px; /* Espace bas pour ne pas masquer par la barre de menu */
   box-sizing: border-box;
 }
 
 .view-section { animation: fadeIn 0.2s ease-out; }
 
-/* BARRE DE NAVIGATION BASSE (Comme une vraie App Mobile) */
+/* BARRE DE NAVIGATION BASSE NATIVE ACCESSIBLE AU POUCE */
 .bottom-nav {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 68px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: space-around;
   align-items: center;
   z-index: 1000;
-  padding-bottom: env(safe-area-inset-bottom); /* Support encoche basse iPhone */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .nav-item {
   background: none;
@@ -75,10 +75,12 @@ body {
   align-items: center;
   gap: 4px;
   color: var(--text-secondary);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
   flex: 1;
+  height: 100%;
+  justify-content: center;
 }
 .nav-item.active { color: var(--color-primary); }
 .nav-item span:first-child { font-size: 1.3rem; }
@@ -94,7 +96,14 @@ body {
 }
 .matieres-grid { display: flex; flex-direction: column; gap: 14px; }
 
-/* Boutons adaptés aux doigts (Hauteur min 48px pour l'ergonomie tactile) */
+.chapitre-item {
+  transition: background 0.15s;
+}
+.chapitre-item:active {
+  background-color: #EEF2FF !important;
+}
+
+/* Boutons ergonomiques hauteur minimale 48px pour les doigts */
 .btn-primary, .btn-secondary, .option-btn {
   min-height: 48px;
   border: none;
@@ -108,30 +117,42 @@ body {
   box-sizing: border-box;
   width: 100%;
 }
-.btn-primary { background: var(--color-primary); color: white; }
-.btn-secondary { background: var(--border-color); color: var(--text-primary); }
+.btn-primary { background: var(--color-primary); color: white; cursor: pointer; }
+.btn-secondary { background: var(--border-color); color: var(--text-primary); cursor: pointer; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .option-btn {
   background: white;
   border: 1.5px solid var(--border-color);
   justify-content: flex-start;
   padding: 0 16px;
   margin-bottom: 10px;
+  text-align: left;
+  line-height: 1.3;
+  cursor: pointer;
 }
-.option-btn:active { background: var(--bg-app); }
+.option-btn:active:not(:disabled) { background: var(--bg-app); }
 
-/* WIDGET PROFIL HAUT DE PAGE */
+.badge { font-size: 0.72rem; font-weight: 700; background: #E0E7FF; color: var(--color-primary); padding: 4px 10px; border-radius: 12px; display: inline-block; }
+
 .mobile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-color);
 }
 
-/* FLASHCARDS INTERACTIVES SUIVANT LE POUCE */
+.explanation-box { padding: 14px; border-radius: 8px; margin-top: 16px; }
+.explanation-box.good { background-color: #DCFCE7; color: #14532D; }
+.explanation-box.bad { background-color: #FEE2E2; color: #7F1D1D; }
+
+.hidden { display: none !important; }
+
+/* ── MOTEUR ANIMATION 3D FLASHCARDS INTERACTIVES ── */
 .flashcard-perspective { perspective: 1000px; width: 100%; height: 320px; }
-.flashcard-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.4s; }
+.flashcard-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
 .flashcard-card.flipped { transform: rotateY(180deg); }
 .flashcard-face {
   position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
@@ -139,8 +160,13 @@ body {
   display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
   border: 1px solid var(--border-color);
 }
-.flashcard-front { background: white; font-size: 1.1rem; font-weight: 700; }
-.flashcard-back { background: linear-gradient(135deg, #1E1B4B, #312E81); color: white; transform: rotateY(180deg); font-size: 0.95rem; }
+.flashcard-front { background: white; color: var(--text-primary); }
+.flashcard-back {
+  background: linear-gradient(135deg, #1E1B4B, #312E81) !important;
+  color: #FFFFFF !important;
+  transform: rotateY(180deg);
+  white-space: pre-line; /* IMPORTANT : Conserve les retours à la ligne du JSON */
+  overflow-y: auto;    /* Autorise le scroll si la fiche de révision est très longue */
+}
 
-.hidden { display: none !important; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
