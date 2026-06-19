@@ -1,102 +1,8 @@
-/* =============================================
-   RévisBrevet 2026 — style.css (MOBILE NATIVE ENGINE)
-   ============================================= */
-:root {
-  --color-primary:   #4F46E5;
-  --color-accent:    #06B6D4;
-  --color-danger:    #EF4444;
-  --color-warning:   #F59E0B;
-  --bg-app:          #F8FAFC;
-  --bg-card:         #FFFFFF;
-  --text-primary:    #0F172A;
-  --text-secondary:  #64748B;
-  --border-color:    #E2E8F0;
-  --font-main:       'Inter', system-ui, sans-serif;
-  --radius:          16px;
-}
-
-body {
-  margin: 0;
-  font-family: var(--font-main);
-  background-color: #0F172A;
-  color: var(--text-primary);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.app-container {
-  width: 100%;
-  max-width: 430px;
-  height: 100vh;
-  background-color: var(--bg-app);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(0,0,0,0.5);
-}
-
-.main-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 16px 90px 16px;
-  box-sizing: border-box;
-}
-
-.view-section { animation: fadeIn 0.2s ease-out; }
-
-/* BOTTOM TAB NAVIGATION BAR */
-.bottom-nav {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 68px;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  z-index: 1000;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-.nav-item {
-  background: none;
-  border: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-secondary);
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-  flex: 1;
-  height: 100%;
-  justify-content: center;
-}
-.nav-item.active { color: var(--color-primary); }
-.nav-item span:first-child { font-size: 1.3rem; }
-
-/* COMPOSANTS CARTES SMARTPHONE */
-.card {
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  border: 1px solid var(--border-color);
-  padding: 16px;
-  margin-bottom: 16px;
-  box-sizing: border-box;
-}
-.matieres-grid { display: flex; flex-direction: column; gap: 14px; }
-
 /* STRUCTURE ACCORDÉON (TIROIR COMPACT MOBILE) */
 .matiere-card-wrapper {
-  padding: 0 !important; /* Laisse le trigger faire toute la largeur */
+  padding: 0 !important;
   overflow: hidden;
+  margin-bottom: 12px;
 }
 .matiere-trigger-header {
   padding: 16px;
@@ -106,6 +12,8 @@ body {
   cursor: pointer;
   background: var(--bg-card);
   user-select: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 .matiere-trigger-header:active {
   background: #F1F5F9;
@@ -114,6 +22,7 @@ body {
   font-size: 0.75rem;
   color: var(--text-secondary);
   transition: transform 0.2s ease;
+  display: inline-block;
 }
 .arrow-indicator.rotated {
   transform: rotate(180deg);
@@ -122,77 +31,8 @@ body {
   padding: 0 16px 16px 16px;
   display: flex;
   flex-direction: column;
-  transition: all 0.2s ease-out;
+  background: var(--bg-card);
 }
 .hidden-drawer {
   display: none !important;
 }
-
-.chapitre-item { transition: background 0.15s; }
-.chapitre-item:active { background-color: #EEF2FF !important; }
-
-/* TOUCH BUTTONS DESIGN */
-.btn-primary, .btn-secondary, .option-btn {
-  min-height: 48px;
-  border: none;
-  border-radius: 12px;
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  width: 100%;
-}
-.btn-primary { background: var(--color-primary); color: white; cursor: pointer; }
-.btn-secondary { background: var(--border-color); color: var(--text-primary); cursor: pointer; }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.option-btn {
-  background: white;
-  border: 1.5px solid var(--border-color);
-  justify-content: flex-start;
-  padding: 0 16px;
-  margin-bottom: 10px;
-  text-align: left;
-}
-.option-btn:active:not(:disabled) { background: var(--bg-app); }
-
-.badge { font-size: 0.72rem; font-weight: 700; background: #E0E7FF; color: var(--color-primary); padding: 4px 10px; border-radius: 12px; display: inline-block; }
-
-.mobile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.explanation-box { padding: 14px; border-radius: 8px; margin-top: 16px; }
-.explanation-box.good { background-color: #DCFCE7; color: #14532D; }
-.explanation-box.bad { background-color: #FEE2E2; color: #7F1D1D; }
-
-.hidden { display: none !important; }
-
-/* ── INTERACTIVE FLASHCARDS 3D ENGINE ── */
-.flashcard-perspective { perspective: 1000px; width: 100%; height: 320px; }
-.flashcard-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-.flashcard-card.flipped { transform: rotateY(180deg); }
-.flashcard-face {
-  position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
-  border-radius: var(--radius); padding: 20px; box-sizing: border-box;
-  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
-  border: 1px solid var(--border-color);
-}
-.flashcard-front { background: white; color: var(--text-primary); }
-.flashcard-back {
-  background: linear-gradient(135deg, #1E1B4B, #312E81) !important;
-  color: #FFFFFF !important;
-  transform: rotateY(180deg);
-  white-space: pre-line;
-  overflow-y: auto;
-}
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
