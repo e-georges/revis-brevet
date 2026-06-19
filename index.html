@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>RévisBrevet 2026</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2=family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -34,7 +34,7 @@
           <span style="font-size: 1.8rem;">⚡</span>
           <div>
             <h3 style="margin: 0; font-size: 0.95rem; font-weight: 800;">Sprint Automatismes (Maths)</h3>
-            <p style="margin: 2px 0 0; font-size: 0.75rem; opacity: 0.9;">10 questions • 45s de chrono par question</p>
+            <p style="margin: 2px 0 0; font-size: 0.75rem; opacity: 0.9;">10 questions • 45s max par question</p>
           </div>
         </div>
       </div>
@@ -74,7 +74,7 @@
         <h3 id="open-ex-title" style="margin-top:0; font-size:1.1rem;">Sujet ouvert</h3>
         <p id="open-ex-enonce" style="background:var(--bg-app); padding:12px; border-radius:8px; font-size:0.85rem; line-height:1.4;"></p>
         
-        <textarea id="open-ex-textarea" rows="4" placeholder="Tape tes arguments ou tes calculs ici..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); box-sizing:border-box; font-family:inherit; font-size:0.85rem; outline:none; resize:none;"></textarea>
+        <textarea id="open-ex-textarea" rows="4" placeholder="Tape tes arguments ici..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); box-sizing:border-box; font-family:inherit; font-size:0.85rem; outline:none; resize:none;"></textarea>
         <button class="btn-primary" id="btn-validate-open-ex" style="margin-top:10px;">🔎 Afficher le barème du correcteur</button>
 
         <div id="open-ex-correction-box" class="hidden" style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--border-color);">
@@ -89,13 +89,13 @@
       <div class="quiz-header-top" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <span id="quiz-progress-text" style="font-size:0.85rem; font-weight:700;">Question 1</span>
         <div id="quiz-timer" style="font-weight:900; font-size:1rem; padding:4px 10px; background:rgba(232,72,85,0.1); border-radius:20px; color:var(--color-danger); display:none;">⏱️ 45s</div>
-        <button class="btn-icon" id="quiz-close" style="font-size:1.2rem; background:none; border:none; cursor:pointer;">✕</button>
+        <button id="quiz-close" style="font-size:1.2rem; background:none; border:none; cursor:pointer;">✕</button>
       </div>
       <div class="progress-bar-container" style="margin:8px 0 16px; background:var(--border-color); height:6px; border-radius:3px; overflow:hidden;">
         <div class="progress-fill" id="quiz-progress-bar" style="background:var(--color-accent); height:100%; width:0%; transition:width 0.2s;"></div>
       </div>
 
-      <h3 id="quiz-question-text" style="font-size:1.05rem; margin-bottom:16px; line-height:1.4;">Énoncé de la question</h3>
+      <h3 id="quiz-question-text" style="font-size:1.05rem; margin-bottom:16px; line-height:1.4;">Énoncé</h3>
       <div id="quiz-options-container"></div>
 
       <div class="explanation-box hidden" id="quiz-explanation-box" style="font-size:0.85rem; line-height:1.4; padding:12px; border-radius:8px; margin-top:12px;">
@@ -107,7 +107,7 @@
 
     <section id="flashcards-screen" class="view-section hidden">
       <div style="text-align:center;">
-        <span id="flashcard-meta" class="badge">Matière</span>
+        <span id="flashcard-meta" class="badge">Chargement...</span>
         
         <div class="flashcard-perspective" style="margin:16px 0;">
           <div class="flashcard-card" id="flashcard-card-box">
@@ -138,6 +138,5 @@
 
 </div>
 
-<script src="app.js"></script>
 </body>
 </html>
