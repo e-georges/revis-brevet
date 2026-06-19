@@ -19,12 +19,44 @@ const AppState = {
 
 const $ = id => document.getElementById(id);
 
+// Banque de secours au cas où troisieme.json est absent, mal formaté ou lent à charger
+const DATA_SECOURS = {
+  matieres: [
+    {
+      id: "maths",
+      label: "Mathématiques",
+      emoji: "📐",
+      chapitres: [
+        {
+          id: "fractions",
+          titre: "Calculs avec des fractions",
+          theme: "Nombres",
+          cours: "Pour additionner ou soustraire deux fractions, il faut impérativement les mettre au même dénominateur.\nPour multiplier, on multiplie les numérateurs entre eux et les dénominateurs entre eux.\nPour diviser par une fraction, on multiplie par son inverse.",
+          piege: "Oublier la priorité des opérations ! La multiplication et la division restent prioritaires sur l'addition et la soustraction, même au milieu de fractions."
+        }
+      ]
+    },
+    {
+      id: "francais",
+      label: "Français",
+      emoji: "✍️",
+      chapitres: [
+        {
+          id: "figures_style",
+          titre: "Les Figures de Style incontournables",
+          theme: "Grammaire",
+          cours: "La Métaphore : compare deux éléments sans outil de comparaison.\nLa Comparaison : utilise un outil (comme, tel que, semblable à).\nLa Personnification : attribue des traits humains à un objet ou un animal.",
+          piege: "Confondre la métaphore et la comparaison. S'il y a le mot 'comme', c'est TOUJOURS une comparaison !"
+        }
+      ]
+    }
+  ]
+};
+
 // ── TRAITEMENT ET CHARGEMENT DU POOL DE QUESTIONS TEXTUELLES (Anti-Répétition) ──
 function obtenirQuestionsFiltrees(pool, quantite) {
-  // Supprime les questions qui se trouvent dans l'historique récent
   let questionsDisponibles = pool.filter(q => !AppState.historiqueQuestions.includes(q.enonce));
   
-  // Si le réservoir est vide, on nettoie l'historique associé à ce chapitre pour boucler proprement
   if (questionsDisponibles.length < quantite) {
     AppState.historiqueQuestions = AppState.historiqueQuestions.filter(enonce => !pool.some(q => q.enonce === enonce));
     questionsDisponibles = pool;
@@ -32,15 +64,14 @@ function obtenirQuestionsFiltrees(pool, quantite) {
   
   const selectionnees = shuffleArr(questionsDisponibles).slice(0, quantite);
   
-  // Sauvegarde dans l'historique local global
   selectionnees.forEach(q => AppState.historiqueQuestions.push(q.enonce));
-  if (AppState.historiqueQuestions.length > 40) AppState.historiqueQuestions.shift(); // Évite la saturation
+  if (AppState.historiqueQuestions.length > 40) AppState.historiqueQuestions.shift();
   localStorage.setItem('dnb_history_anti_repeat', JSON.stringify(AppState.historiqueQuestions));
   
   return selectionnees;
 }
 
-// ── MUTATION NUMÉRIQUE DES MATHÉMATIQUES (Questions Toujours Uniques) ──
+// ── MUTATION NUMÉRIQUE DES MATHÉMATIQUES ──
 function genererQuestionMutationMaths() {
   const pList = [5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 80, 90];
   const vList = [30, 40, 50, 60, 80, 100, 120, 150, 200, 300, 500];
@@ -141,7 +172,7 @@ function analyserLacunes() {
   }
   if (pireTheme) {
     $('lacunes-box').classList.remove('hidden');
-    $('lacunes-text').innerHTML = `🚨 **Alerte Révision :** Tu as plusieurs erreurs sur le thème **${pireTheme}**. Lis sa fiche ou utilise les **Flashcards** ci-dessous pour mieux retenir !`;
+    $('lacunes-text').innerHTML = `🚨 **Alerte Révision :** Tu as des erreurs sur le thème **${pireTheme}**. Sers-toi des **Flashcards** pour mieux retenir !`;
   } else {
     $('lacunes-box').classList.add('hidden');
   }
@@ -157,9 +188,20 @@ async function initialiserApp() {
   
   try {
     const res = await fetch('troisieme.json');
-    if (res.ok) AppState.data = await res.json();
+    if (res.ok) {
+      AppState.data = await res.json();
+    } else {
+      console.warn("Fichier troisieme.json introuvable, utilisation de la banque de secours.");
+      AppState.data = DATA_SECOURS;
+    }
   } catch (e) {
-    console.error("Erreur de chargement", e);
+    console.error("Erreur réseau pour troisieme.json, bascule de secours actives.", e);
+    AppState.data = DATA_SECOURS;
+  }
+  
+  // Si le JSON chargé est vide ou invalide, on force la banque de secours
+  if (!AppState.data || !AppState.data.matieres) {
+    AppState.data = DATA_SECOURS;
   }
   
   construireMenuMatieres();
@@ -167,12 +209,13 @@ async function initialiserApp() {
   configurerFlashcardsMenu();
 }
 
-function construireMenuMatieres() {
+function construirMenuMatieres() {
   const container = $('matieres-container');
   container.innerHTML = "";
   if (!AppState.data || !AppState.data.matieres) return;
 
   AppState.data.matieres.forEach(m => {
+    if (!m.chapitres) return;
     const card = document.createElement('div');
     card.className = 'card';
     card.style.padding = '14px';
@@ -180,7 +223,7 @@ function construireMenuMatieres() {
     let chapitresHTML = m.chapitres.map(c => `
       <div class="chapitre-item" style="padding:10px; margin-top:8px; background:var(--bg-app); border-radius:10px; display:flex; justify-content:space-between; align-items:center;" onclick="ouvrirPreQuiz('${m.id}', '${c.id}', event)">
         <span style="font-weight:600; font-size:.85rem; padding-right:8px;">${c.titre}</span>
-        <span style="font-size:.7rem; color:var(--text-secondary); background:white; padding:2px 6px; border-radius:8px; white-space:nowrap;">${c.theme}</span>
+        <span style="font-size:.7rem; color:var(--text-secondary); background:white; padding:2px 6px; border-radius:8px; white-space:nowrap;">${c.theme || 'DNB'}</span>
       </div>
     `).join('');
 
@@ -195,7 +238,7 @@ function construireMenuMatieres() {
   });
 }
 
-// ── NAVIGATION DES VUES MOBILE ──
+// ── NAVIGATION MOBILE ──
 let currentMatiereSelected = null;
 let currentChapitreSelected = null;
 
@@ -208,7 +251,7 @@ function ouvrirPreQuiz(matiereId, chapitreId, event) {
   $('pre-quiz-screen').classList.remove('hidden');
   
   $('pre-quiz-title').textContent = currentChapitreSelected.titre;
-  $('pre-quiz-theme').textContent = currentChapitreSelected.theme;
+  $('pre-quiz-theme').textContent = currentChapitreSelected.theme || "Général";
   $('pre-quiz-cours-text').textContent = currentChapitreSelected.cours || "Pas de fiche de cours associée.";
   $('pre-quiz-piege-text').textContent = currentChapitreSelected.piege || "Pas de piège listé.";
 
@@ -249,7 +292,7 @@ function lancerQuiz(niveau) {
   }
   
   if(AppState.quiz.questions.length === 0) {
-    alert("Aucune question de ce niveau pour l'instant !");
+    alert("Aucune question de ce niveau pour l'instant ! Bascule sur un autre niveau.");
     return;
   }
 
@@ -337,12 +380,12 @@ $('quiz-next').onclick = () => {
   if (AppState.quiz.idx < AppState.quiz.questions.length) {
     afficherQuestion();
   } else {
-    alert(`🏁 Fini ! Ton score : ${AppState.quiz.score} / ${AppState.quiz.questions.length}`);
+    alert(`🏁 Session finie ! Score : ${AppState.quiz.score} / ${AppState.quiz.questions.length}`);
     goHome();
   }
 };
 
-$('quiz-close').onclick = () => { if (confirm("Quitter la session ?")) goHome(); };
+$('quiz-close').onclick = () => { if (confirm("Quitter le quiz ?")) goHome(); };
 
 // ── SUJETS DE RÉDACTION OUVERTS ──
 function ouvrirExerciceOuvert() {
@@ -362,7 +405,7 @@ function ouvrirExerciceOuvert() {
 
   $('btn-validate-open-ex').onclick = () => {
     if ($('open-ex-textarea').value.trim().length < 5) {
-      alert("Écris ta démarche ou ton paragraphe avant d'afficher la correction.");
+      alert("Écris un début de réponse avant de voir la correction.");
       return;
     }
     $('btn-validate-open-ex').classList.add('hidden');
@@ -383,18 +426,17 @@ function ouvrirExerciceOuvert() {
   $('btn-finish-open-ex').onclick = () => {
     const total = document.querySelectorAll('.critere-cb').length;
     const coches = document.querySelectorAll('.critere-cb:checked').length;
-    alert(`Résultats enregistrés : ${coches} / ${total} critères.`);
+    alert(`Résultats pris en compte : ${coches} / ${total} réussis.`);
     enregistrerLacune(currentChapitreSelected.theme, total > 0 ? (coches / total) >= 0.6 : true);
     goHome();
   };
 }
 
-// ── MODULE FLASHCARDS INTERACTIF PARFAIT (MÉMORISATION ACTIVE) ──
+// ── MODULE FLASHCARDS INTERACTIF PARFAIT ──
 let flashcardsPool = [];
 let currentFlashcardIdx = 0;
 
 function configurerFlashcardsMenu() {
-  // Navigation de la barre basse
   if ($('nav-home')) {
     $('nav-home').onclick = () => {
       $('nav-home').classList.add('active');
@@ -410,7 +452,7 @@ function configurerFlashcardsMenu() {
       
       genererFlashcardsPool();
       if (flashcardsPool.length === 0) {
-        alert("Aucun cours ou piège trouvé dans le fichier JSON pour créer les Flashcards.");
+        alert("Aucun cours ou piège trouvé pour les Flashcards.");
         return;
       }
       currentFlashcardIdx = 0;
@@ -423,7 +465,6 @@ function configurerFlashcardsMenu() {
     };
   }
 
-  // Clic tactile exclusif sur la carte pour la retourner (évite les bugs)
   const cardBox = $('flashcard-card-box');
   if (cardBox) {
     cardBox.onclick = (e) => {
@@ -432,13 +473,12 @@ function configurerFlashcardsMenu() {
     };
   }
 
-  // Clic sur le bouton de passage à la suivante
   if ($('flashcard-next')) {
     $('flashcard-next').onclick = (e) => {
       e.stopPropagation();
       currentFlashcardIdx++;
       if (currentFlashcardIdx >= flashcardsPool.length) {
-        alert("🎉 Excellent ! Tu as fait le tour de toutes les Flashcards du programme !");
+        alert("🎉 Bravo ! Tu as révisé toutes les cartes de mémorisation active !");
         if ($('nav-home')) $('nav-home').click();
         else goHome();
       } else {
@@ -455,7 +495,6 @@ function genererFlashcardsPool() {
   AppState.data.matieres.forEach(m => {
     if (!m.chapitres) return;
     m.chapitres.forEach(c => {
-      // Extraction 1 : Fiche de Révision (Clé 'cours' extraite de troisieme.json)
       if (c.cours && c.cours.trim() !== "") {
         flashcardsPool.push({
           matiere: m.label || m.id,
@@ -464,12 +503,11 @@ function genererFlashcardsPool() {
           verso: c.cours
         });
       }
-      // Extraction 2 : Piège classique de l'épreuve (Clé 'piege' extraite de troisieme.json)
       if (c.piege && c.piege.trim() !== "") {
         flashcardsPool.push({
           matiere: m.label || m.id,
           chapitre: c.titre,
-          recto: `Quel est le piège classique des correcteurs au Brevet concernant :\n\n"${c.titre}" ?`,
+          recto: `Quel est le piège classique au Brevet concernant :\n\n"${c.titre}" ?`,
           verso: `⚠️ ATTENTION PIÈGE :\n\n${c.piege}`
         });
       }
@@ -480,6 +518,7 @@ function genererFlashcardsPool() {
 }
 
 function afficherFlashcard() {
+  if (flashcardsPool.length === 0) return;
   const card = flashcardsPool[currentFlashcardIdx];
   $('flashcard-card-box').classList.remove('flipped');
   
