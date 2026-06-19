@@ -1,5 +1,5 @@
 /* =============================================
-   RévisBrevet 2026 — style.css (MOBILE ONLY ENGINE)
+   RévisBrevet 2026 — style.css (MOBILE ENGINE)
    ============================================= */
 :root {
   --color-primary:   #4F46E5;
@@ -15,11 +15,10 @@
   --radius:          16px;
 }
 
-/* Force un affichage centré type maquette smartphone sur PC, plein écran sur Mobile */
 body {
   margin: 0;
   font-family: var(--font-main);
-  background-color: #0F172A; /* Fond obscur extérieur sur PC */
+  background-color: #0F172A;
   color: var(--text-primary);
   display: flex;
   justify-content: center;
@@ -28,10 +27,9 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Le conteneur simule un smartphone parfait */
 .app-container {
   width: 100%;
-  max-width: 430px; /* Largeur iPhone Pro Max standard */
+  max-width: 430px;
   height: 100vh;
   background-color: var(--bg-app);
   display: flex;
@@ -41,17 +39,16 @@ body {
   box-shadow: 0 0 40px rgba(0,0,0,0.5);
 }
 
-/* Contenu scrollable verticalement */
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 16px 90px 16px; /* Espace bas pour ne pas masquer par la barre de menu */
+  padding: 16px 16px 90px 16px;
   box-sizing: border-box;
 }
 
 .view-section { animation: fadeIn 0.2s ease-out; }
 
-/* BARRE DE NAVIGATION BASSE NATIVE ACCESSIBLE AU POUCE */
+/* BOTTOM NAVIGATION MENU */
 .bottom-nav {
   position: absolute;
   bottom: 0;
@@ -85,7 +82,7 @@ body {
 .nav-item.active { color: var(--color-primary); }
 .nav-item span:first-child { font-size: 1.3rem; }
 
-/* COMPOSANTS SMARTPHONE */
+/* LAYOUT CARDS */
 .card {
   background: var(--bg-card);
   border-radius: var(--radius);
@@ -95,15 +92,9 @@ body {
   box-sizing: border-box;
 }
 .matieres-grid { display: flex; flex-direction: column; gap: 14px; }
+.chapitre-item:active { background-color: #EEF2FF !important; }
 
-.chapitre-item {
-  transition: background 0.15s;
-}
-.chapitre-item:active {
-  background-color: #EEF2FF !important;
-}
-
-/* Boutons ergonomiques hauteur minimale 48px pour les doigts */
+/* ERGONOMICS TACTILE BUTTONS */
 .btn-primary, .btn-secondary, .option-btn {
   min-height: 48px;
   border: none;
@@ -127,9 +118,6 @@ body {
   justify-content: flex-start;
   padding: 0 16px;
   margin-bottom: 10px;
-  text-align: left;
-  line-height: 1.3;
-  cursor: pointer;
 }
 .option-btn:active:not(:disabled) { background: var(--bg-app); }
 
@@ -150,7 +138,7 @@ body {
 
 .hidden { display: none !important; }
 
-/* ── MOTEUR ANIMATION 3D FLASHCARDS INTERACTIVES ── */
+/* ── FLASHCARDS 3D ENGINE ── */
 .flashcard-perspective { perspective: 1000px; width: 100%; height: 320px; }
 .flashcard-card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
 .flashcard-card.flipped { transform: rotateY(180deg); }
@@ -165,8 +153,8 @@ body {
   background: linear-gradient(135deg, #1E1B4B, #312E81) !important;
   color: #FFFFFF !important;
   transform: rotateY(180deg);
-  white-space: pre-line; /* IMPORTANT : Conserve les retours à la ligne du JSON */
-  overflow-y: auto;    /* Autorise le scroll si la fiche de révision est très longue */
+  white-space: pre-line;
+  overflow-y: auto;
 }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
