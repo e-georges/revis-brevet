@@ -31,6 +31,8 @@
           <p id="lacunes-text" style="margin: 0; font-size: 0.85rem; color: #9A3412; line-height: 1.5;"></p>
         </div>
 
+        <p style="margin: 0 0 16px 0; font-size: 0.68rem; color: var(--text-secondary); line-height: 1.5; text-align: center;">📚 Barre = programme disponible &nbsp;•&nbsp; ▰ = ta progression &nbsp;•&nbsp; ⚪📝🔄✅ = ta mémorisation</p>
+
         <div id="matieres-container"></div>
       </section>
 
@@ -47,6 +49,11 @@
         <div class="card">
           <h4 style="margin: 0 0 10px 0; font-size: 0.85rem; text-transform: uppercase; color: var(--color-primary); letter-spacing: 0.05em;">L'essentiel du cours</h4>
           <p id="pre-quiz-cours-text" style="margin: 0; font-size: 0.9rem; color: var(--text-primary); line-height: 1.55; white-space: pre-line;"></p>
+        </div>
+
+        <div id="pre-quiz-support-card" class="card support-text-card hidden">
+          <h4 style="margin: 0 0 10px 0; font-size: 0.85rem; text-transform: uppercase; color: var(--color-accent); letter-spacing: 0.05em; font-style: normal;">📖 Texte support</h4>
+          <p id="pre-quiz-support-text" style="margin: 0;"></p>
         </div>
 
         <div class="card" style="background: #FFF5F5; border-color: #FED7D7;">
@@ -89,6 +96,9 @@
         <div style="width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; margin-bottom: 28px; overflow: hidden;">
           <div id="quiz-progress-bar" style="width: 0%; height: 100%; background: var(--color-primary); transition: width 0.3s ease;"></div>
         </div>
+
+        <button id="quiz-support-toggle" class="quiz-support-toggle hidden">📖 Revoir le texte support</button>
+        <div id="quiz-support-text-box" class="quiz-support-text-box hidden"></div>
 
         <h3 id="quiz-question-text" style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); line-height: 1.5; margin: 0 0 28px 0;">Énoncé ?</h3>
 
@@ -151,6 +161,32 @@
         <button id="flashcard-next" class="btn-primary btn-next-flashcard">Suivante ➡️</button>
       </section>
 
+      <section id="oral-screen" class="view-section hidden">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <button onclick="goHome()" style="background: none; border: none; padding: 4px; cursor: pointer; color: var(--text-secondary);" aria-label="Retour à l'accueil">
+            <svg style="width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2.5;" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <span class="badge">Oral de soutenance</span>
+        </div>
+
+        <h2 style="margin: 0 0 20px 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.01em;">🎤 Simulateur de soutenance</h2>
+
+        <div class="card">
+          <h4 style="margin:0 0 12px 0; font-size:0.8rem; text-transform:uppercase; color:var(--color-primary); letter-spacing:0.04em;">Chronomètre (durée réelle : 15 min)</h4>
+          <div id="oral-timer-display" class="oral-timer-display">15:00</div>
+          <button id="btn-oral-timer-toggle" class="btn-primary">▶️ Démarrer la simulation (15 min)</button>
+        </div>
+
+        <div class="card">
+          <h4 style="margin:0 0 12px 0; font-size:0.8rem; text-transform:uppercase; color:var(--color-accent); letter-spacing:0.04em;">Questions surprises du jury</h4>
+          <div id="oral-question-text" class="oral-question-box">Appuie sur « Tirer une question » pour t'entraîner.</div>
+          <button id="btn-oral-tirer-question" class="btn-secondary">🎲 Tirer une question</button>
+        </div>
+
+        <h4 style="margin:24px 0 12px 0; font-size:0.85rem; text-transform:uppercase; color:var(--text-secondary); letter-spacing:0.05em;">Méthode en 5 étapes</h4>
+        <div id="oral-methode-list"></div>
+      </section>
+
     </main>
 
     <nav class="bottom-nav">
@@ -161,6 +197,10 @@
       <button id="nav-flashcards" class="nav-item">
         <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
         <span>Flashcards</span>
+      </button>
+      <button id="nav-oral" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+        <span>Oral</span>
       </button>
     </nav>
 
