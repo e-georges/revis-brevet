@@ -5,7 +5,6 @@
 const AppState = {
   data: null,
   leitner: {},          // Acquis / mémorisation (boîtes Leitner), indexé par id de CHAPITRE
-  progression: {},       // Progression / effort (niveaux explorés + exercice fait), indexé par id de CHAPITRE
   historiqueQuestions: [],
   quiz: {
     chapitreId: null,
@@ -47,6 +46,592 @@ const SVGMappings = {
   "emc": `<svg viewBox="0 0 24 24"><path d="M12 2L3 7v2h18V7l-9-5z"/><path d="M5 10v9M9 10v9M15 10v9M19 10v9M3 21h18"/></svg>`,
   "sciences": `<svg viewBox="0 0 24 24"><path d="M9 2v6L4 18a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3L15 8V2"/><path d="M9 2h6"/></svg>`
 };
+
+// ==========================================================================
+// 🧮 MOTEUR DE GÉNÉRATION — PILOTE MATHS (7 chapitres × 3 niveaux)
+// Chaque générateur retourne { enonce, options, bonne_reponse, explication }
+// ==========================================================================
+
+function randInt(min, max) { // inclusif
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function pgcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) { [a, b] = [b, a % b]; }
+  return a;
+}
+
+function estPremier(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) if (n % i === 0) return false;
+  return true;
+}
+
+function decompositionPremiers(n) {
+  const facteurs = [];
+  let reste = n;
+  for (let p = 2; p * p <= reste; p++) {
+    let exposant = 0;
+    while (reste % p === 0) { reste /= p; exposant++; }
+    if (exposant > 0) facteurs.push([p, exposant]);
+  }
+  if (reste > 1) facteurs.push([reste, 1]);
+  return facteurs;
+}
+
+function formatDecomposition(facteurs) {
+  const exposantsUnicode = { 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶' };
+  return facteurs.map(([p, e]) => e > 1 ? `${p}${exposantsUnicode[e] || '^' + e}` : `${p}`).join('×');
+}
+
+// Construit un tableau de 4 options uniques (1 correcte + 3 distracteurs).
+// Retourne null si moins de 3 distracteurs uniques sont disponibles : dans ce
+// cas, l'appelant doit se re-tirer (nouveaux paramètres aléatoires) plutôt que
+// d'afficher un texte de secours artificiel et confus pour l'élève.
+function uniqueOptionsFromList(distracteurs, correcte) {
+  const pool = [...new Set(distracteurs.filter(d => d !== correcte))];
+  if (pool.length < 3) return null;
+  return shuffleArr([correcte, ...pool.slice(0, 3)]);
+}
+
+// ==========================================================================
+// 🔁 GESTIONNAIRE DE SESSION SANS DOUBLON (sac à malice)
+// ==========================================================================
+
+function genererSessionSansDoublon(genererUneFn, quantite) {
+  const session = [];
+  const signaturesVues = new Set();
+  let tentatives = 0;
+  const budgetMax = quantite * 40;
+
+  while (session.length < quantite && tentatives < budgetMax) {
+    const q = genererUneFn();
+    tentatives++;
+    const signature = `${q.enonce}__${q.options.join('|')}`;
+    if (!signaturesVues.has(signature)) {
+      signaturesVues.add(signature);
+      session.push(q);
+    }
+  }
+  // Filet de sécurité : si le pool naturel est trop petit (ex: m2-n1), on complète
+  // en acceptant des répétitions plutôt que de bloquer la session.
+  while (session.length < quantite) {
+    session.push(genererUneFn());
+  }
+  return session;
+}
+
+// ==========================================================================
+// M1 — Arithmétique & Nombres premiers
+// ==========================================================================
+
+const BANQUE_PREMIERS = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79];
+const BANQUE_COMPOSES = [4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 22, 24, 25, 26, 27, 28, 32, 33, 34, 35, 36, 38, 39, 40, 44, 45, 46, 48, 49, 50, 51, 52, 54, 55, 56, 57, 58, 62, 63, 64, 65, 66, 68, 69, 70, 72, 74, 75, 76, 77, 78];
+
+function genM1_n1() {
+  const premier = pick(BANQUE_PREMIERS);
+  const composesChoisis = shuffleArr(BANQUE_COMPOSES).slice(0, 3);
+  const options = shuffleArr([String(premier), ...composesChoisis.map(String)]);
+  const exempleCompose = composesChoisis[0];
+  const facteurExemple = decompositionPremiers(exempleCompose)[0][0];
+  return {
+    enonce: `Lequel de ces nombres est premier ?`,
+    options,
+    bonne_reponse: options.indexOf(String(premier)),
+    explication: `${premier} n'est divisible que par 1 et lui-même. Les autres se décomposent (ex : ${exempleCompose} est divisible par ${facteurExemple}).`
+  };
+}
+
+function genM1_n2() {
+  let n;
+  do { n = randInt(12, 100); } while (estPremier(n));
+  const facteurs = decompositionPremiers(n);
+  const correcte = formatDecomposition(facteurs);
+
+  const distracteurs = [];
+  // Mutation 1 : exposant du premier facteur +1 (toujours différent de l'original)
+  const f1 = facteurs.map(f => [...f]);
+  f1[0][1] += 1;
+  distracteurs.push(formatDecomposition(f1));
+  // Mutation 2 : exposant du dernier facteur +2 (toujours différent de l'original ET de la mutation 1)
+  const f2 = facteurs.map(f => [...f]);
+  f2[f2.length - 1][1] += 2;
+  distracteurs.push(formatDecomposition(f2));
+  // Mutation 3 : ajout d'un facteur premier absent de la décomposition (toujours différent)
+  const premiersDisponibles = [2, 3, 5, 7, 11, 13].filter(p => !facteurs.some(([pp]) => pp === p));
+  const premierExtra = premiersDisponibles.length > 0 ? pick(premiersDisponibles) : 13;
+  distracteurs.push(formatDecomposition([...facteurs, [premierExtra, 1]]));
+  // Mutation 4 (opportuniste, filtrée automatiquement si elle collisionne) : produit de deux diviseurs
+  for (let d = 2; d < n; d++) {
+    if (n % d === 0) { distracteurs.push(`${d}×${n / d}`); break; }
+  }
+
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM1_n2();
+  return {
+    enonce: `La décomposition en facteurs premiers de ${n} est :`,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `${n} = ${facteurs.map(([p, e]) => Array(e).fill(p).join('×')).join('×')} = ${correcte}, et tous les facteurs sont premiers.`
+  };
+}
+
+function genM1_n3() {
+  const couples = [[8, 15], [9, 16], [7, 12], [14, 25], [10, 21], [11, 18], [13, 20], [9, 14]];
+  const [a, b] = pick(couples);
+  const options = shuffleArr(['Premiers entre eux', 'Égaux', 'Pairs', "Multiples l'un de l'autre"]);
+  return {
+    enonce: `On calcule PGCD(${a}, ${b}) et on trouve 1. Que peut-on en déduire sur ${a} et ${b} ?`,
+    options,
+    bonne_reponse: options.indexOf('Premiers entre eux'),
+    explication: `Lorsque PGCD(a, b) = 1, par définition, a et b sont premiers entre eux (ils n'ont aucun diviseur commun autre que 1).`
+  };
+}
+
+function genM1(niveau) {
+  if (niveau === 1) return genM1_n1();
+  if (niveau === 2) return genM1_n2();
+  return genM1_n3();
+}
+
+// ==========================================================================
+// M2 — Pythagore & Thalès
+// ==========================================================================
+
+const REFORMULATIONS_M2_N1 = [
+  "Dans quel type de triangle applique-t-on le théorème de Pythagore ?",
+  "Pour utiliser la trigonométrie (sinus, cosinus, tangente), de quel type de triangle a-t-on besoin ?",
+  "Le théorème de Pythagore ne s'applique que dans un triangle de quel type ?"
+];
+
+function genM2_n1() {
+  const enonce = pick(REFORMULATIONS_M2_N1);
+  const options = shuffleArr(['Isocèle', 'Rectangle', 'Équilatéral', 'Quelconque']);
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf('Rectangle'),
+    explication: `Pythagore et la trigonométrie ne s'appliquent que dans un triangle rectangle.`
+  };
+}
+
+const TRIPLETS_PYTHAGORE = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [7, 24, 25], [9, 12, 15], [20, 21, 29], [12, 16, 20]];
+
+function genM2_n2() {
+  const estRectangle = Math.random() < 0.6;
+  let a, b, c;
+  if (estRectangle) {
+    [a, b, c] = pick(TRIPLETS_PYTHAGORE);
+  } else {
+    let base = pick(TRIPLETS_PYTHAGORE);
+    a = base[0]; b = base[1]; c = base[2] + randInt(1, 3);
+    if (a === b) b += 1;
+  }
+  const [p, q, r] = [a, b, c].sort((x, y) => x - y);
+  const estPyth = (p * p + q * q === r * r);
+  const estIso = (a === b || b === c || a === c);
+
+  let correcte, explication;
+  if (estIso) {
+    correcte = 'Isocèle';
+    explication = `Deux côtés sont égaux, le triangle est isocèle.`;
+  } else if (estPyth) {
+    correcte = 'Rectangle';
+    explication = `Car ${p}²+${q}²=${r}² (${p * p}+${q * q}=${r * r}), d'après la réciproque de Pythagore.`;
+  } else {
+    correcte = 'Quelconque';
+    explication = `Car ${p}²+${q}² (${p * p}+${q * q}) ≠ ${r}² (${r * r}) : ce n'est pas un triangle rectangle, et aucune autre propriété particulière ne s'applique.`;
+  }
+  const options = shuffleArr(['Rectangle', 'Isocèle', 'Quelconque', 'Plat']);
+  return {
+    enonce: `Si un triangle a des côtés de ${a}cm, ${b}cm, et ${c}cm, il est :`,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication
+  };
+}
+
+const REFORMULATIONS_M2_N3 = [
+  "Pour utiliser Thalès, que doivent impérativement être deux des droites ?",
+  "Le théorème de Thalès nécessite que les droites concernées soient... ?",
+  "Quelle est la condition indispensable sur les droites pour appliquer Thalès ?"
+];
+
+function genM2_n3() {
+  const enonce = pick(REFORMULATIONS_M2_N3);
+  const options = shuffleArr(['Perpendiculaires', 'Sécantes', 'Parallèles', 'Confondues']);
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf('Parallèles'),
+    explication: `Les droites doivent être parallèles pour conserver les proportions (théorème de Thalès).`
+  };
+}
+
+function genM2(niveau) {
+  if (niveau === 1) return genM2_n1();
+  if (niveau === 2) return genM2_n2();
+  return genM2_n3();
+}
+
+// ==========================================================================
+// M3 — Calcul littéral & Équations
+// ==========================================================================
+
+function genM3_n1() {
+  const a = randInt(2, 9);
+  const b = pick([-9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const signe = b < 0 ? '-' : '+';
+  const absB = Math.abs(b);
+  const enonce = `Développer l'expression : ${a}(x ${signe} ${absB})`;
+  const ab = a * b;
+  const correcte = `${a}x ${ab < 0 ? '-' : '+'} ${Math.abs(ab)}`;
+  const distracteurs = [
+    `${a}x ${signe} ${absB}`,
+    `x ${ab < 0 ? '-' : '+'} ${Math.abs(ab)}`,
+    `${a}x² ${ab < 0 ? '-' : '+'} ${Math.abs(ab)}`
+  ];
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM3_n1();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `${a}×x ${signe} ${a}×${absB} = ${a}x ${ab < 0 ? '-' : '+'} ${Math.abs(ab)}.`
+  };
+}
+
+function genM3_n2() {
+  const a = randInt(2, 9);
+  const xSol = pick([-9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const b = -a * xSol;
+  const signe = b < 0 ? '-' : '+';
+  const absB = Math.abs(b);
+  const enonce = `Quelle est la solution de ${a}x ${signe} ${absB} = 0 ?`;
+  const correcte = `x = ${xSol}`;
+  const distracteurs = [`x = ${-xSol}`, `x = ${b}`, `x = ${-b}`];
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM3_n2();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `${a}x = ${-b} donc x = ${-b}/${a} = ${xSol}.`
+  };
+}
+
+function genM3_n3() {
+  const b = pick([2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  const b2 = b * b;
+  const enonce = `Factoriser x² - ${b2} donne :`;
+  const correcte = `(x-${b})(x+${b})`;
+  const distracteurs = [`(x-${b})²`, `(x+${b})²`, `${b}x(x-${b})`];
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM3_n3();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `Identité remarquable a² - b² = (a-b)(a+b), avec a=x et b=${b} (car ${b}² = ${b2}).`
+  };
+}
+
+function genM3(niveau) {
+  if (niveau === 1) return genM3_n1();
+  if (niveau === 2) return genM3_n2();
+  return genM3_n3();
+}
+
+// ==========================================================================
+// M4 — Fonctions (Linéaires, Affines, Graphiques)
+// ==========================================================================
+
+function genM4_n1() {
+  const a = randInt(1, 9) * (Math.random() < 0.5 ? -1 : 1);
+  const estLineaire = Math.random() < 0.5;
+  const b = estLineaire ? 0 : pick([-7, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 7]);
+  const bStr = b === 0 ? '' : (b > 0 ? ` + ${b}` : ` - ${Math.abs(b)}`);
+  const enonce = `f(x) = ${a}x${bStr} : s'agit-il d'une fonction linéaire ?`;
+  const correcte = estLineaire ? 'Oui, car b = 0' : 'Non, car b ≠ 0';
+  const options = shuffleArr(['Oui, car b = 0', 'Oui, car a ≠ 0', 'Non, car b ≠ 0', 'Non, car a ≠ 0']);
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: estLineaire
+      ? `b = 0, donc la droite passe par l'origine : c'est bien une fonction linéaire.`
+      : `b = ${b} ≠ 0, la droite ne passe pas par l'origine : c'est une fonction affine, mais pas linéaire.`
+  };
+}
+
+function genM4_n2() {
+  const a = pick([-9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const x0 = pick([-9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const correcte = a * x0;
+  const enonce = `Pour f(x) = ${a}x, quelle est l'image de ${x0} ?`;
+  const distracteurs = [a + x0, -correcte, a - x0];
+  const options = uniqueOptionsFromList(distracteurs.map(String), String(correcte));
+  if (!options) return genM4_n2();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(String(correcte)),
+    explication: `${a} × (${x0}) = ${correcte}.`
+  };
+}
+
+function genM4_n3() {
+  const a = pick([-7, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 7]);
+  const b = pick([-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6]);
+  const bStr = b > 0 ? ` + ${b}` : ` - ${Math.abs(b)}`;
+  const demanderA = Math.random() < 0.5;
+  const enonce = demanderA
+    ? `Dans f(x) = ${a}x${bStr}, comment appelle-t-on le terme ${a} (devant x) ?`
+    : `Dans f(x) = ${a}x${bStr}, comment appelle-t-on le terme ${b} ?`;
+  const correcte = demanderA ? 'Le coefficient directeur' : "L'ordonnée à l'origine";
+  const options = shuffleArr(['Le coefficient directeur', "L'image", "L'ordonnée à l'origine", "L'antécédent"]);
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: demanderA
+      ? `${a} est le coefficient directeur : il indique la pente de la droite.`
+      : `${b} est l'ordonnée à l'origine : c'est l'endroit où la droite coupe l'axe vertical.`
+  };
+}
+
+function genM4(niveau) {
+  if (niveau === 1) return genM4_n1();
+  if (niveau === 2) return genM4_n2();
+  return genM4_n3();
+}
+
+// ==========================================================================
+// M5 — Statistiques & Probabilités
+// ==========================================================================
+
+function genM5_n1() {
+  const certain = Math.random() < 0.5;
+  const enonce = certain
+    ? `Quelle est la probabilité d'un événement certain ?`
+    : `Quelle est la probabilité d'un événement impossible ?`;
+  const correcte = certain ? '1' : '0';
+  const options = shuffleArr(['0', '0.5', '1', '100']);
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: certain
+      ? `Un événement certain a une probabilité de 1 (soit 100%).`
+      : `Un événement impossible a une probabilité de 0 (il ne peut jamais se réaliser).`
+  };
+}
+
+function genM5_n2() {
+  const moyenneCible = randInt(8, 20);
+  const v1 = randInt(5, 25);
+  const v2 = randInt(5, 25);
+  const v3 = moyenneCible * 3 - v1 - v2;
+  if (v3 < 1 || v3 > 40) return genM5_n2();
+  const valeurs = shuffleArr([v1, v2, v3]);
+  const enonce = `Quelle est la moyenne de la série : ${valeurs.join(' ; ')} ?`;
+  const somme = v1 + v2 + v3;
+  const correcte = String(moyenneCible);
+  const triees = [...valeurs].sort((x, y) => x - y);
+  const distracteurs = [String(somme), String(moyenneCible + 1), String(triees[1])];
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM5_n2();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `(${valeurs.join('+')})/3 = ${somme}/3 = ${moyenneCible}.`
+  };
+}
+
+function simplifierFraction(num, den) {
+  const d = pgcd(num, den);
+  return [num / d, den / d];
+}
+
+function genM5_n3() {
+  const config = pick([
+    { n: 6, favorables: [2, 4, 6], critere: 'un nombre pair' },
+    { n: 6, favorables: [1, 3, 5], critere: 'un nombre impair' },
+    { n: 6, favorables: [3, 6], critere: 'un multiple de 3' },
+    { n: 8, favorables: [4, 8], critere: 'un multiple de 4' },
+    { n: 10, favorables: [5, 10], critere: 'un multiple de 5' },
+    { n: 12, favorables: [3, 6, 9, 12], critere: 'un multiple de 3' }
+  ]);
+  const [num, den] = simplifierFraction(config.favorables.length, config.n);
+  const correcte = `${num}/${den}`;
+  const enonce = `Si on lance un dé équilibré à ${config.n} faces, quelle est la probabilité d'obtenir ${config.critere} ?`;
+  const [numFaux, denFaux] = simplifierFraction(config.n - config.favorables.length, config.n);
+  const distracteurs = [
+    `${config.favorables.length}/${config.n}`,
+    `${numFaux}/${denFaux}`,
+    `${den}/${num}`
+  ];
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM5_n3();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `Il y a ${config.favorables.length} issues favorables sur ${config.n}, soit ${config.favorables.length}/${config.n} = ${correcte}.`
+  };
+}
+
+function genM5(niveau) {
+  if (niveau === 1) return genM5_n1();
+  if (niveau === 2) return genM5_n2();
+  return genM5_n3();
+}
+
+// ==========================================================================
+// M6 — Trigonométrie dans le triangle rectangle
+// ==========================================================================
+
+function genM6_n1() {
+  const variantes = [
+    { paire: "le côté opposé ET l'hypoténuse", correcte: 'Le sinus' },
+    { paire: "le côté adjacent ET l'hypoténuse", correcte: 'Le cosinus' },
+    { paire: "le côté opposé ET le côté adjacent", correcte: 'La tangente' }
+  ];
+  const v = pick(variantes);
+  const options = shuffleArr(['Le sinus', 'Le cosinus', 'La tangente', 'Pythagore']);
+  return {
+    enonce: `Quelle formule utilise ${v.paire} ?`,
+    options,
+    bonne_reponse: options.indexOf(v.correcte),
+    explication: `${v.correcte} relie ${v.paire.toLowerCase()} dans un triangle rectangle (SOH-CAH-TOA).`
+  };
+}
+
+function genM6_n2() {
+  const [a, b, c] = pick(TRIPLETS_PYTHAGORE);
+  const correcte = `${c} cm`;
+  const enonce = `Dans un triangle rectangle de côtés ${a}cm, ${b}cm et ${c}cm, lequel est l'hypoténuse ?`;
+  const distracteurs = [`${a} cm`, `${b} cm`, `${a + b} cm`]; // 4e leurre : confusion avec la somme des deux côtés
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM6_n2();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `L'hypoténuse est toujours le côté opposé à l'angle droit, et c'est le plus long des trois côtés : ici ${c}cm.`
+  };
+}
+
+function genM6_n3() {
+  const tan = pick([0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1, 1.2, 1.25, 1.5]);
+  const adjacent = pick([10, 20, 25, 40, 50]);
+  const oppose = Math.round(tan * adjacent * 100) / 100;
+  const enonce = `Si tan(angle) = opposé/adjacent = ${tan} et que le côté adjacent vaut ${adjacent} cm, le côté opposé vaut :`;
+  const correcte = `${oppose} cm`;
+  const distracteurs = [
+    `${Math.round((adjacent / tan) * 100) / 100} cm`,
+    `${Math.round((adjacent + oppose) * 100) / 100} cm`,
+    `${Math.round((oppose / 10) * 100) / 100} cm`
+  ];
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM6_n3();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `${tan} × ${adjacent} = ${oppose} cm.`
+  };
+}
+
+function genM6(niveau) {
+  if (niveau === 1) return genM6_n1();
+  if (niveau === 2) return genM6_n2();
+  return genM6_n3();
+}
+
+// ==========================================================================
+// M7 — Géométrie dans l'espace : solides et volumes
+// ==========================================================================
+
+const FORMULES_VOLUMES = {
+  'pavé droit': 'L × l × h',
+  'cylindre': 'π × r² × h',
+  'cône': '(π × r² × h) / 3',
+  'sphère': '(4/3) × π × r³',
+  'pyramide': '(aire base × hauteur) / 3'
+};
+
+function genM7_n1() {
+  const solides = Object.keys(FORMULES_VOLUMES);
+  const solide = pick(solides);
+  const correcte = FORMULES_VOLUMES[solide];
+  const autresFormules = solides.filter(s => s !== solide).map(s => FORMULES_VOLUMES[s]);
+  const distracteurs = shuffleArr(autresFormules).slice(0, 3);
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM7_n1();
+  return {
+    enonce: `Quelle est la formule du volume d'un ${solide} ?`,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `Le volume d'un ${solide} se calcule avec : ${correcte}.`
+  };
+}
+
+function genM7_n2() {
+  const solide = pick(['une pyramide', 'un cône']);
+  const aire = pick([6, 9, 12, 15, 18, 21, 24]);
+  const hauteur = pick([3, 5, 6, 9, 12]);
+  const volume = (aire * hauteur) / 3;
+  const enonce = `${solide.charAt(0).toUpperCase() + solide.slice(1)} a une aire de base de ${aire} cm² et une hauteur de ${hauteur} cm. Quel est son volume ?`;
+  const correcte = `${volume} cm³`;
+  const distracteurs = [`${aire * hauteur} cm³`, `${(aire * hauteur) / 2} cm³`, `${aire * hauteur * 3} cm³`];
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM7_n2();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `Volume = (aire base × hauteur) / 3 = (${aire} × ${hauteur}) / 3 = ${volume} cm³. Ne pas oublier de diviser par 3 !`
+  };
+}
+
+function genM7_n3() {
+  const echelles = [
+    { num: 1, den: 2 }, { num: 1, den: 3 }, { num: 1, den: 4 },
+    { num: 2, den: 1 }, { num: 3, den: 1 }, { num: 2, den: 3 }, { num: 3, den: 2 }
+  ];
+  const e = pick(echelles);
+  const enonce = `Si on réduit (ou agrandit) un solide à l'échelle ${e.num}/${e.den}, son volume est multiplié par :`;
+  const numCube = e.num ** 3;
+  const denCube = e.den ** 3;
+  const d = pgcd(numCube, denCube);
+  const correcte = denCube / d === 1 ? `${numCube / d}` : `${numCube / d}/${denCube / d}`;
+  const distracteurs = [
+    e.den === 1 ? `${e.num}` : `${e.num}/${e.den}`,
+    `${e.num * e.num}/${e.den * e.den}`,
+    `${3 * e.num}/${e.den}`
+  ];
+  const options = uniqueOptionsFromList(distracteurs, correcte);
+  if (!options) return genM7_n3();
+  return {
+    enonce,
+    options,
+    bonne_reponse: options.indexOf(correcte),
+    explication: `Le volume varie selon le CUBE du coefficient : (${e.num}/${e.den})³ = ${correcte}.`
+  };
+}
+
+function genM7(niveau) {
+  if (niveau === 1) return genM7_n1();
+  if (niveau === 2) return genM7_n2();
+  return genM7_n3();
+}
 
 function obtenirQuestionsFiltrees(pool, quantite) {
   let questionsDisponibles = pool.filter(q => !AppState.historiqueQuestions.includes(q.enonce));
@@ -288,29 +873,6 @@ function statutMaitrise(chapitreId) {
   return { icone: '📝', label: 'En cours d\'apprentissage' };
 }
 
-// ==========================================================================
-// ▰ PROGRESSION (effort) — distincte de l'acquis (mémoire). Compte les niveaux
-// explorés jusqu'au bout + l'exercice rédigé fait, par chapitre.
-// ==========================================================================
-
-function enregistrerProgression(chapitreId, cle) {
-  if (!AppState.progression[chapitreId]) AppState.progression[chapitreId] = {};
-  AppState.progression[chapitreId][cle] = true;
-  localStorage.setItem('dnb_progression_v1', JSON.stringify(AppState.progression));
-}
-
-function obtenirProgression(chapitre) {
-  const total = 3 + (chapitre.exercice_ouvert ? 1 : 0);
-  const p = AppState.progression[chapitre.id] || {};
-  let faits = 0;
-  [1, 2, 3].forEach(n => { if (p['niveau' + n]) faits++; });
-  if (chapitre.exercice_ouvert && p.exercice) faits++;
-  return { faits, total };
-}
-
-function segmentsVisuels(faits, total) {
-  return '▰'.repeat(faits) + '▱'.repeat(Math.max(0, total - faits));
-}
 
 // ==========================================================================
 // 📊 TABLEAU DE BORD « COUVERTURE DU PROGRAMME » — indicateur honnête, calculé
@@ -347,11 +909,6 @@ async function initialiserApp() {
   const savedLeitner = localStorage.getItem('dnb_leitner_v3');
   if (savedLeitner) {
     try { AppState.leitner = JSON.parse(savedLeitner); } catch (e) { AppState.leitner = {}; }
-  }
-
-  const savedProgression = localStorage.getItem('dnb_progression_v1');
-  if (savedProgression) {
-    try { AppState.progression = JSON.parse(savedProgression); } catch (e) { AppState.progression = {}; }
   }
 
   const savedHistory = localStorage.getItem('dnb_history_anti_repeat');
@@ -443,7 +1000,6 @@ function construireMenuMatieres() {
         row.style.cssText = "padding:16px 14px; margin-top:12px; background:var(--bg-card); border-radius:12px; display:flex; flex-direction:column; gap:10px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);";
         row.onclick = (e) => ouvrirPreQuiz(m.id, c.id, e);
         const statut = statutMaitrise(c.id);
-        const prog = obtenirProgression(c);
         row.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <span style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:.88rem; padding-right:12px; text-align:left; color:var(--text-primary); line-height:1.4;">
@@ -451,10 +1007,6 @@ function construireMenuMatieres() {
               ${c.titre}
             </span>
             <span style="font-size:.68rem; font-weight:700; color:var(--color-primary); background:#EEF2FF; padding:5px 10px; border-radius:8px; white-space:nowrap; text-transform:uppercase; letter-spacing:0.03em;">${c.theme || 'DNB'}</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:6px; padding-left:2px;">
-            <span style="font-size:0.8rem; color:var(--color-primary); letter-spacing:1px;">${segmentsVisuels(prog.faits, prog.total)}</span>
-            <span style="font-size:0.65rem; font-weight:600; color:var(--text-secondary);">Progression : ${prog.faits}/${prog.total} étapes</span>
           </div>
         `;
         bodyContent.appendChild(row);
@@ -538,6 +1090,15 @@ function goHome() {
   construireMenuMatieres();
 }
 
+// Pilote Maths : 7 chapitres branchés sur des générateurs procéduraux.
+// 20 cellules niveau×chapitre sur 21 sont purement génératives (calcul aléatoire
+// ou banque large) ; seule m2-n1 (Pythagore/trigo : type de triangle requis) reste
+// partiellement statique, avec 2-3 reformulations écrites à la main (cf. fonction
+// genM2_n1 dans la section MOTEUR DE GÉNÉRATION — PILOTE MATHS ci-dessus).
+const GENERATEURS_MATHS = {
+  m1: genM1, m2: genM2, m3: genM3, m4: genM4, m5: genM5, m6: genM6, m7: genM7
+};
+
 function lancerQuiz(niveau) {
   AppState.quiz.chapitreId = currentChapitreSelected.id;
   AppState.quiz.idx = 0;
@@ -545,11 +1106,17 @@ function lancerQuiz(niveau) {
   AppState.quiz.isAutomatisme = false;
   AppState.quiz.niveauFiltre = niveau;
 
-  // FIX v6.0 : chaque chapitre (y compris en maths) utilise désormais SES PROPRES questions
-  // rédigées, au lieu d'être systématiquement redirigé vers le générateur infini de %.
-  // Le générateur infini reste exclusivement réservé au mode global "Automatismes".
-  let pool = currentChapitreSelected.questions ? currentChapitreSelected.questions.filter(q => q.niveau === niveau) : [];
-  AppState.quiz.questions = obtenirQuestionsFiltrees(pool, 3);
+  const generateurChapitre = GENERATEURS_MATHS[currentChapitreSelected.id];
+  if (generateurChapitre) {
+    // Chapitre piloté : 5 questions générées à la volée, dédupliquées au sein
+    // de la session (sac à malice). Plus jamais la même question figée.
+    AppState.quiz.questions = genererSessionSansDoublon(() => generateurChapitre(niveau), 5);
+  } else {
+    // FIX v6.0 : chapitre non encore piloté (français, histoire-géo, emc, sciences) —
+    // repli sur la banque JSON statique existante, intacte, comme filet de sécurité.
+    let pool = currentChapitreSelected.questions ? currentChapitreSelected.questions.filter(q => q.niveau === niveau) : [];
+    AppState.quiz.questions = obtenirQuestionsFiltrees(pool, 3);
+  }
 
   if (AppState.quiz.questions.length === 0) {
     alert("Aucune question de ce niveau n'est disponible pour ce chapitre.");
@@ -656,9 +1223,6 @@ $('quiz-next').onclick = () => {
   if (AppState.quiz.idx < AppState.quiz.questions.length) {
     afficherQuestion();
   } else {
-    if (AppState.quiz.chapitreId && AppState.quiz.chapitreId !== "automatismes_global") {
-      enregistrerProgression(AppState.quiz.chapitreId, 'niveau' + AppState.quiz.niveauFiltre);
-    }
     alert(`🏁 Fin de session ! Score : ${AppState.quiz.score} / ${AppState.quiz.questions.length}`);
     goHome();
   }
@@ -708,7 +1272,6 @@ function ouvrirExerciceOuvert() {
     const coches = document.querySelectorAll('.critere-cb:checked').length;
     alert(`Auto-évaluation enregistrée.`);
     enregistrerLacune(currentChapitreSelected.id, total > 0 ? (coches / total) >= 0.6 : true, currentChapitreSelected.titre);
-    enregistrerProgression(currentChapitreSelected.id, 'exercice');
     construireMenuMatieres();
     goHome();
   };
