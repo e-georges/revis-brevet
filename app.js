@@ -182,7 +182,7 @@ function genM1_n2() {
 }
 
 function genM1_n3() {
-  const couples = [[8, 15], [9, 16], [7, 12], [14, 25], [10, 21], [11, 18], [13, 20], [9, 14]];
+  const couples = [[6, 11], [7, 9], [8, 11], [9, 11], [10, 13], [11, 13], [12, 17], [13, 15], [14, 17], [15, 17], [16, 19], [17, 19], [18, 23], [19, 21], [20, 23], [21, 23], [22, 25], [23, 25], [24, 29], [25, 27], [26, 29], [27, 29], [28, 31], [29, 31], [30, 37]];
   const [a, b] = pick(couples);
   const options = shuffleArr(['Premiers entre eux', 'Égaux', 'Pairs', "Multiples l'un de l'autre"]);
   return {
@@ -220,7 +220,7 @@ function genM2_n1() {
   };
 }
 
-const TRIPLETS_PYTHAGORE = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [7, 24, 25], [9, 12, 15], [20, 21, 29], [12, 16, 20]];
+const TRIPLETS_PYTHAGORE = [[3, 4, 5], [5, 12, 13], [6, 8, 10], [7, 24, 25], [8, 15, 17], [9, 12, 15], [9, 40, 41], [10, 24, 26], [12, 16, 20], [12, 35, 37], [15, 20, 25], [15, 36, 39], [16, 30, 34], [18, 24, 30], [20, 21, 29], [21, 28, 35], [24, 32, 40], [24, 45, 51], [27, 36, 45], [28, 45, 53], [30, 40, 50], [33, 44, 55], [36, 48, 60], [40, 42, 58]];
 
 function genM2_n2() {
   const estRectangle = Math.random() < 0.6;
@@ -326,7 +326,7 @@ function genM3_n2() {
 }
 
 function genM3_n3() {
-  const b = pick([2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  const b = pick([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]);
   const b2 = b * b;
   const enonce = `Factoriser x² - ${b2} donne :`;
   const correcte = `(x-${b})(x+${b})`;
@@ -461,12 +461,21 @@ function simplifierFraction(num, den) {
 
 function genM5_n3() {
   const config = pick([
-    { n: 6, favorables: [2, 4, 6], critere: 'un nombre pair' },
-    { n: 6, favorables: [1, 3, 5], critere: 'un nombre impair' },
     { n: 6, favorables: [3, 6], critere: 'un multiple de 3' },
+    { n: 6, favorables: [1, 2, 3, 4], critere: 'inférieur ou égal à 4' },
+    { n: 6, favorables: [6], critere: 'le numéro 6' },
     { n: 8, favorables: [4, 8], critere: 'un multiple de 4' },
+    { n: 8, favorables: [1, 2, 3, 4, 5, 6], critere: 'inférieur à 7' },
+    { n: 8, favorables: [2, 4, 8], critere: 'un diviseur de 8 (autre que 1)' },
     { n: 10, favorables: [5, 10], critere: 'un multiple de 5' },
-    { n: 12, favorables: [3, 6, 9, 12], critere: 'un multiple de 3' }
+    { n: 10, favorables: [3, 6, 9], critere: 'un multiple de 3' },
+    { n: 10, favorables: [1, 2, 3, 4], critere: 'inférieur à 5' },
+    { n: 12, favorables: [3, 6, 9, 12], critere: 'un multiple de 3' },
+    { n: 12, favorables: [4, 8, 12], critere: 'un multiple de 4' },
+    { n: 12, favorables: [6, 12], critere: 'un multiple de 6' },
+    { n: 20, favorables: [4, 8, 12, 16, 20], critere: 'un multiple de 4' },
+    { n: 20, favorables: [5, 10, 15, 20], critere: 'un multiple de 5' },
+    { n: 20, favorables: [10, 20], critere: 'un multiple de 10' }
   ]);
   const [num, den] = simplifierFraction(config.favorables.length, config.n);
   const correcte = `${num}/${den}`;
@@ -603,8 +612,11 @@ function genM7_n2() {
 
 function genM7_n3() {
   const echelles = [
-    { num: 1, den: 2 }, { num: 1, den: 3 }, { num: 1, den: 4 },
-    { num: 2, den: 1 }, { num: 3, den: 1 }, { num: 2, den: 3 }, { num: 3, den: 2 }
+    { num: 1, den: 2 }, { num: 1, den: 3 }, { num: 1, den: 4 }, { num: 1, den: 5 },
+    { num: 2, den: 1 }, { num: 2, den: 3 }, { num: 2, den: 5 },
+    { num: 3, den: 1 }, { num: 3, den: 2 }, { num: 3, den: 4 }, { num: 3, den: 5 },
+    { num: 4, den: 1 }, { num: 4, den: 3 }, { num: 4, den: 5 },
+    { num: 5, den: 1 }, { num: 5, den: 2 }, { num: 5, den: 3 }, { num: 5, den: 4 }
   ];
   const e = pick(echelles);
   const enonce = `Si on réduit (ou agrandit) un solide à l'échelle ${e.num}/${e.den}, son volume est multiplié par :`;
